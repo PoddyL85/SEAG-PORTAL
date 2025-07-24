@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nicolas's SEAG Portal</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel to compile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase v9 COMPATIBILITY Libraries (Essential for this setup) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // This is your entire React Application inside a single script tag.
+        // Babel will compile it automatically in the browser.
+
+        const { useState, useEffect, useCallback } = React;
+
+        // --- Firebase Configuration ---
+        // IMPORTANT: You MUST replace these placeholder values with your actual Firebase config.
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Check if the Firebase config has been filled out
+        const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+        // --- Initialize Firebase ---
+        let app, auth, db;
+        if (isFirebaseConfigured) {
+            try {
+                // Initialize Firebase using the compat libraries
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+            } catch (e) {
+                 console.error("Firebase initialization failed:", e);
+            }
+        }
+
+        // --- Question Data ---
+        const initialQuizData = {
+          "maths-pack-1": {
+            title: "Maths Test 1",
+            subject: "Maths",
+            questions: Array.from({ length: 28 }, (_, i) => ({
+              question: `Maths Question ${i + 1}/28: What is 2 + ${i}?`,
+              options: [`${i}`, `${i + 1}`, `${i + 2}`, `${i + 3}`],
+              answer: `${i + 2}`,
+            })),
+          },
+          "english-pack-1": {
+            title: "English Test 1",
+            subject: "English",
+            questions: Array.from({ length: 28 }, (_, i) => ({
+              question: `English Question ${i + 1}/28: Which word is a noun?`,
+              options: ["Run", "Quickly", `Cat-${i}`, "On"],
+              answer: `Cat-${i}`,
+            })),
+          },
+          "full-test-1": {
+            title: "Full Practice Test 1",
+            subject: "Mixed",
+            questions: [
+              ...Array.from({ length: 28 }, (_, i) => ({
+                question: `Maths Question ${i + 1}/28: What is 5 + ${i}?`,
+                options: [`${i+3}`, `${i + 4}`, `${i + 5}`, `${i + 6}`],
+                answer: `${i + 5}`,
+              })),
+              ...Array.from({ length: 28 }, (_, i) => ({
+                question: `English Question ${i + 1}/28: What is a verb?`,
+                options: ["A person", "An action word", "A place", "A thing"],
+                answer: "An action word",
+              })),
+            ],
+          },
+        };
+
+        // --- Helper Components ---
+        const LoadingSpinner = ({ message }) => (
+            <div className="flex flex-col justify-center items-center h-screen bg-gray-800 text-white">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-lg">{message}</p>
+            </div>
+        );
+
+        const ErrorDisplay = ({ message }) => (
+            <div className="flex flex-col justify-center items-center h-screen bg-red-100 text-red-800 p-4 text-center">
+                <h2 className="text-2xl font-bold mb-4">An Error Occurred</h2>
+                <p className="max-w-md">{message}</p>
+            </div>
+        );
+        
+        const CharacterMessage = ({ message, character }) => {
+            const characters = { Freddy: "🐻", Chica: "🐔", Foxy: "🦊" };
+            return (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 my-4 rounded-r-lg shadow-md flex items-center">
+                    <span className="text-4xl mr-4">{characters[character] || '🤖'}</span>
+                    <p className="font-semibold">{message}</p>
+                </div>
+            );
+        };
+
+        // --- Main App Components ---
+        const Dashboard = ({ userData, setView, setSelectedTest }) => {
+            const handleSelectTest = (testId, settings) => {
+                setSelectedTest({ id: testId, settings });
+                setView('quiz');
+            };
+            if (!userData) return <LoadingSpinner message="Loading user data..." />;
+            return (
+                <div className="p-4 sm:p-8 bg-gray-100 min-h-screen">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Welcome, {userData.name}!</h1>
+                            <div>
+                                <button onClick={() => setView('admin')} className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Admin Panel</button>
+                            </div>
+                        </div>
+                        <CharacterMessage message="Ready to ace these tests? Let's get started!" character="Freddy" />
+                        <div className="bg-white rounded-xl shadow-lg p-6">
+                            <h2 className="text-2xl font-bold text-gray-700 mb-6">Choose Your Test</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(initialQuizData).map(([testId, test]) => (
+                                    <TestCard key={testId} testId={testId} test={test} onStart={handleSelectTest} progress={userData.progress?.[testId]} />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TestCard = ({ testId, test, onStart, progress }) => {
+            const [feedbackOn, setFeedbackOn] = useState(true);
+            const questionsCount = test.questions.length;
+            const answeredCount = progress ? Object.keys(progress.answers || {}).length : 0;
+            const progressPercent = questionsCount > 0 ? (answeredCount / questionsCount) * 100 : 0;
+            const handleStartClick = () => onStart(testId, { feedbackOn });
+            return (
+                <div className="border border-gray-200 rounded-lg p-5 flex flex-col justify-between hover:shadow-xl transition-shadow">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800">{test.title}</h3>
+                        <p className="text-gray-500 mb-4">{test.subject} - {questionsCount} Questions</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                            <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">{answeredCount} / {questionsCount} answered</p>
+                    </div>
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-medium text-gray-700">Live Feedback</label>
+                            <div onClick={() => setFeedbackOn(!feedbackOn)} className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${feedbackOn ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${feedbackOn ? 'translate-x-6' : ''}`}></div>
+                            </div>
+                        </div>
+                        <button onClick={handleStartClick} className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+                            {answeredCount > 0 && answeredCount < questionsCount ? 'Continue Test' : 'Start Test'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const QuizView = ({ user, userData, testDetails, setView }) => {
+            const { id: testId, settings } = testDetails;
+            const test = initialQuizData[testId];
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [userAnswers, setUserAnswers] = useState({});
+            const getInitialTime = () => {
+                const savedTime = userData?.progress?.[testId]?.timeLeft;
+                return (savedTime !== undefined && savedTime > 0) ? savedTime : (test.subject === 'Mixed' ? 60 * 60 : 30 * 60);
+            };
+            const [timeLeft, setTimeLeft] = useState(getInitialTime);
+            const [isPaused, setIsPaused] = useState(false);
+            const [feedback, setFeedback] = useState(null);
+
+            useEffect(() => {
+                if (userData?.progress?.[testId]) {
+                    setUserAnswers(userData.progress[testId].answers || {});
+                    setCurrentQuestionIndex(userData.progress[testId].lastQuestionIndex || 0);
+                }
+            }, [userData, testId]);
+
+            useEffect(() => {
+                if (isPaused || !timeLeft) return;
+                const intervalId = setInterval(() => setTimeLeft(t => t - 1), 1000);
+                return () => clearInterval(intervalId);
+            }, [timeLeft, isPaused]);
+
+            const calculateScore = useCallback(() => Object.entries(userAnswers).reduce((acc, [index, answer]) => (test.questions[index]?.answer === answer ? acc + 1 : acc), 0), [userAnswers, test.questions]);
+
+            const saveProgress = useCallback(async () => {
+                if (!isFirebaseConfigured || !db || !user) return;
+                const userDocRef = db.collection("users").doc(user.uid);
+                const newProgress = { ...userData.progress, [testId]: { answers: userAnswers, lastQuestionIndex: currentQuestionIndex, score: calculateScore(), timeLeft: timeLeft } };
+                await userDocRef.set({ ...userData, progress: newProgress }, { merge: true });
+            }, [user, userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft]);
+
+            const handleAnswer = (answer) => {
+                setUserAnswers(prev => ({ ...prev, [currentQuestionIndex]: answer }));
+                if (settings.feedbackOn) {
+                    const isCorrect = test.questions[currentQuestionIndex].answer === answer;
+                    setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is ${test.questions[currentQuestionIndex].answer}.`);
+                }
+            };
+
+            const goToNext = () => {
+                if (currentQuestionIndex < test.questions.length - 1) {
+                    setFeedback(null);
+                    setCurrentQuestionIndex(i => i + 1);
+                }
+            };
+
+            const handleFinish = async () => { await saveProgress(); setView('results'); };
+            const handlePause = async () => { setIsPaused(true); await saveProgress(); alert("Progress saved!"); setView('dashboard'); };
+
+            const currentQ = test.questions[currentQuestionIndex];
+            return (
+                <div className="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-3xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{test.title}</h2>
+                            <div className="text-lg sm:text-xl font-mono bg-gray-800 text-white px-4 py-2 rounded-lg">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>
+                        </div>
+                        <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-700">{currentQ.question}</p></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            {currentQ.options ? currentQ.options.map((option, index) => (
+                                <button key={index} onClick={() => handleAnswer(option)} disabled={feedback !== null} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[currentQuestionIndex] === option ? 'bg-blue-100 border-blue-500' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'} ${feedback !== null ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
+                            )) : <textarea value={userAnswers[currentQuestionIndex] || ''} onChange={(e) => handleAnswer(e.target.value)} className="w-full col-span-2 p-4 border-2 border-gray-300 rounded-lg" placeholder="Type your answer here..." rows="4"></textarea>}
+                        </div>
+                        {feedback && <div className={`p-4 rounded-lg my-4 text-white ${feedback.startsWith('Correct') ? 'bg-green-500' : 'bg-red-500'}`}>{feedback}</div>}
+                        <div className="flex justify-between mt-8">
+                            <button onClick={handlePause} className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-600">Pause & Save</button>
+                            {currentQuestionIndex < test.questions.length - 1 ? (
+                                <button onClick={goToNext} disabled={settings.feedbackOn && !feedback} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Next</button>
+                            ) : (
+                                <button onClick={handleFinish} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">Finish Test</button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ResultsView = ({ userData, setView }) => (
+            <div className="p-8 bg-gray-100 min-h-screen flex items-center justify-center">
+                <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-3xl text-center">
+                    <h2 className="text-4xl font-bold text-blue-600 mb-4">Test Complete!</h2>
+                    <p className="text-lg text-gray-600 mb-8">Great work, {userData.name}! Your results have been saved.</p>
+                    <CharacterMessage message="Every test you complete makes you stronger. Awesome job!" character="Chica" />
+                    <button onClick={() => setView('dashboard')} className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700">Back to Dashboard</button>
+                </div>
+            </div>
+        );
+
+        const AdminView = ({ user, userData, setView }) => {
+            const handleResetProgress = async (testId) => {
+                if (!isFirebaseConfigured || !db || !user || !window.confirm(`Are you sure you want to reset all progress for ${initialQuizData[testId].title}?`)) return;
+                const userDocRef = db.collection("users").doc(user.uid);
+                const newProgress = { ...userData.progress };
+                delete newProgress[testId];
+                try {
+                    await userDocRef.set({ ...userData, progress: newProgress }, { merge: true });
+                    alert("Progress reset successfully!");
+                    // In a real app with state management, you'd update the local state here.
+                    // For now, the user can navigate back to see the change.
+                } catch (error) {
+                    alert("Failed to reset progress.");
+                    console.error("Error resetting progress: ", error);
+                }
+            };
+            return (
+                <div className="p-8 bg-gray-800 text-white min-h-screen">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <h1 className="text-4xl font-bold">Admin Panel</h1>
+                            <button onClick={() => setView('dashboard')} className="bg-blue-500 font-semibold py-2 px-4 rounded-lg hover:bg-blue-600">&larr; Back to Dashboard</button>
+                        </div>
+                        <div className="bg-gray-900 rounded-xl p-6">
+                            <h2 className="text-2xl font-bold mb-4">Manage Tests</h2>
+                            <div className="space-y-4">
+                                {Object.entries(initialQuizData).map(([testId, test]) => (
+                                    <div key={testId} className="bg-gray-800 p-4 rounded-lg flex justify-between items-center">
+                                        <div><h3 className="text-lg font-bold">{test.title}</h3><p className="text-gray-400">{test.questions.length} questions</p></div>
+                                        <button onClick={() => handleResetProgress(testId)} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Reset Progress</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
+        function App() {
+            const [user, setUser] = useState(null);
+            const [userData, setUserData] = useState(null);
+            const [view, setView] = useState('loading');
+            const [selectedTest, setSelectedTest] = useState(null);
+            const [error, setError] = useState('');
+
+            useEffect(() => {
+                if (!isFirebaseConfigured) {
+                    setError("Firebase is not configured. Please add your project's API keys to the firebaseConfig object. The app is running in offline mode and progress will not be saved.");
+                    setView('dashboard');
+                    setUserData({ name: "Nicolas", progress: {} }); // Mock data for offline mode
+                    return;
+                }
+                
+                auth.onAuthStateChanged(async (currentUser) => {
+                    if (currentUser) {
+                        setUser(currentUser);
+                        const userDocRef = db.collection("users").doc(currentUser.uid);
+                        const userDoc = await userDocRef.get();
+                        if (userDoc.exists) {
+                            setUserData(userDoc.data());
+                        } else {
+                            const newUserData = { name: "Nicolas", email: null, isAdmin: true, progress: {}, theme: 'default' };
+                            await userDocRef.set(newUserData);
+                            setUserData(newUserData);
+                        }
+                        setView('dashboard');
+                    } else {
+                        auth.signInAnonymously().catch((err) => {
+                            console.error("Anonymous sign-in failed", err);
+                            setError("Could not start a session. Please check your internet connection and Firebase security rules.");
+                            setView('error');
+                        });
+                    }
+                });
+            }, []);
+
+            const renderView = () => {
+                switch (view) {
+                    case 'loading': return <LoadingSpinner message="Initializing..." />;
+                    case 'error': return <ErrorDisplay message={error} />;
+                    case 'dashboard': return <Dashboard userData={userData} setView={setView} setSelectedTest={setSelectedTest} />;
+                    case 'quiz': return <QuizView user={user} userData={userData} testDetails={selectedTest} setView={setView} />;
+                    case 'results': return <ResultsView userData={userData} setView={setView} />;
+                    case 'admin': return <AdminView user={user} userData={userData} setView={setView} />;
+                    default: return <LoadingSpinner message="Loading Portal..." />;
+                }
+            };
+
+            return <div className="font-sans">{renderView()}</div>;
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
