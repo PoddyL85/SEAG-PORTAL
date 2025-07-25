@@ -20,6 +20,13 @@
     <!-- Babel to compile JSX in the browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- PDF.js for parsing PDF files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Required for PDF.js to work
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    </script>
+
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -28,10 +35,45 @@
             font-family: 'Orbitron', sans-serif;
         }
         .glowing-border {
-            box-shadow: 0 0 2px #00aaff, 0 0 5px #00aaff, 0 0 10px #00aaff;
+            box-shadow: 0 0 2px var(--color-primary), 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
         }
         .glowing-text {
-            text-shadow: 0 0 5px #00aaff, 0 0 10px #00aaff;
+            text-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
+        }
+        /* Custom styles for modal and notifications */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .notification-bar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        /* Animation for feedback flash */
+        @keyframes flash-green {
+            0% { background-color: #16a34a; } /* green-600 */
+            100% { background-color: transparent; }
+        }
+        @keyframes flash-red {
+            0% { background-color: #dc2626; } /* red-600 */
+            100% { background-color: transparent; }
+        }
+        .flash-correct {
+            animation: flash-green 0.5s ease-out;
+        }
+        .flash-incorrect {
+            animation: flash-red 0.5s ease-out;
         }
     </style>
 </head>
@@ -40,53 +82,53 @@
 
     <script type="text/babel">
         // This is your entire React Application inside a single script tag.
-        // All Firebase code has been removed. Data is now saved in the browser.
+        // Data is saved in the browser's localStorage.
 
         const { useState, useEffect, useCallback } = React;
 
-        // --- Default Test Data ---
-        // This is the initial set of tests. New tests created in the Admin Panel
-        // will be saved to the browser's localStorage.
+        // --- Default Test Data (Restored to full version) ---
         const defaultTests = [
             {
                 id: "maths-pack-1",
                 title: "Maths Test Pack 1",
                 subject: "Maths",
+                notes: "From 2023 practice paper, page 5.",
                 questions: [
-                  { question: "A football pitch measures 115 metres long and 80 metres wide. The area of a rugby pitch is 6,392 square metres. How many square metres smaller is the area of the rugby pitch than the area of the football pitch?", options: ["9200 m²", "2908 m²", "2809 m²", "2808 m²", "6197 m²"], answer: "2808 m²" },
-                  { question: "Convert this measurement: 1701 g = ___ kg", options: ["17.01 kg", "1.701 kg", "170.1 kg", "1.7 kg", "0.1701 kg"], answer: "1.701 kg" },
-                  { question: "How many lines of symmetry does a rhombus have?", options: ["0", "1", "2", "3", "4"], answer: "2" },
-                  { question: "Which is the most appropriate instrument for measuring the distance around a football?", options: ["trundle wheel", "odometer", "metre stick", "tape measure", "ruler"], answer: "tape measure" },
-                  { question: "Ahmed cycled 13 km on Monday and 15 km on Thursday. How much further did he cycle on Thursday than on Monday?", options: ["1 km", "3 km", "5 km", "4 km", "2 km"], answer: "2 km" },
-                  { question: "What decimal fraction is equivalent to 3/4?", options: ["0.25", "0.33", "0.20", "0.75", "0.10"], answer: "0.75" },
-                  { question: "A regular hexagon has a side length of 7 cm. A square has the same perimeter as the hexagon. What is the area of the square?", options: ["42 cm²", "100 cm²", "10.5 cm²", "110.25 cm²", "49 cm²"], answer: "110.25 cm²" },
-                  { question: "What is the tenth number in this sequence: 1.5, 3.0, 4.5, 6.0, ...?", options: ["9.0", "12.5", "15", "15.0", "17.5"], answer: "15.0" },
-                  { question: "Girls in Years 4, 5, 6, and 7 collected £4, £12, £16, and £17 respectively. What was the average amount collected?", options: ["£12.00", "£12.25", "£12.50", "£10.00", "£13.00"], answer: "£12.25" },
-                  { question: "A rectangle's corners are at A(25, 30), B(55, 30), C(55, 14), and D. What are the coordinates of point D?", options: ["(25, 14)", "(55, 30)", "(25, 22)", "(55, 14)", "(40, 14)"], answer: "(25, 14)" },
-                  { question: "By how much is 18.401 greater than 14.1?", options: ["4.3", "3.3", "4.301", "3.301", "4"], answer: "4.301" },
-                  { question: "A stack of 20 identical pizza boxes is 160 cm tall. Giovanni removes 3 from the top. How tall is the stack now?", options: ["130 cm", "132 cm", "134 cm", "136 cm", "138 cm"], answer: "136 cm" },
-                  { question: "What would be the best unit of measure for recording the amount of water in a paddling pool?", options: ["litres", "mm", "cm", "m³", "ml"], answer: "litres" },
-                  { question: "A scale shows a weight between 1.2 kg and 1.3 kg, marked in 10 increments. The pointer is on the 4th mark after 1.2. What is the weight?", options: ["1.21 kg", "1.22 kg", "1.23 kg", "1.24 kg", "1.25 kg"], answer: "1.24 kg" },
-                  { question: "b × 6 = 48. What does (b + 2) × 5 equal?", options: ["30", "40", "20", "50", "60"], answer: "50" },
-                  { question: "How many vertical lines are in an isosceles trapezium with a vertical line of symmetry drawn through it?", options: ["0", "1", "2", "3", "4"], answer: "1" },
-                  { question: "What is 7/10 of £17?", options: ["£9.90", "£10.90", "£11.70", "£11.90", "£12.90"], answer: "£11.90" },
-                  { question: "A chart showing population change over time with points connected by lines is what type of chart?", options: ["Block Graph", "Pie Chart", "Bar Graph", "Bar-Line Graph", "Line Graph"], answer: "Line Graph" },
-                  { question: "A rectangle is divided into 8 equal squares. 6 of them are shaded. What fraction is shaded?", options: ["1/4", "3/8", "5/8", "3/4", "7/8"], answer: "3/4" },
-                  { question: "A chart shows temperature ranges. The lowest is -13°C and the highest is 6°C. What is the difference between the highest and lowest temperatures?", options: ["-13°C", "18°C", "19°C", "20°C", "21°C"], answer: "19°C" },
-                  { question: "Pattern 1 has 9 blocks. Pattern 2 has 13 blocks. Pattern 3 has 17 blocks. The rule is (Number of blocks) = 4 * PatternNumber + 5. Which pattern will have 49 blocks?", options: ["9", "10", "11", "12", "13"], answer: "11" },
-                  { question: "In a sale, everything was reduced by 25%. How much would be saved on an item which usually cost £4.80?", answer: "£1.20" },
-                  { question: "A decision tree sorts numbers. If the number is even, it checks if it's a multiple of 5. If not even, it checks if it's a square number. Which box would the number 64 be put into? (Box A: even, mult of 5. Box B: even, not mult of 5. Box C: odd, square. Box D: odd, not square)", answer: "B" },
-                  { question: "What is the missing number in this sequence: 2, 5, 11, 23, ___?", answer: "47" },
-                  { question: "A film starts at 19:45 and lasts for 1 hour and 35 minutes. What time does it finish?", answer: "21:20" },
-                  { question: "Calculate 3.5 × 8.", answer: "28" },
-                  { question: "A bag contains 6 red balls and 10 blue balls. What is the probability of picking a red ball?", answer: "6/16" },
-                  { question: "What is 15% of 300?", answer: "45" }
+                    { question: "A football pitch measures 115 metres long and 80 metres wide. The area of a rugby pitch is 6,392 square metres. How many square metres smaller is the area of the rugby pitch than the area of the football pitch?", options: ["9200 m²", "2908 m²", "2809 m²", "2808 m²", "6197 m²"], answer: "2808 m²" },
+                    { question: "Convert this measurement: 1701 g = ___ kg", options: ["17.01 kg", "1.701 kg", "170.1 kg", "1.7 kg", "0.1701 kg"], answer: "1.701 kg" },
+                    { question: "How many lines of symmetry does a rhombus have?", options: ["0", "1", "2", "3", "4"], answer: "2" },
+                    { question: "Which is the most appropriate instrument for measuring the distance around a football?", options: ["trundle wheel", "odometer", "metre stick", "tape measure", "ruler"], answer: "tape measure" },
+                    { question: "Ahmed cycled 13 km on Monday and 15 km on Thursday. How much further did he cycle on Thursday than on Monday?", options: ["1 km", "3 km", "5 km", "4 km", "2 km"], answer: "2 km" },
+                    { question: "What decimal fraction is equivalent to 3/4?", options: ["0.25", "0.33", "0.20", "0.75", "0.10"], answer: "0.75" },
+                    { question: "A regular hexagon has a side length of 7 cm. A square has the same perimeter as the hexagon. What is the area of the square?", options: ["42 cm²", "100 cm²", "10.5 cm²", "110.25 cm²", "49 cm²"], answer: "110.25 cm²" },
+                    { question: "What is the tenth number in this sequence: 1.5, 3.0, 4.5, 6.0, ...?", options: ["9.0", "12.5", "15", "15.0", "17.5"], answer: "15.0" },
+                    { question: "Girls in Years 4, 5, 6, and 7 collected £4, £12, £16, and £17 respectively. What was the average amount collected?", options: ["£12.00", "£12.25", "£12.50", "£10.00", "£13.00"], answer: "£12.25" },
+                    { question: "A rectangle's corners are at A(25, 30), B(55, 30), C(55, 14), and D. What are the coordinates of point D?", options: ["(25, 14)", "(55, 30)", "(25, 22)", "(55, 14)", "(40, 14)"], answer: "(25, 14)" },
+                    { question: "By how much is 18.401 greater than 14.1?", options: ["4.3", "3.3", "4.301", "3.301", "4"], answer: "4.301" },
+                    { question: "A stack of 20 identical pizza boxes is 160 cm tall. Giovanni removes 3 from the top. How tall is the stack now?", options: ["130 cm", "132 cm", "134 cm", "136 cm", "138 cm"], answer: "136 cm" },
+                    { question: "What would be the best unit of measure for recording the amount of water in a paddling pool?", options: ["litres", "mm", "cm", "m³", "ml"], answer: "litres" },
+                    { question: "A scale shows a weight between 1.2 kg and 1.3 kg, marked in 10 increments. The pointer is on the 4th mark after 1.2. What is the weight?", options: ["1.21 kg", "1.22 kg", "1.23 kg", "1.24 kg", "1.25 kg"], answer: "1.24 kg" },
+                    { question: "b × 6 = 48. What does (b + 2) × 5 equal?", options: ["30", "40", "20", "50", "60"], answer: "50" },
+                    { question: "How many vertical lines are in an isosceles trapezium with a vertical line of symmetry drawn through it?", options: ["0", "1", "2", "3", "4"], answer: "1" },
+                    { question: "What is 7/10 of £17?", options: ["£9.90", "£10.90", "£11.70", "£11.90", "£12.90"], answer: "£11.90" },
+                    { question: "A chart showing population change over time with points connected by lines is what type of chart?", options: ["Block Graph", "Pie Chart", "Bar Graph", "Bar-Line Graph", "Line Graph"], answer: "Line Graph" },
+                    { question: "A rectangle is divided into 8 equal squares. 6 of them are shaded. What fraction is shaded?", options: ["1/4", "3/8", "5/8", "3/4", "7/8"], answer: "3/4" },
+                    { question: "A chart shows temperature ranges. The lowest is -13°C and the highest is 6°C. What is the difference between the highest and lowest temperatures?", options: ["-13°C", "18°C", "19°C", "20°C", "21°C"], answer: "19°C" },
+                    { question: "Pattern 1 has 9 blocks. Pattern 2 has 13 blocks. Pattern 3 has 17 blocks. The rule is (Number of blocks) = 4 * PatternNumber + 5. Which pattern will have 49 blocks?", options: ["9", "10", "11", "12", "13"], answer: "11" },
+                    { question: "In a sale, everything was reduced by 25%. How much would be saved on an item which usually cost £4.80?", answer: "£1.20" },
+                    { question: "A decision tree sorts numbers. If the number is even, it checks if it's a multiple of 5. If not even, it checks if it's a square number. Which box would the number 64 be put into? (Box A: even, mult of 5. Box B: even, not mult of 5. Box C: odd, square. Box D: odd, not square)", answer: "B" },
+                    { question: "What is the missing number in this sequence: 2, 5, 11, 23, ___?", answer: "47" },
+                    { question: "A film starts at 19:45 and lasts for 1 hour and 35 minutes. What time does it finish?", answer: "21:20" },
+                    { question: "Calculate 3.5 × 8.", answer: "28" },
+                    { question: "A bag contains 6 red balls and 10 blue balls. What is the probability of picking a red ball?", answer: "6/16" },
+                    { question: "What is 15% of 300?", answer: "45" }
                 ]
             },
             {
                 id: "maths-pack-2",
                 title: "Maths Test Pack 2",
                 subject: "Maths",
+                notes: "General maths revision.",
                 questions: [
                     { question: "A baker uses 250g of flour for every cake. How many cakes can he bake with a 5kg bag of flour?", options: ["10", "15", "20", "25", "30"], answer: "20" },
                     { question: "What is the value of x if 4x + 5 = 25?", options: ["3", "4", "5", "6", "7"], answer: "5" },
@@ -122,6 +164,7 @@
                 id: "english-pack-1",
                 title: "English Test Pack 1",
                 subject: "English",
+                notes: "Focus on punctuation and grammar.",
                 questions: [
                     { question: "Identify the sentence with the correct punctuation: The cat sat on the mat. or The cat, sat on the mat.", answer: "The cat sat on the mat." },
                     { question: "Which word is the adjective in this sentence: The quick brown fox jumps over the lazy dog.", answer: "quick" },
@@ -157,6 +200,7 @@
                 id: "english-pack-2",
                 title: "English Test Pack 2",
                 subject: "English",
+                notes: "Vocabulary and sentence structure.",
                 questions: [
                     { question: "Which sentence is grammatically correct?", options: ["She done her homework.", "She did her homework."], answer: "She did her homework." },
                     { question: "What is the plural of 'goose'?", answer: "geese" },
@@ -192,6 +236,7 @@
                 id: "full-test-1",
                 title: "Full Practice Test 1",
                 subject: "Mixed",
+                notes: "Full-length practice exam 1.",
                 questions: [
                     // English Section (28 Qs)
                     { question: "Identify the sentence with the correct punctuation: The cat sat on the mat. or The cat, sat on the mat.", answer: "The cat sat on the mat." },
@@ -257,6 +302,7 @@
                 id: "full-test-2",
                 title: "Full Practice Test 2",
                 subject: "Mixed",
+                notes: "Full-length practice exam 2.",
                 questions: [
                     // English Section (28 Qs)
                     { question: "Which sentence is grammatically correct?", options: ["She done her homework.", "She did her homework."], answer: "She did her homework." },
@@ -338,12 +384,58 @@
             );
         };
 
+        const Notification = ({ message, type, onDismiss }) => {
+            useEffect(() => {
+                const timer = setTimeout(onDismiss, 3000);
+                return () => clearTimeout(timer);
+            }, [onDismiss]);
+
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            return (
+                <div className={`notification-bar p-4 rounded-lg text-white font-bold shadow-lg ${bgColor}`}>
+                    {message}
+                </div>
+            );
+        };
+
+        const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => (
+            <div className="modal-backdrop">
+                <div className="bg-slate-800 border border-cyan-500 rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
+                    <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-4">{title}</h2>
+                    {message && <p className="text-slate-300 mb-8">{message}</p>}
+                    {children}
+                    <div className="flex justify-center gap-4 mt-8">
+                        {onCancel && <button onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-500">Cancel</button>}
+                        {onConfirm && <button onClick={onConfirm} className={`font-bold py-2 px-6 rounded-lg ${confirmText === 'Awesome!' || confirmText === 'Start' ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'}`}>{confirmText}</button>}
+                    </div>
+                </div>
+            </div>
+        );
+
         // --- Main App Components ---
-        const Dashboard = ({ userData, setView, setSelectedTest, allTests }) => {
-            const handleSelectTest = (testId, settings) => {
-                setSelectedTest({ id: testId, settings });
-                setView('quiz');
+        const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal }) => {
+            const xpForNextLevel = userData.level * 100;
+            const xpPercent = (userData.xp / xpForNextLevel) * 100;
+
+            const handleSelectTest = (testId) => {
+                showModal({
+                    title: "Choose Your Mode",
+                    children: (
+                        <div className="space-y-4">
+                            <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice' } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-cyan-700 hover:bg-cyan-600 rounded-lg">
+                                <h3 className="font-bold text-cyan-200">Practice Mode</h3>
+                                <p className="text-sm text-slate-300">No timer, hints enabled, and live feedback on your answers.</p>
+                            </button>
+                            <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test' } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-yellow-700 hover:bg-yellow-600 rounded-lg">
+                                <h3 className="font-bold text-yellow-200">Test Mode</h3>
+                                <p className="text-sm text-slate-300">A timer will run, hints are disabled, and results are shown only at the end.</p>
+                            </button>
+                        </div>
+                    ),
+                    onCancel: () => {} // Just to show the cancel button
+                });
             };
+
             if (!userData) return <LoadingSpinner message="Loading user data..." />;
             
             const achievementsList = [
@@ -355,12 +447,28 @@
             return (
                 <div className="p-4 sm:p-8 min-h-screen">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-                            <h1 className="text-3xl sm:text-4xl font-bold font-orbitron glowing-text text-cyan-300">Welcome, {userData.name}!</h1>
-                            <div>
+                        <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                            <h1 className="text-3xl sm:text-4xl font-bold font-orbitron glowing-text text-cyan-300 flex items-center">
+                                <span className="text-5xl mr-4">{userData.avatar || '👨‍🚀'}</span>
+                                Welcome, {userData.name}!
+                            </h1>
+                            <div className="flex gap-2">
+                                <button onClick={() => setView('settings')} className="bg-slate-700 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">Settings</button>
                                 <button onClick={() => setView('admin')} className="bg-slate-700 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">Admin Panel</button>
                             </div>
                         </div>
+
+                        {/* XP and Level System */}
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-8">
+                            <div className="flex justify-between items-center mb-2 font-orbitron">
+                                <span className="font-bold text-cyan-300">Level {userData.level}</span>
+                                <span className="text-sm text-slate-400">{userData.xp} / {xpForNextLevel} XP</span>
+                            </div>
+                            <div className="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
+                                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${xpPercent}%` }}></div>
+                            </div>
+                        </div>
+
                         <CharacterMessage message="Ready to ace these tests? Let's get started!" character="GameMaster" />
                         
                         <div className="mb-8">
@@ -384,7 +492,7 @@
                             {allTests.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {allTests.map(test => (
-                                        <TestCard key={test.id} testId={test.id} test={test} onStart={handleSelectTest} progress={userData.progress?.[test.id]} />
+                                        <TestCard key={test.id} testId={test.id} test={test} onStart={() => handleSelectTest(test.id)} progress={userData.progress?.[test.id]} />
                                     ))}
                                 </div>
                             ) : (
@@ -397,11 +505,10 @@
         };
 
         const TestCard = ({ testId, test, onStart, progress }) => {
-            const [feedbackOn, setFeedbackOn] = useState(true);
             const questionsCount = test.questions.length;
             const answeredCount = progress ? Object.keys(progress.answers || {}).length : 0;
             const progressPercent = questionsCount > 0 ? (answeredCount / questionsCount) * 100 : 0;
-            const handleStartClick = () => onStart(testId, { feedbackOn });
+
             return (
                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-5 flex flex-col justify-between hover:border-cyan-400 hover:shadow-cyan-500/10 hover:shadow-lg transition-all">
                     <div>
@@ -412,30 +519,25 @@
                         </div>
                         <p className="text-sm text-slate-400 mb-4">{answeredCount} / {questionsCount} answered</p>
                     </div>
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <label className="text-sm font-medium text-slate-300">Live Feedback</label>
-                            <div onClick={() => setFeedbackOn(!feedbackOn)} className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${feedbackOn ? 'bg-green-500' : 'bg-slate-600'}`}>
-                                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${feedbackOn ? 'translate-x-6' : ''}`}></div>
-                            </div>
-                        </div>
-                        <button onClick={handleStartClick} className="w-full bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-500 transition-colors">
-                            {answeredCount > 0 && answeredCount < questionsCount ? 'Continue Test' : 'Start Test'}
-                        </button>
-                    </div>
+                    <button onClick={onStart} className="w-full bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-500 transition-colors">
+                        {answeredCount > 0 && answeredCount < questionsCount ? 'Continue Test' : 'Start Test'}
+                    </button>
                 </div>
             );
         };
         
-        const QuizView = ({ userData, testDetails, setView, allTests, updateUserData }) => {
+        const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, showNotification, showModal }) => {
             const { id: testId, settings } = testDetails;
             const test = allTests.find(t => t.id === testId);
 
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(userData?.progress?.[testId]?.lastQuestionIndex || 0);
             const [userAnswers, setUserAnswers] = useState(userData?.progress?.[testId]?.answers || {});
+            const [submittedAnswers, setSubmittedAnswers] = useState({});
             const [streak, setStreak] = useState(userData?.progress?.[testId]?.streak || 0);
             const [hint, setHint] = useState(null);
             const [isHintLoading, setIsHintLoading] = useState(false);
+            const [feedback, setFeedback] = useState(null);
+            const [flash, setFlash] = useState(null);
 
             const getInitialTime = () => {
                 const savedTime = userData?.progress?.[testId]?.timeLeft;
@@ -444,13 +546,12 @@
             };
             const [timeLeft, setTimeLeft] = useState(getInitialTime);
             const [isPaused, setIsPaused] = useState(false);
-            const [feedback, setFeedback] = useState(null);
 
             useEffect(() => {
-                if (isPaused || !timeLeft) return;
+                if (isPaused || !timeLeft || settings.mode === 'Practice') return;
                 const intervalId = setInterval(() => setTimeLeft(t => t > 0 ? t - 1 : 0), 1000);
                 return () => clearInterval(intervalId);
-            }, [timeLeft, isPaused]);
+            }, [timeLeft, isPaused, settings.mode]);
             
             const calculateScore = useCallback(() => Object.entries(userAnswers).reduce((acc, [index, answer]) => (test.questions[index]?.answer === answer ? acc + 1 : acc), 0), [userAnswers, test.questions]);
 
@@ -459,28 +560,52 @@
                 const newProgress = { ...userData.progress, [testId]: { answers: userAnswers, lastQuestionIndex: currentQuestionIndex, score: score, timeLeft: timeLeft, streak: streak } };
                 
                 let newAchievements = { ...userData.achievements };
-                if (isFinished) {
+                let newlyUnlocked = [];
+
+                if (isFinished && !userData.achievements.firstTest) {
                     newAchievements.firstTest = true;
-                    if (score === test.questions.length) {
-                        newAchievements.perfectScore = true;
-                    }
+                    newlyUnlocked.push('First Mission');
                 }
-                if (streak >= 5) {
+                if (isFinished && score === test.questions.length && !userData.achievements.perfectScore) {
+                    newAchievements.perfectScore = true;
+                    newlyUnlocked.push('Flawless Victory');
+                }
+                if (streak >= 5 && !userData.achievements.streak5) {
                     newAchievements.streak5 = true;
+                    newlyUnlocked.push('On a Roll');
+                }
+
+                if (newlyUnlocked.length > 0) {
+                    showModal({
+                        title: "🏆 Achievement Unlocked! 🏆",
+                        message: `Congratulations! You've earned the "${newlyUnlocked.join(', ')}" achievement!`,
+                        onConfirm: () => {},
+                        confirmText: "Awesome!"
+                    });
                 }
 
                 updateUserData({ ...userData, progress: newProgress, achievements: newAchievements });
             }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, updateUserData]);
 
-            const handleAnswer = (answer) => {
+            const handleAnswerSelect = (answer) => {
                 const newAnswers = { ...userAnswers, [currentQuestionIndex]: answer };
                 setUserAnswers(newAnswers);
+            };
+
+            const handleSubmitAnswer = () => {
+                const answer = userAnswers[currentQuestionIndex];
+                if (!answer) return;
+
+                setSubmittedAnswers({...submittedAnswers, [currentQuestionIndex]: true});
 
                 const isCorrect = test.questions[currentQuestionIndex].answer === answer;
                 const newStreak = isCorrect ? streak + 1 : 0;
                 setStreak(newStreak);
 
-                if (settings.feedbackOn) {
+                setFlash(isCorrect ? 'correct' : 'incorrect');
+                setTimeout(() => setFlash(null), 500);
+
+                if (settings.mode === 'Practice') {
                     setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${test.questions[currentQuestionIndex].answer}`);
                 }
             };
@@ -494,7 +619,12 @@
             };
 
             const handleFinish = () => { saveProgress(true); setView('results'); };
-            const handlePause = () => { setIsPaused(true); saveProgress(); alert("Progress saved!"); setView('dashboard'); };
+            const handlePause = () => { 
+                setIsPaused(true); 
+                saveProgress(); 
+                showNotification('Progress saved!', 'success');
+                setView('dashboard'); 
+            };
 
             const fetchHint = async () => {
                 setIsHintLoading(true);
@@ -513,8 +643,12 @@
                         body: JSON.stringify(payload)
                     });
                     const result = await response.json();
-                    const text = result.candidates[0].content.parts[0].text;
-                    setHint(text);
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        setHint(text);
+                    } else {
+                        throw new Error("Invalid API response structure.");
+                    }
                 } catch (error) {
                     console.error("Error fetching hint:", error);
                     setHint("Sorry, could not get a hint at this time.");
@@ -525,29 +659,38 @@
 
             if (!test) return <LoadingSpinner message="Loading Test..." />;
             const currentQ = test.questions[currentQuestionIndex];
+            const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
             
             useEffect(() => {
                 saveProgress();
             }, [userAnswers, currentQuestionIndex]);
             
             return (
-                <div className="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+                <div className={`p-4 sm:p-8 min-h-screen flex items-center justify-center ${flash === 'correct' ? 'flash-correct' : ''} ${flash === 'incorrect' ? 'flash-incorrect' : ''}`}>
                     <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-2">
                             <h2 className="text-xl sm:text-2xl font-bold font-orbitron text-cyan-300">{test.title}</h2>
-                            <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>
+                            {streak > 1 && <span className="text-lg text-orange-400 font-orbitron">🔥 {streak} Streak!</span>}
+                            {settings.mode === 'Test' && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
                         </div>
+                        <p className="text-center font-mono text-slate-400 mb-4">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
                         <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-300">{currentQ.question}</p></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             {currentQ.options ? currentQ.options.map((option, index) => (
-                                <button key={index} onClick={() => handleAnswer(option)} disabled={feedback !== null} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[currentQuestionIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${feedback !== null ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
-                            )) : <textarea value={userAnswers[currentQuestionIndex] || ''} onChange={(e) => handleAnswer(e.target.value)} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg" placeholder="Type your answer here..." rows="4"></textarea>}
+                                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[currentQuestionIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
+                            )) : <textarea value={userAnswers[currentQuestionIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
                         </div>
 
+                        {!isCurrentQSubmitted && (
+                            <div className="text-center my-4">
+                                <button onClick={handleSubmitAnswer} disabled={!userAnswers[currentQuestionIndex]} className="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Submit Answer</button>
+                            </div>
+                        )}
+
                         <div className="my-4 text-center">
-                            <button onClick={fetchHint} disabled={isHintLoading || hint} className="text-sm text-cyan-400 hover:text-cyan-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {settings.mode === 'Practice' && <button onClick={fetchHint} disabled={isHintLoading || hint} className="text-sm text-cyan-400 hover:text-cyan-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {isHintLoading ? '✨ Generating Hint...' : (hint ? 'Hint Revealed!' : '✨ Get a Hint')}
-                            </button>
+                            </button>}
                             {hint && <div className="mt-2 p-3 bg-slate-700 border border-slate-600 text-yellow-300 rounded-lg text-sm">{hint}</div>}
                         </div>
 
@@ -555,9 +698,9 @@
                         <div className="flex justify-between mt-8">
                             <button onClick={handlePause} className="bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-500">Pause & Save</button>
                             {currentQuestionIndex < test.questions.length - 1 ? (
-                                <button onClick={goToNext} disabled={settings.feedbackOn && !feedback} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500 disabled:bg-slate-600">Next</button>
+                                <button onClick={goToNext} disabled={!isCurrentQSubmitted} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Next</button>
                             ) : (
-                                <button onClick={handleFinish} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500">Finish Test</button>
+                                <button onClick={handleFinish} disabled={!isCurrentQSubmitted} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Finish Test</button>
                             )}
                         </div>
                     </div>
@@ -565,30 +708,83 @@
             );
         };
 
-        const ResultsView = ({ userData, setView }) => (
-            <div className="p-8 min-h-screen flex items-center justify-center">
-                <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-8 w-full max-w-3xl text-center">
-                    <h2 className="text-4xl font-bold text-cyan-300 font-orbitron mb-4">Test Complete!</h2>
-                    <p className="text-lg text-gray-300 mb-8">Great work, {userData.name}! Your results have been saved.</p>
-                    <CharacterMessage message="Every test you complete makes you stronger. Awesome job!" character="GameMaster" />
-                    <button onClick={() => setView('dashboard')} className="bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-cyan-500">Back to Dashboard</button>
-                </div>
-            </div>
-        );
+        const ResultsView = ({ userData, setView, testDetails, allTests }) => {
+            const { id: testId } = testDetails;
+            const test = allTests.find(t => t.id === testId);
+            const userAnswers = userData.progress[testId].answers;
+            const score = userData.progress[testId].score;
 
-        const AdminView = ({ userData, setView, allTests, updateAllData }) => {
+            if (!test) return <LoadingSpinner message="Loading Results..." />;
+
+            return (
+                <div className="p-4 sm:p-8 min-h-screen">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 sm:p-8 w-full">
+                            <h2 className="text-4xl font-bold text-cyan-300 font-orbitron mb-2 text-center">Test Complete!</h2>
+                            <p className="text-2xl text-center mb-4">You scored: <span className="font-bold text-yellow-400">{score} / {test.questions.length}</span></p>
+                            <CharacterMessage message="Every test you complete makes you stronger. Awesome job!" character="GameMaster" />
+                            
+                            <div className="space-y-4 mt-8">
+                                {test.questions.map((q, index) => {
+                                    const userAnswer = userAnswers[index];
+                                    const isCorrect = userAnswer === q.answer;
+                                    return (
+                                        <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
+                                            <p className="font-semibold text-slate-300 mb-2">{index + 1}. {q.question}</p>
+                                            <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{userAnswer || "Not answered"}</span></p>
+                                            {!isCorrect && <p className="text-sm text-yellow-400">Correct answer: <span className="font-bold">{q.answer}</span></p>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="text-center mt-8">
+                                <button onClick={() => setView('dashboard')} className="bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-cyan-500">Back to Dashboard</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        };
+
+        const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
             const [adminView, setAdminView] = useState('main');
+            const [editingTest, setEditingTest] = useState(null);
 
             const handleResetProgress = (testId) => {
-                if (!window.confirm(`Are you sure you want to reset all progress for this test?`)) return;
-                const newProgress = { ...userData.progress };
-                delete newProgress[testId];
-                updateAllData({ userData: { ...userData, progress: newProgress }, allTests });
-                alert("Progress reset successfully!");
+                showModal({
+                    title: "Reset Progress?",
+                    message: `Are you sure you want to reset all progress for this test? This action cannot be undone.`,
+                    onConfirm: () => {
+                        const newProgress = { ...userData.progress };
+                        delete newProgress[testId];
+                        updateAllData({ userData: { ...userData, progress: newProgress }, allTests });
+                        showNotification("Progress reset successfully!", 'success');
+                    }
+                });
             };
+
+            const handleDeleteTest = (testId) => {
+                showModal({
+                    title: "Delete Test?",
+                    message: `Are you sure you want to permanently delete this test? This action cannot be undone.`,
+                    onConfirm: () => {
+                        const newAllTests = allTests.filter(t => t.id !== testId);
+                        const newProgress = { ...userData.progress };
+                        delete newProgress[testId];
+                        updateAllData({ userData: { ...userData, progress: newProgress }, allTests: newAllTests });
+                        showNotification("Test deleted successfully!", 'success');
+                    }
+                });
+            };
+
+            const handleEditTest = (test) => {
+                setEditingTest(test);
+                setAdminView('create');
+            }
             
             if (adminView === 'create') {
-                return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} />;
+                return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} />;
             }
             
             if (adminView === 'analysis') {
@@ -604,7 +800,7 @@
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <button onClick={() => setAdminView('create')} className="bg-green-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-green-500">Create New Test</button>
+                            <button onClick={() => { setEditingTest(null); setAdminView('create'); }} className="bg-green-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-green-500">Create New Test</button>
                             <button onClick={() => setAdminView('analysis')} className="bg-purple-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-purple-500">Problem Analysis</button>
                         </div>
 
@@ -612,9 +808,13 @@
                             <h2 className="text-2xl font-bold mb-4 font-orbitron text-cyan-300">Manage Tests</h2>
                             <div className="space-y-4">
                                 {allTests.map(test => (
-                                    <div key={test.id} className="bg-slate-800 p-4 rounded-lg flex justify-between items-center">
+                                    <div key={test.id} className="bg-slate-800 p-4 rounded-lg flex flex-wrap justify-between items-center gap-4">
                                         <div><h3 className="text-lg font-bold">{test.title}</h3><p className="text-slate-400">{test.questions.length} questions</p></div>
-                                        <button onClick={() => handleResetProgress(test.id)} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Reset Progress</button>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => handleEditTest(test)} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Edit</button>
+                                            <button onClick={() => handleDeleteTest(test.id)} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Delete</button>
+                                            <button onClick={() => handleResetProgress(test.id)} className="bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700">Reset Progress</button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -628,10 +828,13 @@
             );
         };
         
-        const CreateTestView = ({ setAdminView, allTests, updateAllData, userData }) => {
-            const [title, setTitle] = useState('');
-            const [subject, setSubject] = useState('Maths');
-            const [questions, setQuestions] = useState([{ question: '', options: ['', '', '', ''], answer: '' }]);
+        const CreateTestView = ({ setAdminView, allTests, updateAllData, userData, showNotification, editingTest, setEditingTest }) => {
+            const [title, setTitle] = useState(editingTest?.title || '');
+            const [subject, setSubject] = useState(editingTest?.subject || 'Maths');
+            const [notes, setNotes] = useState(editingTest?.notes || '');
+            const [questions, setQuestions] = useState(editingTest?.questions || [{ question: '', options: ['', '', '', ''], answer: '' }]);
+            const [isParsing, setIsParsing] = useState(false);
+            const [bulkText, setBulkText] = useState('');
 
             const handleQuestionChange = (index, field, value) => {
                 const newQuestions = [...questions];
@@ -641,6 +844,7 @@
             
             const handleOptionChange = (qIndex, oIndex, value) => {
                 const newQuestions = [...questions];
+                if (!newQuestions[qIndex].options) newQuestions[qIndex].options = ['', '', '', ''];
                 newQuestions[qIndex].options[oIndex] = value;
                 setQuestions(newQuestions);
             };
@@ -651,24 +855,79 @@
             
             const handleSaveTest = () => {
                 if (!title || questions.some(q => !q.question || !q.answer)) {
-                    alert("Please fill out the title and ensure every question has a question text and a correct answer.");
+                    showNotification("Title and all question fields are required.", 'error');
                     return;
                 }
-                const newTest = { id: `custom-${Date.now()}`, title, subject, questions };
-                const newAllTests = [...allTests, newTest];
-                updateAllData({ userData, allTests: newAllTests });
-                alert("Test saved successfully!");
+
+                if (editingTest) {
+                    // Update existing test
+                    const updatedTest = { ...editingTest, title, subject, questions, notes };
+                    const newAllTests = allTests.map(t => t.id === editingTest.id ? updatedTest : t);
+                    updateAllData({ userData, allTests: newAllTests });
+                    showNotification("Test updated successfully!", 'success');
+                } else {
+                    // Create new test
+                    const newTest = { id: `custom-${Date.now()}`, title, subject, questions, notes };
+                    const newAllTests = [...allTests, newTest];
+                    updateAllData({ userData, allTests: newAllTests });
+                    showNotification("Test created successfully!", 'success');
+                }
+                setEditingTest(null);
                 setAdminView('main');
+            };
+
+            const handleBulkImport = () => {
+                try {
+                    const parsedQuestions = [];
+                    const lines = bulkText.split('\n');
+                    let currentQuestion = null;
+
+                    for (const line of lines) {
+                        if (line.startsWith('Q:')) {
+                            if (currentQuestion) parsedQuestions.push(currentQuestion);
+                            currentQuestion = { question: line.substring(2).trim(), options: [], answer: '' };
+                        } else if (line.startsWith('O:') && currentQuestion) {
+                            currentQuestion.options.push(line.substring(2).trim());
+                        } else if (line.startsWith('A:') && currentQuestion) {
+                            currentQuestion.answer = line.substring(2).trim();
+                        }
+                    }
+                    if (currentQuestion) parsedQuestions.push(currentQuestion);
+
+                    if (parsedQuestions.length > 0) {
+                        setQuestions(parsedQuestions);
+                        showNotification('Bulk import successful!', 'success');
+                    } else {
+                        showNotification('Could not find any questions in the provided format.', 'error');
+                    }
+                } catch (e) {
+                    showNotification('Error parsing bulk text. Please check the format.', 'error');
+                }
             };
 
             return (
                  <div className="p-8 min-h-screen">
                     <div className="max-w-4xl mx-auto">
                         <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-3xl font-bold font-orbitron text-cyan-300">Create New Test</h1>
-                            <button onClick={() => setAdminView('main')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
+                            <h1 className="text-3xl font-bold font-orbitron text-cyan-300">{editingTest ? 'Edit Test' : 'Create New Test'}</h1>
+                            <button onClick={() => { setEditingTest(null); setAdminView('main'); }} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
                         </div>
                         <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl space-y-6">
+                            {/* Bulk Import Section */}
+                            <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                <h3 className="text-lg font-bold mb-2">Bulk Import from Text</h3>
+                                <textarea 
+                                    className="w-full p-2 bg-slate-700 rounded-md border border-slate-600"
+                                    rows="6"
+                                    placeholder={`Paste your test here. Use this format:\nQ: What is 2+2?\nO: 3\nO: 4\nO: 5\nA: 4`}
+                                    value={bulkText}
+                                    onChange={e => setBulkText(e.target.value)}
+                                ></textarea>
+                                <button onClick={handleBulkImport} className="mt-2 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-500">Parse Bulk Text</button>
+                            </div>
+
+                            <hr className="border-slate-600"/>
+
                             <div>
                                 <label className="block mb-2 font-bold">Test Title</label>
                                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" />
@@ -681,13 +940,17 @@
                                     <option>Mixed</option>
                                 </select>
                             </div>
+                            <div>
+                                <label className="block mb-2 font-bold">Admin Notes (Visible only to you)</label>
+                                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" placeholder="e.g., Source of test, focus area..." />
+                            </div>
                             <hr className="border-slate-600"/>
                             {questions.map((q, qIndex) => (
                                 <div key={qIndex} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                                     <label className="block mb-2 font-bold">Question {qIndex + 1}</label>
                                     <textarea value={q.question} onChange={e => handleQuestionChange(qIndex, 'question', e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" rows="2" placeholder="Enter question text..."></textarea>
                                     <div className="grid grid-cols-2 gap-4 my-4">
-                                        {q.options.map((opt, oIndex) => (
+                                        {(q.options || ['', '', '', '']).map((opt, oIndex) => (
                                              <input key={oIndex} type="text" value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} className="p-2 bg-slate-700 rounded-md border border-slate-600" />
                                         ))}
                                     </div>
@@ -698,7 +961,7 @@
                             <button onClick={addQuestion} className="bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-500">Add Another Question</button>
                         </div>
                         <div className="mt-8 text-center">
-                            <button onClick={handleSaveTest} className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-500 text-xl">Save Test</button>
+                            <button onClick={handleSaveTest} className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-500 text-xl">{editingTest ? 'Update Test' : 'Save Test'}</button>
                         </div>
                     </div>
                 </div>
@@ -731,15 +994,17 @@
                 }
                 
                 const counts = incorrectAnswers.reduce((acc, curr) => {
-                    if (!acc[curr.questionText]) {
-                        acc[curr.questionText] = { count: 0, details: curr };
+                    const key = curr.questionText;
+                    if (!acc[key]) {
+                        acc[key] = { count: 0, details: curr, wrongAnswers: {} };
                     }
-                    acc[curr.questionText].count += 1;
+                    acc[key].count += 1;
+                    acc[key].wrongAnswers[curr.userAnswer] = (acc[key].wrongAnswers[curr.userAnswer] || 0) + 1;
                     return acc;
                 }, {});
 
                 const sortedAnalysis = Object.entries(counts)
-                    .map(([question, data]) => ({ question, count: data.count, details: data.details }))
+                    .map(([question, data]) => ({ question, ...data }))
                     .sort((a, b) => b.count - a.count);
                 
                 setAnalysis(sortedAnalysis);
@@ -760,8 +1025,12 @@
                         body: JSON.stringify(payload)
                     });
                     const result = await response.json();
-                    const text = result.candidates[0].content.parts[0].text;
-                    setExplanations(prev => ({ ...prev, [index]: text }));
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        setExplanations(prev => ({ ...prev, [index]: text }));
+                    } else {
+                        throw new Error("Invalid API response structure.");
+                    }
                 } catch (error) {
                     console.error("Error fetching explanation:", error);
                     setExplanations(prev => ({ ...prev, [index]: "Sorry, could not get an explanation at this time." }));
@@ -785,6 +1054,9 @@
                                         <li key={index} className="bg-slate-800 p-4 rounded-lg">
                                             <p className="font-semibold text-gray-300">"{item.question}"</p>
                                             <p className="text-red-400 font-bold">Incorrect {item.count} time(s)</p>
+                                            <div className="text-sm text-slate-400 mt-1">
+                                                Common wrong answers: {Object.entries(item.wrongAnswers).map(([ans, count]) => `${ans} (${count}x)`).join(', ')}
+                                            </div>
                                             <button onClick={() => fetchExplanation(item, index)} disabled={isLoadingExplanation === index} className="mt-2 text-sm text-cyan-400 hover:text-cyan-200 disabled:opacity-50">
                                                 {isLoadingExplanation === index ? '✨ Generating...' : '✨ Get AI Explanation'}
                                             </button>
@@ -801,22 +1073,99 @@
             );
         };
 
+        const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
+            const [name, setName] = useState(userData.name);
+            const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀');
+            const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
+
+            const handleSave = () => {
+                updateUserData({ ...userData, name, avatar });
+                showNotification("Settings saved!", "success");
+                setView('dashboard');
+            };
+
+            return (
+                 <div className="p-8 min-h-screen flex items-center justify-center">
+                    <div className="max-w-md mx-auto w-full bg-slate-800 border border-slate-700 rounded-xl p-8">
+                        <h1 className="text-3xl font-bold font-orbitron text-cyan-300 mb-6 text-center">Settings</h1>
+                        <div className="mb-6">
+                            <label className="block mb-2 font-bold">Player Name</label>
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" />
+                        </div>
+                        <div className="mb-8">
+                            <label className="block mb-2 font-bold">Choose Your Avatar</label>
+                            <div className="grid grid-cols-4 gap-4">
+                                {avatars.map(av => (
+                                    <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-lg transition-all ${avatar === av ? 'bg-cyan-600 ring-2 ring-cyan-300' : 'bg-slate-700 hover:bg-slate-600'}`}>{av}</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <button onClick={() => setView('dashboard')} className="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500">Cancel</button>
+                            <button onClick={handleSave} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-500">Save</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
 
         // --- Main App Component ---
         function App() {
             const [appData, setAppData] = useState(null);
             const [view, setView] = useState('loading');
             const [selectedTest, setSelectedTest] = useState(null);
+            const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+            const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, onCancel: null, confirmText: "Confirm", children: null });
+
+            const showNotification = (message, type = 'success') => {
+                setNotification({ show: true, message, type });
+            };
+
+            const hideModal = () => {
+                 setModal({ show: false });
+            };
+
+            const showModal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
+                setModal({ 
+                    show: true, 
+                    title, 
+                    message, 
+                    onConfirm: onConfirm ? () => {
+                        onConfirm();
+                        hideModal();
+                    } : null,
+                    onCancel: onCancel ? () => {
+                        onCancel();
+                        hideModal();
+                    } : hideModal,
+                    confirmText: confirmText || "Confirm",
+                    children
+                });
+            };
 
             // Load data from localStorage on initial render
             useEffect(() => {
                 const savedData = localStorage.getItem('seagPortalData');
                 if (savedData) {
-                    setAppData(JSON.parse(savedData));
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        // Ensure new data structures exist
+                        if (!parsedData.userData.xp) parsedData.userData.xp = 0;
+                        if (!parsedData.userData.level) parsedData.userData.level = 1;
+                        if (!parsedData.userData.avatar) parsedData.userData.avatar = '👨‍🚀';
+                        setAppData(parsedData);
+                    } catch(e) {
+                        console.error("Failed to parse saved data, initializing fresh.", e);
+                        setAppData({
+                            userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀' },
+                            allTests: defaultTests
+                        });
+                    }
                 } else {
                     // Initialize with default data if nothing is saved
                     setAppData({
-                        userData: { name: "Nicolas", progress: {}, achievements: {} },
+                        userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀' },
                         allTests: defaultTests
                     });
                 }
@@ -843,15 +1192,22 @@
             const renderView = () => {
                 switch (view) {
                     case 'loading': return <LoadingSpinner message="Loading Portal..." />;
-                    case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} />;
-                    case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} />;
-                    case 'results': return <ResultsView userData={appData.userData} setView={setView} />;
-                    case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} />;
+                    case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} />;
+                    case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModal} />;
+                    case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />;
+                    case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} />;
+                    case 'settings': return <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
                     default: return <LoadingSpinner message="Loading Portal..." />;
                 }
             };
 
-            return <div className="font-sans">{renderView()}</div>;
+            return (
+                <div className="font-sans">
+                    {renderView()}
+                    {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
+                    {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
+                </div>
+            );
         }
 
         const container = document.getElementById('root');
