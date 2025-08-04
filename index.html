@@ -26,6 +26,10 @@
         // Required for PDF.js to work
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
     </script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
     <style>
         body {
@@ -35,10 +39,10 @@
             font-family: 'Orbitron', sans-serif;
         }
         .glowing-border {
-            box-shadow: 0 0 2px var(--color-primary), 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
+            box-shadow: 0 0 2px #00aaff, 0 0 5px #00aaff, 0 0 10px #00aaff;
         }
         .glowing-text {
-            text-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
+            text-shadow: 0 0 5px #00aaff, 0 0 10px #00aaff;
         }
         /* Custom styles for modal and notifications */
         .modal-backdrop {
@@ -75,6 +79,24 @@
         .flash-incorrect {
             animation: flash-red 0.5s ease-out;
         }
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200">
@@ -84,7 +106,7 @@
         // This is your entire React Application inside a single script tag.
         // Data is saved in the browser's localStorage.
 
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect, useCallback, useRef } = React;
 
         // --- Default Test Data (Restored to full version) ---
         const defaultTests = [
@@ -413,7 +435,7 @@
         );
 
         // --- Main App Components ---
-        const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal }) => {
+        const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal, updateUserData, appData, updateAllData, showNotification }) => {
             const xpForNextLevel = userData.level * 100;
             const xpPercent = (userData.xp / xpForNextLevel) * 100;
 
@@ -443,6 +465,61 @@
                 { id: 'perfectScore', title: 'Flawless Victory', description: 'Get a 100% score on any test.'},
                 { id: 'streak5', title: 'On a Roll', description: 'Answer 5 questions correctly in a row.'},
             ];
+            
+            const handleDailyChallenge = () => {
+                let allQuestions = allTests.flatMap(test => test.questions);
+                // Simple shuffle and pick 5
+                const dailyQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
+                const challengeTest = {
+                    id: 'daily-challenge',
+                    title: 'Daily Challenge',
+                    subject: 'Mixed',
+                    questions: dailyQuestions
+                };
+                
+                // Temporarily add this test to the list for the quiz view to find it
+                updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'daily-challenge'), challengeTest] });
+                
+                setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice' } });
+                setView('quiz');
+            };
+
+            const handlePracticeMistakes = () => {
+                const incorrectQuestions = [];
+                const seenQuestions = new Set();
+
+                Object.values(userData.progress || {}).forEach(progressData => {
+                    const test = allTests.find(t => t.id === Object.keys(userData.progress).find(key => userData.progress[key] === progressData));
+                    if (test) {
+                        Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
+                            const question = test.questions[qIndex];
+                            if (question && question.answer !== userAnswer && !seenQuestions.has(question.question)) {
+                                incorrectQuestions.push(question);
+                                seenQuestions.add(question.question);
+                            }
+                        });
+                    }
+                });
+
+                if (incorrectQuestions.length === 0) {
+                    showNotification("No mistakes to practice. Great job!", "success");
+                    return;
+                }
+
+                const mistakesTest = {
+                    id: 'mistakes-test',
+                    title: 'Practice Your Mistakes',
+                    subject: 'Mixed',
+                    questions: incorrectQuestions
+                };
+                
+                updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
+                setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice' } });
+                setView('quiz');
+            };
+
+            const hasMistakes = Object.values(userData.progress || {}).some(p => p.score < p.answers.length);
+
 
             return (
                 <div className="p-4 sm:p-8 min-h-screen">
@@ -469,6 +546,36 @@
                             </div>
                         </div>
 
+                        {/* Daily Challenge & Practice Mistakes Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="bg-slate-800/50 border-2 border-purple-500 rounded-xl p-6 shadow-lg">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h2 className="text-2xl font-orbitron text-purple-300">Daily Challenge</h2>
+                                        <p className="text-slate-400">A quick warm-up to get you started!</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-4xl">🔥</div>
+                                        <div className="font-bold text-xl">{userData.loginStreak || 0} Day Streak</div>
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    {userData.dailyChallenge?.completedToday ? (
+                                        <p className="text-center text-green-400 font-bold p-3 bg-slate-800 rounded-lg">Challenge Complete! Come back tomorrow.</p>
+                                    ) : (
+                                        <button onClick={handleDailyChallenge} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-500">Start Daily Challenge</button>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="bg-slate-800/50 border-2 border-orange-500 rounded-xl p-6 shadow-lg">
+                                <h2 className="text-2xl font-orbitron text-orange-300">Review Mistakes</h2>
+                                <p className="text-slate-400 mb-4">Tackle the questions you've gotten wrong before.</p>
+                                <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-orange-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                                    Practice Your Mistakes
+                                </button>
+                            </div>
+                        </div>
+
                         <CharacterMessage message="Ready to ace these tests? Let's get started!" character="GameMaster" />
                         
                         <div className="mb-8">
@@ -491,7 +598,7 @@
                             <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-6">Available Tests</h2>
                             {allTests.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {allTests.map(test => (
+                                    {allTests.filter(t => !t.isBoss).map(test => (
                                         <TestCard key={test.id} testId={test.id} test={test} onStart={() => handleSelectTest(test.id)} progress={userData.progress?.[test.id]} />
                                     ))}
                                 </div>
@@ -713,6 +820,52 @@
             const test = allTests.find(t => t.id === testId);
             const userAnswers = userData.progress[testId].answers;
             const score = userData.progress[testId].score;
+            const [aiFeedback, setAiFeedback] = useState('');
+            const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+            const [conceptExplanations, setConceptExplanations] = useState({});
+            const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
+
+
+            const getAIFeedback = async () => {
+                setIsFeedbackLoading(true);
+                const incorrectQuestions = test.questions.filter((q, i) => userAnswers[i] !== q.answer);
+                const prompt = `My son, Nicolas, just completed a test. He scored ${score} out of ${test.questions.length}. Here are the questions he got wrong: ${JSON.stringify(incorrectQuestions)}. Please provide a short, encouraging summary of his performance. Highlight his strengths based on the questions he likely got right, and gently point out one or two common themes or topics from the incorrect answers that he could focus on next time. Keep the tone positive and motivating for a 10-year-old.`;
+
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if(text) setAiFeedback(text); else throw new Error();
+                } catch (error) {
+                    setAiFeedback("Sorry, couldn't generate feedback at this time.");
+                } finally {
+                    setIsFeedbackLoading(false);
+                }
+            };
+            
+            const getConceptExplanation = async (question, index) => {
+                setIsLoadingExplanation(index);
+                const prompt = `Please explain the concept behind this question for a 10-year-old. Question: "${question.question}". Correct Answer: "${question.answer}". Keep it simple and clear.`;
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if(text) setConceptExplanations(prev => ({...prev, [index]: text})); else throw new Error();
+                } catch (error) {
+                    setConceptExplanations(prev => ({...prev, [index]: "Sorry, couldn't get an explanation."}));
+                } finally {
+                    setIsLoadingExplanation(null);
+                }
+            };
+
 
             if (!test) return <LoadingSpinner message="Loading Results..." />;
 
@@ -722,8 +875,20 @@
                         <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 sm:p-8 w-full">
                             <h2 className="text-4xl font-bold text-cyan-300 font-orbitron mb-2 text-center">Test Complete!</h2>
                             <p className="text-2xl text-center mb-4">You scored: <span className="font-bold text-yellow-400">{score} / {test.questions.length}</span></p>
-                            <CharacterMessage message="Every test you complete makes you stronger. Awesome job!" character="GameMaster" />
                             
+                            <div className="text-center my-6">
+                                <button onClick={getAIFeedback} disabled={isFeedbackLoading} className="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-500 disabled:bg-slate-600">
+                                    {isFeedbackLoading ? '✨ Analyzing Performance...' : '✨ Get AI Feedback'}
+                                </button>
+                            </div>
+                            
+                            {aiFeedback && (
+                                <div className="bg-slate-700/50 p-4 rounded-lg my-4 border border-slate-600">
+                                    <h3 className="font-bold font-orbitron text-purple-300 mb-2">Performance Review</h3>
+                                    <p className="text-slate-300 whitespace-pre-wrap">{aiFeedback}</p>
+                                </div>
+                            )}
+
                             <div className="space-y-4 mt-8">
                                 {test.questions.map((q, index) => {
                                     const userAnswer = userAnswers[index];
@@ -733,6 +898,14 @@
                                             <p className="font-semibold text-slate-300 mb-2">{index + 1}. {q.question}</p>
                                             <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{userAnswer || "Not answered"}</span></p>
                                             {!isCorrect && <p className="text-sm text-yellow-400">Correct answer: <span className="font-bold">{q.answer}</span></p>}
+                                            {!isCorrect && (
+                                                <div className="mt-2">
+                                                    <button onClick={() => getConceptExplanation(q, index)} disabled={isLoadingExplanation === index} className="text-xs text-cyan-400 hover:text-cyan-200 disabled:opacity-50">
+                                                        {isLoadingExplanation === index ? '✨ Explaining...' : '✨ Explain Concept'}
+                                                    </button>
+                                                    {conceptExplanations[index] && <p className="text-xs mt-1 p-2 bg-slate-700 rounded">{conceptExplanations[index]}</p>}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -835,6 +1008,8 @@
             const [questions, setQuestions] = useState(editingTest?.questions || [{ question: '', options: ['', '', '', ''], answer: '' }]);
             const [isParsing, setIsParsing] = useState(false);
             const [bulkText, setBulkText] = useState('');
+            const [aiTopic, setAiTopic] = useState('');
+            const [aiNumQuestions, setAiNumQuestions] = useState(10);
 
             const handleQuestionChange = (index, field, value) => {
                 const newQuestions = [...questions];
@@ -904,6 +1079,39 @@
                     showNotification('Error parsing bulk text. Please check the format.', 'error');
                 }
             };
+            
+            const handleAIGenerate = async () => {
+                if (!aiTopic) {
+                    showNotification("Please enter a topic to generate questions.", "error");
+                    return;
+                }
+                setIsParsing(true);
+                try {
+                    const prompt = `Generate ${aiNumQuestions} multiple-choice ${subject} questions suitable for a 10-year-old based on the topic: "${aiTopic}". Provide the response as a JSON object. Each question must have at least 3 options.`;
+                    const schema = { type: "OBJECT", properties: { "questions": { type: "ARRAY", items: { type: "OBJECT", properties: { "question": { "type": "STRING" }, "options": { "type": "ARRAY", "items": { "type": "STRING" } }, "answer": { "type": "STRING" } }, required: ["question", "answer", "options"] } } }, required: ["questions"] };
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    const parsedText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if(parsedText) {
+                        const parsedJson = JSON.parse(parsedText);
+                        setQuestions(parsedJson.questions.map(q => ({ question: q.question, options: q.options || ['', '', '', ''], answer: q.answer })));
+                        setTitle(`AI Generated: ${aiTopic}`);
+                        showNotification("AI generated questions successfully!", 'success');
+                    } else {
+                        throw new Error("Failed to generate questions.");
+                    }
+                } catch (error) {
+                    console.error("Error generating with AI:", error);
+                    showNotification("Failed to generate questions with AI.", 'error');
+                } finally {
+                    setIsParsing(false);
+                }
+            };
 
             return (
                  <div className="p-8 min-h-screen">
@@ -913,6 +1121,18 @@
                             <button onClick={() => { setEditingTest(null); setAdminView('main'); }} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
                         </div>
                         <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl space-y-6">
+                            {/* AI Generation Section */}
+                            <div className="bg-slate-800 p-4 rounded-lg border border-purple-500">
+                                <h3 className="text-lg font-bold mb-2 text-purple-300">✨ Generate Test with AI</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" value={aiTopic} onChange={e => setAiTopic(e.target.value)} placeholder="Enter a topic..." className="md:col-span-2 p-2 bg-slate-700 rounded-md border border-slate-600" />
+                                    <input type="number" value={aiNumQuestions} onChange={e => setAiNumQuestions(parseInt(e.target.value, 10))} className="p-2 bg-slate-700 rounded-md border border-slate-600" />
+                                </div>
+                                <button onClick={handleAIGenerate} disabled={isParsing} className="mt-2 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-500 disabled:bg-slate-600">
+                                    {isParsing ? 'Generating...' : 'Generate Questions'}
+                                </button>
+                            </div>
+
                             {/* Bulk Import Section */}
                             <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                                 <h3 className="text-lg font-bold mb-2">Bulk Import from Text</h3>
@@ -1154,18 +1374,20 @@
                         if (!parsedData.userData.xp) parsedData.userData.xp = 0;
                         if (!parsedData.userData.level) parsedData.userData.level = 1;
                         if (!parsedData.userData.avatar) parsedData.userData.avatar = '👨‍🚀';
+                        if (!parsedData.userData.dailyChallenge) parsedData.userData.dailyChallenge = { lastCompleted: null, completedToday: false };
+                        if (!parsedData.userData.loginStreak) parsedData.userData.loginStreak = 0;
                         setAppData(parsedData);
                     } catch(e) {
                         console.error("Failed to parse saved data, initializing fresh.", e);
                         setAppData({
-                            userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀' },
+                            userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀', dailyChallenge: { lastCompleted: null, completedToday: false }, loginStreak: 0 },
                             allTests: defaultTests
                         });
                     }
                 } else {
                     // Initialize with default data if nothing is saved
                     setAppData({
-                        userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀' },
+                        userData: { name: "Nicolas", progress: {}, achievements: {}, xp: 0, level: 1, avatar: '👨‍🚀', dailyChallenge: { lastCompleted: null, completedToday: false }, loginStreak: 0 },
                         allTests: defaultTests
                     });
                 }
@@ -1192,7 +1414,7 @@
             const renderView = () => {
                 switch (view) {
                     case 'loading': return <LoadingSpinner message="Loading Portal..." />;
-                    case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} />;
+                    case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} updateUserData={updateUserData} appData={appData} updateAllData={updateAllData} showNotification={showNotification} />;
                     case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModal} />;
                     case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />;
                     case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} />;
