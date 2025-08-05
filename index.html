@@ -100,7 +100,7 @@
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200">
-    <h1 style="color: red; font-size: 3rem; text-align: center;">CODE UPDATED SUCCESSFULLY - V3</h1>
+    <h1 style="color: red; font-size: 2rem; text-align: center; background-color: yellow; padding: 1rem; font-weight: bold;">CODE V3 - DIAGNOSTIC CHECK</h1>
     <div id="root"></div>
 
     <script type="text/babel">
@@ -748,15 +748,23 @@
                 const prompt = `You are a helpful teaching assistant for a 10-year-old student. Provide a short, simple hint for the following question. Do NOT give the answer. Just provide a small clue to help the student think about the problem correctly. Question: "${question.question}"`;
                 
                 try {
+                    if (!GEMINI_API_KEY) {
+                        throw new Error("API Key is missing.");
+                    }
                     let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                     const payload = { contents: chatHistory };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+
+                    if (!response.ok) {
+                        const errorBody = await response.json();
+                        throw new Error(`API Error: ${errorBody.error.message}`);
+                    }
+
                     const result = await response.json();
                     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (text) {
@@ -766,6 +774,12 @@
                     }
                 } catch (error) {
                     console.error("Error fetching hint:", error);
+                    showModal({
+                        title: "AI Feature Error",
+                        message: `Could not get a hint. Please check the API Key and connection. Error: ${error.message}`,
+                        onConfirm: () => {},
+                        confirmText: "OK"
+                    });
                     setHint("Sorry, could not get a hint at this time.");
                 } finally {
                     setIsHintLoading(false);
