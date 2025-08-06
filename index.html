@@ -537,6 +537,23 @@
 
             const hasMistakes = Object.values(userData.progress || {}).some(p => p.score < Object.keys(p.answers).length);
 
+            const getGameMasterMessage = () => {
+                const lastCompletedTest = Object.values(userData.progress || {})
+                    .filter(p => p.settings?.mode === 'Test' && Object.keys(p.answers).length === allTests.find(t => t.id === Object.keys(userData.progress).find(key => userData.progress[key] === p))?.questions.length)
+                    .sort((a,b) => (b.completedAt || 0) - (a.completedAt || 0))[0];
+
+                if (lastCompletedTest) {
+                    const test = allTests.find(t => t.id === Object.keys(userData.progress).find(key => userData.progress[key] === lastCompletedTest));
+                    const scorePercentage = (lastCompletedTest.score / test.questions.length) * 100;
+                    if (scorePercentage >= 90) {
+                        return `Incredible work on ${test.title}! You're a real pro!`;
+                    } else if (scorePercentage < 50) {
+                        return `That was a tough one! The 'Practice Mistakes' button is a great way to master those tricky questions.`;
+                    }
+                }
+                return "Ready to ace these tests? Let's get started!";
+            };
+
 
             return (
                 <div className="p-4 sm:p-8 min-h-screen">
@@ -594,7 +611,7 @@
                             </div>
                         </div>
 
-                        <CharacterMessage message="Ready to ace these tests? Let's get started!" character="GameMaster" />
+                        <CharacterMessage message={getGameMasterMessage()} character="GameMaster" />
                         
                         <div className="bg-slate-800/50 border border-slate-700 rounded-xl shadow-lg p-6">
                             <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-6">Available Tests</h2>
@@ -1012,7 +1029,7 @@
             }
             
             if (adminView === 'analysis') {
-                return <ProblemAnalysisView setAdminView={setAdminView} userData={userData} allTests={allTests} />;
+                return <PerformanceDashboardView setAdminView={setAdminView} userData={userData} allTests={allTests} showModal={showModal} />;
             }
 
             return (
@@ -1025,7 +1042,7 @@
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <button onClick={() => { setEditingTest(null); setAdminView('create'); }} className="bg-green-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-green-500">Create New Test</button>
-                            <button onClick={() => setAdminView('analysis')} className="bg-purple-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-purple-500">Problem Analysis</button>
+                            <button onClick={() => setAdminView('analysis')} className="bg-purple-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-purple-500">Performance Dashboard</button>
                         </div>
 
                         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
