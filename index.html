@@ -498,13 +498,19 @@
             const handlePracticeMistakes = () => {
                 const incorrectQuestions = [];
                 const seenQuestions = new Set();
+                const isAnswerCorrect = (correctAnswer, userAnswer) => {
+                    if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                        return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                    }
+                    return correctAnswer === userAnswer;
+                };
 
                 Object.values(userData.progress || {}).forEach(progressData => {
                     const test = allTests.find(t => t.id === Object.keys(userData.progress).find(key => userData.progress[key] === progressData));
                     if (test) {
                         Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
                             const question = test.questions[qIndex];
-                            if (question && question.answer !== userAnswer && !seenQuestions.has(question.question)) {
+                            if (question && !isAnswerCorrect(question.answer, userAnswer) && !seenQuestions.has(question.question)) {
                                 incorrectQuestions.push(question);
                                 seenQuestions.add(question.question);
                             }
@@ -656,16 +662,20 @@
                 return () => clearInterval(intervalId);
             }, [timeLeft, isPaused, settings.mode]);
             
+            const isAnswerCorrect = (correctAnswer, userAnswer) => {
+                if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                    return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                }
+                return correctAnswer === userAnswer;
+            };
+
             const calculateScore = useCallback(() => {
                 return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
                     const correctAnswer = test.questions[index]?.answer;
-                    let isMatch = false;
-                    if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-                        isMatch = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
-                    } else {
-                        isMatch = correctAnswer === userAnswer;
+                    if (isAnswerCorrect(correctAnswer, userAnswer)) {
+                        return acc + 1;
                     }
-                    return isMatch ? acc + 1 : acc;
+                    return acc;
                 }, 0);
             }, [userAnswers, test.questions]);
 
@@ -698,13 +708,7 @@
                 setSubmittedAnswers({...submittedAnswers, [currentQuestionIndex]: true});
 
                 const correctAnswer = test.questions[currentQuestionIndex].answer;
-                let isCorrect = false;
-
-                if (typeof correctAnswer === 'string' && typeof answer === 'string') {
-                    isCorrect = correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
-                } else {
-                    isCorrect = correctAnswer === answer;
-                }
+                const isCorrect = isAnswerCorrect(correctAnswer, answer);
                 
                 let newUserData = { ...userData };
                 
@@ -862,6 +866,13 @@
             const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
             const [conceptExplanations, setConceptExplanations] = useState({});
             const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
+            
+            const isAnswerCorrect = (correctAnswer, userAnswer) => {
+                if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                    return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                }
+                return correctAnswer === userAnswer;
+            };
 
 
             const getAIFeedback = async () => {
@@ -930,7 +941,7 @@
                             <div className="space-y-4 mt-8">
                                 {test.questions.map((q, index) => {
                                     const userAnswer = userAnswers[index];
-                                    const isCorrect = userAnswer === q.answer;
+                                    const isCorrect = isAnswerCorrect(q.answer, userAnswer);
                                     return (
                                         <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
                                             <p className="font-semibold text-slate-300 mb-2">{index + 1}. {q.question}</p>
