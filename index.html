@@ -1278,74 +1278,109 @@
             );
         };
         
-        const ProblemAnalysisView = ({ setAdminView, userData, allTests }) => {
-            const [analysis, setAnalysis] = useState(null);
-            const [explanations, setExplanations] = useState({});
-            const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
+        const PerformanceDashboardView = ({ setAdminView, userData, allTests, showModal }) => {
+            const chartRef = useRef(null);
+            const [aiSummary, setAiSummary] = useState('');
+            const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
             useEffect(() => {
+                const completedTests = Object.entries(userData.progress || {})
+                    .map(([testId, progressData]) => {
+                        const test = allTests.find(t => t.id === testId);
+                        if (!test || Object.keys(progressData.answers).length !== test.questions.length) return null;
+                        return {
+                            ...test,
+                            ...progressData,
+                            completedAt: progressData.completedAt || Date.now() // Fallback for older data
+                        };
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => a.completedAt - b.completedAt);
+
+                const mathsScores = completedTests.filter(t => t.subject === 'Maths').map(t => (t.score / t.questions.length) * 100);
+                const englishScores = completedTests.filter(t => t.subject === 'English').map(t => (t.score / t.questions.length) * 100);
+                
+                const labels = Array.from({length: Math.max(mathsScores.length, englishScores.length)}, (_, i) => `Test ${i + 1}`);
+
+                const ctx = chartRef.current.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Maths Average Score (%)',
+                                data: mathsScores,
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'English Average Score (%)',
+                                data: englishScores,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                fill: false,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            }, [userData, allTests]);
+
+            const getAISummary = async () => {
+                setIsSummaryLoading(true);
                 const incorrectAnswers = [];
-                if (userData.progress && allTests.length > 0) {
-                    Object.entries(userData.progress).forEach(([testId, progressData]) => {
+                 Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
                         const test = allTests.find(t => t.id === testId);
                         if (test) {
                             Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
                                 const question = test.questions[qIndex];
-                                if (question && question.answer !== userAnswer) {
-                                    incorrectAnswers.push({
-                                        questionText: question.question,
-                                        correctAnswer: question.answer,
-                                        userAnswer: userAnswer,
-                                    });
+                                if (question && question.answer.trim().toLowerCase() !== userAnswer.trim().toLowerCase()) {
+                                    incorrectAnswers.push(question.question);
                                 }
                             });
                         }
                     });
-                }
-                
-                const counts = incorrectAnswers.reduce((acc, curr) => {
-                    const key = curr.questionText;
-                    if (!acc[key]) {
-                        acc[key] = { count: 0, details: curr, wrongAnswers: {} };
-                    }
-                    acc[key].count += 1;
-                    acc[key].wrongAnswers[curr.userAnswer] = (acc[key].wrongAnswers[curr.userAnswer] || 0) + 1;
-                    return acc;
-                }, {});
 
-                const sortedAnalysis = Object.entries(counts)
-                    .map(([question, data]) => ({ question, ...data }))
-                    .sort((a, b) => b.count - a.count);
-                
-                setAnalysis(sortedAnalysis);
-            }, [userData, allTests]);
+                const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`; // Limit to 50 to avoid overly long prompts
 
-            const fetchExplanation = async (item, index) => {
-                setIsLoadingExplanation(index);
-                const prompt = `You are a friendly and encouraging teacher helping a 10-11 year old student study. Explain the answer to the following question in a simple, step-by-step way. Question: "${item.details.questionText}" The correct answer is: "${item.details.correctAnswer}" The student's incorrect answer was: "${item.details.userAnswer}". Explain how to get the correct answer.`;
-                
                 try {
-                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = { contents: chatHistory };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    if (!GEMINI_API_KEY) {
+                        throw new Error("API Key is missing.");
+                    }
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        const errorBody = await response.json();
+                        throw new Error(`API Error: ${errorBody.error.message}`);
+                    }
                     const result = await response.json();
                     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (text) {
-                        setExplanations(prev => ({ ...prev, [index]: text }));
+                        setAiSummary(text);
                     } else {
                         throw new Error("Invalid API response structure.");
                     }
                 } catch (error) {
-                    console.error("Error fetching explanation:", error);
-                    setExplanations(prev => ({ ...prev, [index]: "Sorry, could not get an explanation at this time." }));
+                     showModal({
+                        title: "AI Feature Error",
+                        message: `Could not generate summary. Error: ${error.message}`,
+                        onConfirm: () => {},
+                        confirmText: "OK"
+                    });
                 } finally {
-                    setIsLoadingExplanation(null);
+                    setIsSummaryLoading(false);
                 }
             };
 
@@ -1353,31 +1388,27 @@
                 <div className="p-8 min-h-screen">
                     <div className="max-w-4xl mx-auto">
                         <div className="flex justify-between items-center mb-8">
-                            <h1 className="text-3xl font-bold font-orbitron text-cyan-300">Problem Analysis</h1>
+                            <h1 className="text-3xl font-bold font-orbitron text-cyan-300">Performance Dashboard</h1>
                             <button onClick={() => setAdminView('main')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
                         </div>
-                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl">
-                            <h2 className="text-xl font-bold mb-4">Most Frequently Incorrect Questions</h2>
-                            {analysis && analysis.length > 0 ? (
-                                <ul className="space-y-4">
-                                    {analysis.map((item, index) => (
-                                        <li key={index} className="bg-slate-800 p-4 rounded-lg">
-                                            <p className="font-semibold text-gray-300">"{item.question}"</p>
-                                            <p className="text-red-400 font-bold">Incorrect {item.count} time(s)</p>
-                                            <div className="text-sm text-slate-400 mt-1">
-                                                Common wrong answers: {Object.entries(item.wrongAnswers).map(([ans, count]) => `${ans} (${count}x)`).join(', ')}
-                                            </div>
-                                            <button onClick={() => fetchExplanation(item, index)} disabled={isLoadingExplanation === index} className="mt-2 text-sm text-cyan-400 hover:text-cyan-200 disabled:opacity-50">
-                                                {isLoadingExplanation === index ? '✨ Generating...' : '✨ Get AI Explanation'}
-                                            </button>
-                                            {explanations[index] && <div className="mt-2 p-3 bg-slate-700 border border-slate-600 text-yellow-300 rounded-lg text-sm whitespace-pre-wrap">{explanations[index]}</div>}
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-slate-400">No incorrect answers have been recorded yet. Complete some tests to see analysis.</p>
+
+                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl mb-8">
+                            <h2 className="text-xl font-bold mb-4">Score Over Time</h2>
+                            <canvas ref={chartRef}></canvas>
+                        </div>
+                        
+                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl mb-8">
+                             <h2 className="text-xl font-bold mb-4">AI Performance Summary</h2>
+                             <button onClick={getAISummary} disabled={isSummaryLoading} className="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-500 disabled:bg-slate-600">
+                                {isSummaryLoading ? '✨ Analyzing Performance...' : '✨ Generate AI Summary'}
+                            </button>
+                            {aiSummary && (
+                                <div className="bg-slate-700/50 p-4 rounded-lg mt-4 border border-slate-600">
+                                    <p className="text-slate-300 whitespace-pre-wrap">{aiSummary}</p>
+                                </div>
                             )}
                         </div>
+
                     </div>
                 </div>
             );
