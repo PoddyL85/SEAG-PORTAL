@@ -109,7 +109,7 @@
         const { useState, useEffect, useCallback, useRef } = React;
 
         // --- PASTE YOUR API KEY HERE ---
-        const GEMINI_API_KEY = "AIzaSyBGKBOQ-oupxp1bHgN3nXFMyKrjqex-A-s";
+        const GEMINI_API_KEY = "";
 
         // --- Default Test Data ---
         const defaultTests = [
@@ -980,7 +980,7 @@
             }
             
             if (adminView === 'create') {
-                return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} />;
+                return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} showModal={showModal} />;
             }
             
             if (adminView === 'analysis') {
@@ -1615,4 +1615,3 @@
     </script>
 </body>
 </html>
-
