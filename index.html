@@ -1126,9 +1126,13 @@
                     }
 
                     const result = await response.json();
-                    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                     
                     if (rawText) {
+                        // Clean the response from markdown
+                        if (rawText.startsWith("```json")) {
+                            rawText = rawText.substring(7, rawText.length - 3).trim();
+                        }
                         const parsedJson = JSON.parse(rawText);
                         if (Array.isArray(parsedJson)) {
                              setQuestions(parsedJson.map(q => ({ question: q.question, options: q.options || ['', '', '', ''], answer: q.answer })));
