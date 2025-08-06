@@ -656,7 +656,18 @@
                 return () => clearInterval(intervalId);
             }, [timeLeft, isPaused, settings.mode]);
             
-            const calculateScore = useCallback(() => Object.entries(userAnswers).reduce((acc, [index, answer]) => (test.questions[index]?.answer === answer ? acc + 1 : acc), 0), [userAnswers, test.questions]);
+            const calculateScore = useCallback(() => {
+                return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
+                    const correctAnswer = test.questions[index]?.answer;
+                    let isMatch = false;
+                    if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                        isMatch = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                    } else {
+                        isMatch = correctAnswer === userAnswer;
+                    }
+                    return isMatch ? acc + 1 : acc;
+                }, 0);
+            }, [userAnswers, test.questions]);
 
             const saveProgress = useCallback((isFinished = false) => {
                 const score = calculateScore();
@@ -686,7 +697,14 @@
 
                 setSubmittedAnswers({...submittedAnswers, [currentQuestionIndex]: true});
 
-                const isCorrect = test.questions[currentQuestionIndex].answer === answer;
+                const correctAnswer = test.questions[currentQuestionIndex].answer;
+                let isCorrect = false;
+
+                if (typeof correctAnswer === 'string' && typeof answer === 'string') {
+                    isCorrect = correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+                } else {
+                    isCorrect = correctAnswer === answer;
+                }
                 
                 let newUserData = { ...userData };
                 
