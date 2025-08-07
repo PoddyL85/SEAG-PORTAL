@@ -500,18 +500,18 @@
                 const seenQuestions = new Set();
                 const isAnswerCorrect = (correctAnswer, userAnswer) => {
                     if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-                        return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                        return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
                     }
                     return correctAnswer === userAnswer;
                 };
 
-                Object.values(userData.progress || {}).forEach(progressData => {
-                    const test = allTests.find(t => t.id === Object.keys(userData.progress).find(key => userData.progress[key] === progressData));
+                Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
+                    const test = allTests.find(t => t.id === testId);
                     if (test) {
                         Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
                             const question = test.questions[qIndex];
                             if (question && !isAnswerCorrect(question.answer, userAnswer) && !seenQuestions.has(question.question)) {
-                                incorrectQuestions.push(question);
+                                incorrectQuestions.push({ ...question, originalTestId: testId, originalQIndex: qIndex });
                                 seenQuestions.add(question.question);
                             }
                         });
@@ -681,7 +681,7 @@
             
             const isAnswerCorrect = (correctAnswer, userAnswer) => {
                 if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-                    return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                    return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
                 }
                 return correctAnswer === userAnswer;
             };
@@ -768,8 +768,39 @@
             };
 
             const handleFinish = () => { 
-                saveProgress(true); 
-                setView('results'); 
+                if (testId === 'mistakes-test') {
+                    const newProgress = { ...userData.progress };
+                    const correctlyAnsweredMistakes = [];
+
+                    test.questions.forEach((q, index) => {
+                        const userAnswer = userAnswers[index];
+                        if (isAnswerCorrect(q.answer, userAnswer)) {
+                            correctlyAnsweredMistakes.push({
+                                testId: q.originalTestId,
+                                qIndex: q.originalQIndex,
+                                answer: q.answer
+                            });
+                        }
+                    });
+
+                    correctlyAnsweredMistakes.forEach(correction => {
+                        if (newProgress[correction.testId] && newProgress[correction.testId].answers) {
+                            newProgress[correction.testId].answers[correction.qIndex] = correction.answer;
+                        }
+                    });
+                    
+                    updateUserData({ ...userData, progress: newProgress });
+                    
+                    showModal({
+                        title: "Practice Complete!",
+                        message: "Well done! Your corrected answers have been updated.",
+                        onConfirm: () => setView('dashboard'),
+                        confirmText: "Back to Dashboard"
+                    });
+                } else {
+                    saveProgress(true);
+                    setView('results');
+                }
             };
             const handlePause = () => { 
                 setIsPaused(true); 
@@ -828,7 +859,9 @@
             const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
             
             useEffect(() => {
-                saveProgress();
+                if (testId !== 'mistakes-test') {
+                    saveProgress();
+                }
             }, [userAnswers, currentQuestionIndex]);
             
             return (
