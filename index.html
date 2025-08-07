@@ -93,6 +93,9 @@
                 display: none;
             }
         }
+        .dragging-over {
+            border: 2px dashed #38bdf8; /* cyan-400 */
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200">
@@ -919,7 +922,7 @@
             
             const isAnswerCorrect = (correctAnswer, userAnswer) => {
                 if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-                    return correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                    return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
                 }
                 return correctAnswer === userAnswer;
             };
