@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nicolas's SEAG Portal</title>
+    <meta name="theme-color" content="#06b6d4" />
+    <link rel="manifest" href="manifest.webmanifest" />
     
     <!-- Google Fonts: Orbitron for a gaming feel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,11 +64,11 @@
         }
         /* Animation for feedback flash */
         @keyframes flash-green {
-            0% { background-color: #16a34a; } /* green-600 */
+            0% { background-color: #16a34a; }
             100% { background-color: transparent; }
         }
         @keyframes flash-red {
-            0% { background-color: #dc2626; } /* red-600 */
+            0% { background-color: #dc2626; }
             100% { background-color: transparent; }
         }
         .flash-correct {
@@ -94,14 +96,14 @@
             }
         }
         .dragging-over {
-            border: 2px dashed #38bdf8; /* cyan-400 */
+            border: 2px dashed #38bdf8;
         }
     </style>
 </head>
 <body class="bg-slate-900 text-gray-200">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react">
         // This is your entire React Application inside a single script tag.
         // Data is saved in the browser's localStorage.
 
@@ -111,7 +113,7 @@
         const { useState, useEffect, useCallback, useRef } = React;
 
         // --- PASTE YOUR API KEY HERE ---
-        const GEMINI_API_KEY = "";
+        const GEMINI_API_KEY = "AIzaSyBGKBOQ-oupxp1bHgN3nXFMyKrjqex-A-s";
 
         // --- Default Test Data ---
         const defaultTests = [
@@ -463,6 +465,103 @@
             const xpForNextLevel = userData.level * 100;
             const xpPercent = (userData.xp / xpForNextLevel) * 100;
 
+            // Helper from other views
+            const isAnswerCorrect = (correctAnswer, userAnswer) => {
+                if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                    return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                }
+                return correctAnswer === userAnswer;
+            };
+
+            // Accuracy aggregation for charts
+            const subjectChartCanvasRef = useRef(null);
+            const tagChartCanvasRef = useRef(null);
+            const subjectChartInstance = useRef(null);
+            const tagChartInstance = useRef(null);
+
+            const { subjectStats, tagStats } = React.useMemo(() => {
+                const subj = { Maths: { correct: 0, total: 0 }, English: { correct: 0, total: 0 }, Mixed: { correct: 0, total: 0 } };
+                const tags = {};
+                const progress = userData.progress || {};
+                for (const [testId, p] of Object.entries(progress)) {
+                    const test = allTests.find(t => t.id === testId);
+                    if (!test) continue;
+                    for (const [idxStr, userAnswer] of Object.entries(p.answers || {})) {
+                        const idx = parseInt(idxStr, 10);
+                        const q = test.questions[idx];
+                        if (!q) continue;
+                        const correct = isAnswerCorrect(q.answer, userAnswer);
+                        const s = test.subject || 'Mixed';
+                        if (!subj[s]) subj[s] = { correct: 0, total: 0 };
+                        subj[s].total++;
+                        if (correct) subj[s].correct++;
+                        (q.tags || []).forEach(tag => {
+                            if (!tags[tag]) tags[tag] = { correct: 0, total: 0 };
+                            tags[tag].total++;
+                            if (correct) tags[tag].correct++;
+                        });
+                    }
+                }
+                return { subjectStats: subj, tagStats: tags };
+            }, [userData.progress, allTests]);
+
+            useEffect(() => {
+                // Subject Accuracy chart (Maths, English, Mixed)
+                const ctx = subjectChartCanvasRef.current?.getContext('2d');
+                if (subjectChartInstance.current) {
+                    subjectChartInstance.current.destroy();
+                    subjectChartInstance.current = null;
+                }
+                if (ctx && window.Chart) {
+                    const labels = Object.keys(subjectStats);
+                    const values = labels.map(k => subjectStats[k].total ? Math.round((subjectStats[k].correct / subjectStats[k].total) * 100) : 0);
+                    subjectChartInstance.current = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: 'Accuracy %',
+                                data: values,
+                                backgroundColor: ['rgba(6, 182, 212, 0.4)', 'rgba(34, 211, 238, 0.3)', 'rgba(99, 102, 241, 0.3)'],
+                                borderColor: ['#06b6d4', '#22d3ee', '#6366f1'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+                    });
+                }
+
+                // Tag Accuracy chart
+                const ctx2 = tagChartCanvasRef.current?.getContext('2d');
+                if (tagChartInstance.current) {
+                    tagChartInstance.current.destroy();
+                    tagChartInstance.current = null;
+                }
+                if (ctx2 && window.Chart) {
+                    const labels = Object.keys(tagStats);
+                    const values = labels.map(k => tagStats[k].total ? Math.round((tagStats[k].correct / tagStats[k].total) * 100) : 0);
+                    tagChartInstance.current = new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: 'Accuracy % by Tag',
+                                data: values,
+                                backgroundColor: 'rgba(168, 85, 247, 0.25)',
+                                borderColor: '#a855f7',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+                    });
+                }
+
+                return () => {
+                    if (subjectChartInstance.current) subjectChartInstance.current.destroy();
+                    if (tagChartInstance.current) tagChartInstance.current.destroy();
+                };
+            }, [subjectStats, tagStats]);
+
             const handleSelectTest = (testId) => {
                 showModal({
                     title: "Choose Your Mode",
@@ -478,7 +577,7 @@
                             </button>
                         </div>
                     ),
-                    onCancel: () => {} // Just to show the cancel button
+                    onCancel: () => {}
                 });
             };
 
@@ -501,7 +600,7 @@
             const handlePracticeMistakes = () => {
                 const incorrectQuestions = [];
                 const seenQuestions = new Set();
-                const isAnswerCorrect = (correctAnswer, userAnswer) => {
+                const isAnswerCorrectLocal = (correctAnswer, userAnswer) => {
                     if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
                         return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
                     }
@@ -513,7 +612,7 @@
                     if (test) {
                         Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
                             const question = test.questions[qIndex];
-                            if (question && !isAnswerCorrect(question.answer, userAnswer) && !seenQuestions.has(question.question)) {
+                            if (question && !isAnswerCorrectLocal(question.answer, userAnswer) && !seenQuestions.has(question.question)) {
                                 incorrectQuestions.push({ ...question, originalTestId: testId, originalQIndex: qIndex });
                                 seenQuestions.add(question.question);
                             }
@@ -615,6 +714,26 @@
                         </div>
 
                         <CharacterMessage message={getGameMasterMessage()} character="GameMaster" />
+
+                        {/* Performance Snapshot Charts */}
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl shadow-lg p-6 mb-8">
+                            <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-6">Performance Snapshot</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-bold text-cyan-200">Accuracy by Subject</h3>
+                                    </div>
+                                    <canvas ref={subjectChartCanvasRef} aria-label="Subject accuracy chart" role="img"></canvas>
+                                </div>
+                                <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-bold text-cyan-200">Accuracy by Tag</h3>
+                                        <span className="text-xs text-slate-400">Based on questions you've answered</span>
+                                    </div>
+                                    <canvas ref={tagChartCanvasRef} aria-label="Accuracy by tag chart" role="img"></canvas>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div className="bg-slate-800/50 border border-slate-700 rounded-xl shadow-lg p-6">
                             <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-6">Available Tests</h2>
@@ -927,6 +1046,27 @@
                 return correctAnswer === userAnswer;
             };
 
+            const printResults = () => {
+                try {
+                    const lines = [];
+                    lines.push(`Results: ${test.title}`);
+                    lines.push(`Score: ${score} / ${test.questions.length}`);
+                    lines.push('');
+                    test.questions.forEach((q, i) => {
+                        const ua = userAnswers[i];
+                        const correct = isAnswerCorrect(q.answer, ua);
+                        lines.push(`${i + 1}. ${q.question}`);
+                        lines.push(`Your answer: ${ua ?? '(no answer)'}${correct ? ' ✓' : ' ✗'}`);
+                        if (!correct) lines.push(`Correct: ${q.answer}`);
+                        lines.push('');
+                    });
+                    const w = window.open('', '_blank');
+                    const pre = `<pre style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap;">${lines.map(x => x.replaceAll('<', '&lt;')).join('\n')}</pre>`;
+                    w.document.write(`<!doctype html><html><head><title>Results</title><meta charset="utf-8"></head><body>${pre}</body></html>`);
+                    setTimeout(() => { try { w.focus(); w.print(); } catch(e) {} }, 250);
+                    w.document.close();
+                } catch (e) {}
+            };
 
             const getAIFeedback = async () => {
                 setIsFeedbackLoading(true);
@@ -978,7 +1118,8 @@
                             <h2 className="text-4xl font-bold text-cyan-300 font-orbitron mb-2 text-center">Test Complete!</h2>
                             <p className="text-2xl text-center mb-4">You scored: <span className="font-bold text-yellow-400">{score} / {test.questions.length}</span></p>
                             
-                            <div className="text-center my-6">
+                            <div className="flex flex-wrap gap-3 justify-center my-4">
+                                <button onClick={printResults} className="bg-slate-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600">Print Results</button>
                                 <button onClick={getAIFeedback} disabled={isFeedbackLoading} className="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-500 disabled:bg-slate-600">
                                     {isFeedbackLoading ? '✨ Analyzing Performance...' : '✨ Get AI Feedback'}
                                 </button>
@@ -1327,7 +1468,7 @@
                         return {
                             ...test,
                             ...progressData,
-                            completedAt: progressData.completedAt || Date.now() // Fallback for older data
+                            completedAt: progressData.completedAt || Date.now()
                         };
                     })
                     .filter(Boolean)
@@ -1381,14 +1522,14 @@
                         if (test) {
                             Object.entries(progressData.answers).forEach(([qIndex, userAnswer]) => {
                                 const question = test.questions[qIndex];
-                                if (question && question.answer.trim().toLowerCase() !== userAnswer.trim().toLowerCase()) {
+                                if (question && question.answer.trim().toLowerCase() !== (userAnswer || '').trim().toLowerCase()) {
                                     incorrectAnswers.push(question.question);
                                 }
                             });
                         }
                     });
 
-                const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`; // Limit to 50 to avoid overly long prompts
+                const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`;
 
                 try {
                     if (!GEMINI_API_KEY) {
@@ -1461,25 +1602,62 @@
                 setView('dashboard');
             };
 
+            // Backup & Restore
+            const exportAll = () => {
+                const saved = localStorage.getItem('seagPortalData');
+                const blob = new Blob([saved || ''], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'seag_export.json'; a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 3000);
+            };
+            const importAll = (file) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const data = JSON.parse(reader.result);
+                        localStorage.setItem('seagPortalData', JSON.stringify(data));
+                        window.location.reload();
+                    } catch (e) {
+                        showNotification({ message: 'Import failed. Invalid file.', type: 'error' });
+                    }
+                };
+                reader.readAsText(file);
+            };
+
             return (
                  <div className="p-8 min-h-screen flex items-center justify-center">
-                    <div className="max-w-md mx-auto w-full bg-slate-800 border border-slate-700 rounded-xl p-8">
-                        <h1 className="text-3xl font-bold font-orbitron text-cyan-300 mb-6 text-center">Profile Settings</h1>
-                        <div className="mb-6">
-                            <label className="block mb-2 font-bold">Player Name</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" />
-                        </div>
-                        <div className="mb-8">
-                            <label className="block mb-2 font-bold">Choose Your Avatar</label>
-                            <div className="grid grid-cols-4 gap-4">
-                                {avatars.map(av => (
-                                    <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-lg transition-all ${avatar === av ? 'bg-cyan-600 ring-2 ring-cyan-300' : 'bg-slate-700 hover:bg-slate-600'}`}>{av}</button>
-                                ))}
+                    <div className="max-w-2xl mx-auto w-full space-y-8">
+                        <div className="bg-slate-800 border border-slate-700 rounded-xl p-8">
+                            <h1 className="text-3xl font-bold font-orbitron text-cyan-300 mb-6 text-center">Profile Settings</h1>
+                            <div className="mb-6">
+                                <label className="block mb-2 font-bold">Player Name</label>
+                                <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" />
+                            </div>
+                            <div className="mb-8">
+                                <label className="block mb-2 font-bold">Choose Your Avatar</label>
+                                <div className="grid grid-cols-4 gap-4">
+                                    {avatars.map(av => (
+                                        <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-lg transition-all ${avatar === av ? 'bg-cyan-600 ring-2 ring-cyan-300' : 'bg-slate-700 hover:bg-slate-600'}`}>{av}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <button onClick={() => setView('dashboard')} className="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500">Cancel</button>
+                                <button onClick={handleSave} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-500">Save</button>
                             </div>
                         </div>
-                        <div className="flex gap-4">
-                            <button onClick={() => setView('dashboard')} className="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500">Cancel</button>
-                            <button onClick={handleSave} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-500">Save</button>
+
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                            <h2 className="text-2xl font-orbitron text-cyan-300 mb-4">Backup & Restore</h2>
+                            <div className="flex flex-wrap gap-3">
+                                <button onClick={exportAll} className="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-500">Export All Data</button>
+                                <label className="bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 cursor-pointer">
+                                    Import Data
+                                    <input type="file" accept="application/json" className="hidden" onChange={e => e.target.files[0] && importAll(e.target.files[0])} />
+                                </label>
+                                <p className="text-xs text-slate-400 self-center">Tip: Export before big edits or browser cleanup.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1728,6 +1906,15 @@
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
         root.render(<App />);
+    </script>
+
+    <!-- PWA service worker registration (works when service-worker.js is at site root) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        });
+      }
     </script>
 </body>
 </html>
