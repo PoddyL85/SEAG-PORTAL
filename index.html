@@ -804,6 +804,18 @@
         }
       }, []);
 
+      // PATCH A: Move the inline useMemo out of JSX
+      const answeredSet = React.useMemo(() => {
+        const keys = Object.keys(userAnswers).map(Number);
+        if (!shuffledOrder) return new Set(keys);
+        const pos = new Set();
+        keys.forEach(origIdx => {
+          const shuffledPos = shuffledOrder.indexOf(origIdx);
+          if (shuffledPos !== -1) pos.add(shuffledPos);
+        });
+        return pos;
+      }, [userAnswers, shuffledOrder]);
+
       const calculateScore = useCallback(() => {
         return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
           const question = test.questions[index];
@@ -1068,19 +1080,11 @@
               {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
             </div>
             
+            {/* PATCH B: Update the QuestionNavigator JSX to use the variable */}
             <QuestionNavigator
               total={test.questions.length}
               current={currentQuestionIndex}
-              answeredIndices={React.useMemo(() => {
-                const keys = Object.keys(userAnswers).map(Number);
-                if (!shuffledOrder) return new Set(keys);
-                const pos = new Set();
-                keys.forEach(origIdx => {
-                  const shuffledPos = shuffledOrder.indexOf(origIdx);
-                  if (shuffledPos !== -1) pos.add(shuffledPos);
-                });
-                return pos;
-              }, [userAnswers, shuffledOrder])}
+              answeredIndices={answeredSet}
               onNavigate={navigateToQuestion}
             />
 
