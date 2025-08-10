@@ -98,13 +98,15 @@
     // This is your entire React Application inside a single script tag.
     // Data is saved in the browser's localStorage.
 
-    // Required for PDF.js to work
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    // PATCH 1: Fix PDF.js crash at startup
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
 
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    // --- PASTE YOUR API KEY HERE ---
-    const GEMINI_API_KEY = "AIzaSyBGKBOQ-oupxp1bHgN3nXFMyKrjqex-A-s";
+    // PATCH 5: Remove hardcoded API key
+    const GEMINI_API_KEY = '';
 
     // --- Default Test Data ---
     const defaultTests = [
@@ -408,19 +410,23 @@
 
     // --- Helper Components & Functions ---
 
-    // NEW: Normalizes string answers for more lenient checking.
+    // PATCH 3: Fix answer normalization
     const normalizeAnswer = (answer, tags = []) => {
-        if (typeof answer !== 'string') return answer;
-        let normalized = answer.toLowerCase().trim().replace(/\s+/g, ' ');
-        
-        const hasNumericTags = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
-        if (hasNumericTags) {
-            normalized = normalized.replace(/[£$€,m²cm²°]/g, '').trim();
-        }
-        return normalized;
+      if (typeof answer !== 'string') return answer;
+      let s = answer.toLowerCase().trim();
+      s = s.replace(/\s+/g, ' ');
+      const numericish = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
+      if (numericish) {
+        s = s
+          .replace(/[£$€]/g, '')
+          .replace(/[°,]/g, '')
+          .replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles|mile|meters|metres|meter|metre|deg|degrees)\b/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+      return s;
     };
 
-    // MODIFIED: This function now uses the new normalizer.
     const isAnswerCorrect = (question, userAnswer) => {
         if (!question) return false;
         const correctAnswer = question.answer;
@@ -480,7 +486,6 @@
       );
     };
     
-    // MODIFIED: Added Shuffle Questions toggle
     const CustomModeSelector = ({ onStart }) => {
         const [useTimer, setUseTimer] = useState(true);
         const [useHints, setUseHints] = useState(false);
@@ -518,7 +523,6 @@
       const xpForNextLevel = userData.level * 100;
       const xpPercent = (userData.xp / xpForNextLevel) * 100;
 
-      // MODIFIED: Default modes now explicitly set shuffle to false.
       const handleSelectTest = (testId) => {
         const test = allTests.find(t => t.id === testId);
         const progress = userData.progress?.[testId];
@@ -571,7 +575,6 @@
         setView('quiz');
       };
 
-      // MODIFIED: Updated isAnswerCorrect call to use new signature.
       const handlePracticeMistakes = () => {
         const incorrectQuestions = [];
         const seenQuestions = new Set();
@@ -786,7 +789,6 @@
         return () => clearInterval(intervalId);
       }, [timerEnabled, isPaused]);
       
-      // MODIFIED: Logic to create/load shuffled order on component mount.
       useEffect(() => {
         if (settings.shuffle && !existingProgress.shuffledOrder) {
             const indices = Array.from(test.questions.keys());
@@ -1051,7 +1053,7 @@
         }
       };
 
-      if (!test) return <LoadingSpinner message="Loading Test..." />;
+      if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       const currentQ = test.questions[originalIndex];
       const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
       const isLocked = timerEnabled && timeLeft === 0;
@@ -1067,10 +1069,19 @@
             </div>
             
             <QuestionNavigator
-                total={test.questions.length}
-                current={currentQuestionIndex}
-                answeredIndices={new Set(Object.keys(userAnswers).map(Number))}
-                onNavigate={navigateToQuestion}
+              total={test.questions.length}
+              current={currentQuestionIndex}
+              answeredIndices={React.useMemo(() => {
+                const keys = Object.keys(userAnswers).map(Number);
+                if (!shuffledOrder) return new Set(keys);
+                const pos = new Set();
+                keys.forEach(origIdx => {
+                  const shuffledPos = shuffledOrder.indexOf(origIdx);
+                  if (shuffledPos !== -1) pos.add(shuffledPos);
+                });
+                return pos;
+              }, [userAnswers, shuffledOrder])}
+              onNavigate={navigateToQuestion}
             />
 
             <hr className="border-slate-600 my-4" />
@@ -1644,6 +1655,9 @@
       const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
       useEffect(() => {
+        // PATCH 4: Fix Chart.js crash
+        if (!window.Chart || !chartRef.current) return;
+
         const completedTests = Object.entries(userData.progress || {})
           .map(([testId, progressData]) => {
             const test = allTests.find(t => t.id === testId);
