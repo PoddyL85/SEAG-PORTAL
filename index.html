@@ -5,19 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nicolas's SEAG Portal</title>
 
+  <!-- Google Fonts: Orbitron for a gaming feel -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
+  <!-- Tailwind CSS for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- React Libraries (Production) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
+  <!-- Babel to compile JSX in the browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- PDF.js for parsing PDF files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
+  <!-- Chart.js for data visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -95,7 +101,7 @@
     // Required for PDF.js to work
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
 
-    const { useState, useEffect, useCallback, useRef } = React;
+    const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
     // --- PASTE YOUR API KEY HERE ---
     const GEMINI_API_KEY = "AIzaSyBGKBOQ-oupxp1bHgN3nXFMyKrjqex-A-s";
@@ -400,7 +406,32 @@
       { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete all available "Full Practice Tests" at least once.', category: 'Consistency', unlocksTitle: 'The Marathoner' },
     ];
 
-    // --- Helper Components ---
+    // --- Helper Components & Functions ---
+
+    // NEW: Normalizes string answers for more lenient checking.
+    const normalizeAnswer = (answer, tags = []) => {
+        if (typeof answer !== 'string') return answer;
+        let normalized = answer.toLowerCase().trim().replace(/\s+/g, ' ');
+        
+        const hasNumericTags = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
+        if (hasNumericTags) {
+            normalized = normalized.replace(/[£$€,m²cm²°]/g, '').trim();
+        }
+        return normalized;
+    };
+
+    // MODIFIED: This function now uses the new normalizer.
+    const isAnswerCorrect = (question, userAnswer) => {
+        if (!question) return false;
+        const correctAnswer = question.answer;
+        const tags = question.tags || [];
+
+        const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
+        const normalizedUser = normalizeAnswer(userAnswer, tags);
+
+        return normalizedCorrect === normalizedUser;
+    };
+
     const LoadingSpinner = ({ message }) => (
       <div className="flex flex-col justify-center items-center h-screen bg-slate-900">
         <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-cyan-400 mb-4"></div>
@@ -449,25 +480,32 @@
       );
     };
     
-    // NEW: Small component for the custom mode options inside the modal.
+    // MODIFIED: Added Shuffle Questions toggle
     const CustomModeSelector = ({ onStart }) => {
         const [useTimer, setUseTimer] = useState(true);
         const [useHints, setUseHints] = useState(false);
+        const [shuffle, setShuffle] = useState(false);
         
         return (
             <div className="text-left p-4 bg-slate-700 rounded-lg mt-4 border border-slate-600">
                 <h4 className="font-bold text-lg text-center mb-4">Custom Settings</h4>
-                <div className="flex items-center justify-between mb-4">
-                    <label htmlFor="timer-toggle" className="font-semibold text-slate-300">Enable Timer</label>
-                    <input id="timer-toggle" type="checkbox" checked={useTimer} onChange={() => setUseTimer(!useTimer)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
-                </div>
-                <div className="flex items-center justify-between mb-6">
-                    <label htmlFor="hints-toggle" className="font-semibold text-slate-300">Enable Hints & Feedback</label>
-                    <input id="hints-toggle" type="checkbox" checked={useHints} onChange={() => setUseHints(!useHints)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="timer-toggle" className="font-semibold text-slate-300">Enable Timer</label>
+                        <input id="timer-toggle" type="checkbox" checked={useTimer} onChange={() => setUseTimer(!useTimer)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="hints-toggle" className="font-semibold text-slate-300">Enable Hints & Feedback</label>
+                        <input id="hints-toggle" type="checkbox" checked={useHints} onChange={() => setUseHints(!useHints)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="shuffle-toggle" className="font-semibold text-slate-300">Shuffle Questions</label>
+                        <input id="shuffle-toggle" type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
+                    </div>
                 </div>
                 <button 
-                    onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints })} 
-                    className="w-full text-center p-3 bg-purple-700 hover:bg-purple-600 rounded-lg font-bold"
+                    onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle: shuffle })} 
+                    className="w-full text-center p-3 mt-6 bg-purple-700 hover:bg-purple-600 rounded-lg font-bold"
                 >
                     Start Custom Test
                 </button>
@@ -480,34 +518,31 @@
       const xpForNextLevel = userData.level * 100;
       const xpPercent = (userData.xp / xpForNextLevel) * 100;
 
-      // MODIFIED: handleSelectTest now includes a "Custom Mode" option.
+      // MODIFIED: Default modes now explicitly set shuffle to false.
       const handleSelectTest = (testId) => {
         const test = allTests.find(t => t.id === testId);
         const progress = userData.progress?.[testId];
         const totalQ = test?.questions?.length || 0;
         const answered = progress ? Object.keys(progress.answers || {}).length : 0;
 
-        // If partially answered, resume with previous mode without re-selecting
         if (progress && answered > 0 && answered < totalQ) {
-          setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice' } });
+          setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice', shuffle: false } });
           setView('quiz');
           return;
         }
 
-        // Otherwise select mode
         showModal({
           title: "Choose Your Mode",
           children: (
             <div className="space-y-4">
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice' } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-cyan-700 hover:bg-cyan-600 rounded-lg">
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-cyan-700 hover:bg-cyan-600 rounded-lg">
                 <h3 className="font-bold text-cyan-200">Practice Mode</h3>
                 <p className="text-sm text-slate-300">No timer, hints enabled, and live feedback on your answers.</p>
               </button>
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test' } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-yellow-700 hover:bg-yellow-600 rounded-lg">
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-yellow-700 hover:bg-yellow-600 rounded-lg">
                 <h3 className="font-bold text-yellow-200">Test Mode</h3>
                 <p className="text-sm text-slate-300">A timer will run, hints are disabled, and results are shown only at the end.</p>
               </button>
-              {/* NEW: Custom mode options */}
               <CustomModeSelector onStart={(settings) => {
                   setSelectedTest({ id: testId, settings });
                   setView('quiz');
@@ -515,8 +550,8 @@
               }} />
             </div>
           ),
-          onCancel: () => {}, // Just to show the cancel button
-          confirmText: null // Hide the default confirm button
+          onCancel: () => {},
+          confirmText: null
         });
       };
 
@@ -532,26 +567,21 @@
           questions: dailyQuestions
         };
         updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'daily-challenge'), challengeTest] });
-        setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice' } });
+        setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice', shuffle: true } });
         setView('quiz');
       };
 
+      // MODIFIED: Updated isAnswerCorrect call to use new signature.
       const handlePracticeMistakes = () => {
         const incorrectQuestions = [];
         const seenQuestions = new Set();
-        const isAnswerCorrect = (correctAnswer, userAnswer) => {
-          if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-            return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
-          }
-          return correctAnswer === userAnswer;
-        };
-
+        
         Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
           const test = allTests.find(t => t.id === testId);
           if (test) {
             Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
               const question = test.questions[qIndex];
-              if (question && !isAnswerCorrect(question.answer, userAnswer) && !seenQuestions.has(question.question)) {
+              if (question && !isAnswerCorrect(question, userAnswer) && !seenQuestions.has(question.question)) {
                 incorrectQuestions.push({ ...question, originalTestId: testId, originalQIndex: qIndex });
                 seenQuestions.add(question.question);
               }
@@ -572,7 +602,7 @@
         };
         
         updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
-        setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice' } });
+        setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
         setView('quiz');
       };
 
@@ -618,7 +648,6 @@
               </div>
             </div>
 
-            {/* XP and Level System */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-8">
               <div className="flex justify-between items-center mb-2 font-orbitron">
                 <span className="font-bold text-cyan-300">Level {userData.level}</span>
@@ -629,7 +658,6 @@
               </div>
             </div>
 
-            {/* Daily Challenge & Practice Mistakes Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-slate-800/50 border-2 border-purple-500 rounded-xl p-6 shadow-lg">
                 <div className="flex justify-between items-center">
@@ -700,10 +728,9 @@
       );
     };
 
-    // NEW: Question Navigator Component
     const QuestionNavigator = ({ total, current, answeredIndices, onNavigate }) => {
         return (
-            <div className="grid grid-cols-10 sm:grid-cols-14 md:grid-cols-20 gap-2 my-4">
+            <div className="flex flex-wrap gap-2 my-4">
                 {Array.from({ length: total }, (_, i) => {
                     const isAnswered = answeredIndices.has(i);
                     const isCurrent = i === current;
@@ -736,6 +763,7 @@
       const [isHintLoading, setIsHintLoading] = useState(false);
       const [feedback, setFeedback] = useState(null);
       const [flash, setFlash] = useState(null);
+      const [shuffledOrder, setShuffledOrder] = useState(null);
 
       const totalTime = test?.subject === 'Mixed' ? 60 * 60 : 30 * 60;
       const getInitialTime = () => {
@@ -746,25 +774,38 @@
       const [isPaused, setIsPaused] = useState(false);
       const initialTotalRef = useRef(existingProgress?.initialTotalTime || totalTime);
 
-      // MODIFIED: Adapted to handle Custom Mode timer settings
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
-      useEffect(() => {
-        if (isPaused || !timeLeft || !timerEnabled) return;
-        const intervalId = setInterval(() => setTimeLeft(t => t > 0 ? t - 1 : 0), 1000);
-        return () => clearInterval(intervalId);
-      }, [timeLeft, isPaused, timerEnabled]);
       
-      const isAnswerCorrect = (correctAnswer, userAnswer) => {
-        if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-          return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+      useEffect(() => {
+        if (!timerEnabled || isPaused) {
+            return;
         }
-        return correctAnswer === userAnswer;
-      };
+        const intervalId = setInterval(() => {
+            setTimeLeft(t => (t > 0 ? t - 1 : 0));
+        }, 1000);
+        return () => clearInterval(intervalId);
+      }, [timerEnabled, isPaused]);
+      
+      // MODIFIED: Logic to create/load shuffled order on component mount.
+      useEffect(() => {
+        if (settings.shuffle && !existingProgress.shuffledOrder) {
+            const indices = Array.from(test.questions.keys());
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            setShuffledOrder(indices);
+            const newProgress = { ...userData.progress, [testId]: { ...existingProgress, shuffledOrder: indices, settings } };
+            updateUserData({ ...userData, progress: newProgress }, { silentAchievements: true });
+        } else if (existingProgress.shuffledOrder) {
+            setShuffledOrder(existingProgress.shuffledOrder);
+        }
+      }, []);
 
       const calculateScore = useCallback(() => {
         return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
-          const correctAnswer = test.questions[index]?.answer;
-          if (isAnswerCorrect(correctAnswer, userAnswer)) {
+          const question = test.questions[index];
+          if (isAnswerCorrect(question, userAnswer)) {
             return acc + 1;
           }
           return acc;
@@ -784,6 +825,7 @@
           streak: streak, 
           settings: settings,
           initialTotalTime: initialTotalRef.current,
+          ...(shuffledOrder && { shuffledOrder }),
           ...(isFinished ? { completedAt: now } : {})
         };
         const newProgress = { ...newUserData.progress, [testId]: newProgressEntry };
@@ -800,7 +842,7 @@
           timeLeft,
           initialTotalTime: initialTotalRef.current,
           testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
-          lastQuestionCorrect: isAnswerCorrect(test.questions[test.questions.length - 1]?.answer, lastAnswer),
+          lastQuestionCorrect: isAnswerCorrect(test.questions[test.questions.length - 1], lastAnswer),
           isFullPractice: testId.startsWith('full-test') || test.questions.length === 56,
           isDailyChallenge: testId === 'daily-challenge',
           finishedAt: now
@@ -809,9 +851,8 @@
           silentAchievements: !!silentAchievements || !!auto, 
           postTestContext 
         });
-      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test]);
+      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test, shuffledOrder]);
 
-      // MODIFIED: Wrapped handleFinish in useCallback to fix stale state issues.
       const handleFinish = useCallback((auto = false) => { 
         if (testId === 'mistakes-test') {
           const newProgress = { ...userData.progress };
@@ -819,7 +860,7 @@
 
           test.questions.forEach((q, index) => {
             const userAnswer = userAnswers[index];
-            if (isAnswerCorrect(q.answer, userAnswer)) {
+            if (isAnswerCorrect(q, userAnswer)) {
               correctlyAnsweredMistakes.push({
                 testId: q.originalTestId,
                 qIndex: q.originalQIndex,
@@ -841,7 +882,7 @@
             if (t) {
               const p = newProgress[tid];
               const newScore = Object.entries(p.answers || {}).reduce((acc, [idx, ua]) => {
-                return acc + (isAnswerCorrect(t.questions[idx]?.answer, ua) ? 1 : 0);
+                return acc + (isAnswerCorrect(t.questions[idx], ua) ? 1 : 0);
               }, 0);
               newProgress[tid] = { ...p, score: newScore };
             }
@@ -865,11 +906,10 @@
         }
       }, [testId, test, userAnswers, userData, allTests, setView, showModal, showNotification, updateUserData, saveProgress]);
 
-      // MODIFIED: Auto-finish useEffect now has handleFinish in its dependency array.
       useEffect(() => {
         if (timerEnabled && timeLeft === 0) {
           setIsPaused(true);
-          handleFinish(true); // auto-finish
+          handleFinish(true);
         }
       }, [timeLeft, timerEnabled, handleFinish]);
       
@@ -887,30 +927,31 @@
         };
       }, [saveProgress, settings.mode]);
 
+      const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
+
       const handleAnswerSelect = (answer) => {
-        if (timerEnabled && timeLeft === 0) return; // locked on timeout
-        const newAnswers = { ...userAnswers, [currentQuestionIndex]: answer };
+        if (timerEnabled && timeLeft === 0) return;
+        const newAnswers = { ...userAnswers, [originalIndex]: answer };
         setUserAnswers(newAnswers);
       };
 
-      // MODIFIED: Logic for instant feedback and submitting answers now checks custom mode settings.
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
       const handleSubmitAnswer = () => {
-        const answer = userAnswers[currentQuestionIndex];
+        const answer = userAnswers[originalIndex];
         if (answer === undefined || answer === null || answer === "") return;
 
         setSubmittedAnswers({...submittedAnswers, [currentQuestionIndex]: true});
 
-        const correctAnswer = test.questions[currentQuestionIndex].answer;
-        const isCorrect = isAnswerCorrect(correctAnswer, answer);
+        const question = test.questions[originalIndex];
+        const isCorrect = isAnswerCorrect(question, answer);
         
         let newUserData = { ...userData };
         
         if (isCorrect) {
           newUserData.totalCorrectAnswers = (newUserData.totalCorrectAnswers || 0) + 1;
           
-          const tags = test.questions[currentQuestionIndex].tags || [];
+          const tags = question.tags || [];
           tags.forEach(tag => {
             newUserData.correctAnswersByTag[tag] = (newUserData.correctAnswersByTag[tag] || 0) + 1;
           });
@@ -933,18 +974,16 @@
         setTimeout(() => setFlash(null), 500);
 
         if (showInstantFeedback) {
-          setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${test.questions[currentQuestionIndex].answer}`);
+          setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
         }
 
         saveProgress(false);
 
-        // Auto-navigate to next question if not showing instant feedback
         if (!showInstantFeedback && currentQuestionIndex < test.questions.length - 1) {
             setTimeout(goToNext, 200);
         }
       };
 
-      // NEW: Function to navigate to any question.
       const navigateToQuestion = (index) => {
         if (index >= 0 && index < test.questions.length) {
             setFeedback(null);
@@ -970,7 +1009,7 @@
       const fetchHint = async () => {
         setIsHintLoading(true);
         setHint(null);
-        const question = test.questions[currentQuestionIndex];
+        const question = test.questions[originalIndex];
         const prompt = `You are a helpful teaching assistant for a 10-year-old student. Provide a short, simple hint for the following question. Do NOT give the answer. Just provide a small clue to help the student think about the problem correctly. Question: "${question.question}"`;
         
         try {
@@ -1013,7 +1052,7 @@
       };
 
       if (!test) return <LoadingSpinner message="Loading Test..." />;
-      const currentQ = test.questions[currentQuestionIndex];
+      const currentQ = test.questions[originalIndex];
       const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
       const isLocked = timerEnabled && timeLeft === 0;
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
@@ -1027,7 +1066,6 @@
               {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
             </div>
             
-            {/* NEW: Render Question Navigator */}
             <QuestionNavigator
                 total={test.questions.length}
                 current={currentQuestionIndex}
@@ -1041,13 +1079,13 @@
             <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-300">{currentQ.question}</p></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {currentQ.options ? currentQ.options.map((option, index) => (
-                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted || isLocked} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[currentQuestionIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted || isLocked ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
-              )) : <textarea value={userAnswers[currentQuestionIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted || isLocked} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
+                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted || isLocked} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted || isLocked ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
+              )) : <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted || isLocked} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
             </div>
 
-            {(!isCurrentQSubmitted || !showInstantFeedback) && (
+            {!isCurrentQSubmitted && (
               <div className="text-center my-4">
-                <button onClick={handleSubmitAnswer} disabled={!userAnswers[currentQuestionIndex] || isLocked} className="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                <button onClick={handleSubmitAnswer} disabled={!userAnswers[originalIndex] || isLocked} className="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
                     {showInstantFeedback ? 'Submit Answer' : 'Confirm Answer'}
                 </button>
               </div>
@@ -1077,23 +1115,28 @@
     const ResultsView = ({ userData, setView, testDetails, allTests }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
-      const userAnswers = userData.progress[testId].answers;
-      const score = userData.progress[testId].score;
+
+      const progress = userData.progress?.[testId];
+      useEffect(() => {
+        if (!progress) {
+            setView('dashboard');
+        }
+      }, [progress, setView]);
+
+      if (!progress) {
+        return <LoadingSpinner message="No results found, redirecting..." />;
+      }
+      
+      const userAnswers = progress.answers;
+      const score = progress.score;
       const [aiFeedback, setAiFeedback] = useState('');
       const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
       const [conceptExplanations, setConceptExplanations] = useState({});
       const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
       
-      const isAnswerCorrect = (correctAnswer, userAnswer) => {
-        if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-          return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
-        }
-        return correctAnswer === userAnswer;
-      };
-
-      // NEW: Logic to calculate stats by topic tag.
       const topicStats = useMemo(() => {
         const stats = {};
+        if (!test || !userAnswers) return [];
         test.questions.forEach((q, index) => {
             const tags = q.tags || ['General'];
             tags.forEach(tag => {
@@ -1101,17 +1144,17 @@
                     stats[tag] = { correct: 0, total: 0 };
                 }
                 stats[tag].total += 1;
-                if (isAnswerCorrect(q.answer, userAnswers[index])) {
+                if (isAnswerCorrect(q, userAnswers[index])) {
                     stats[tag].correct += 1;
                 }
             });
         });
         return Object.entries(stats);
-      }, [test.questions, userAnswers]);
+      }, [test, userAnswers]);
 
       const getAIFeedback = async () => {
         setIsFeedbackLoading(true);
-        const incorrectQuestions = test.questions.filter((q, i) => !isAnswerCorrect(q.answer, userAnswers[i]));
+        const incorrectQuestions = test.questions.filter((q, i) => !isAnswerCorrect(q, userAnswers[i]));
         const prompt = `My son, Nicolas, just completed a test. He scored ${score} out of ${test.questions.length}. Here are the questions he got wrong: ${JSON.stringify(incorrectQuestions)}. Please provide a short, encouraging summary of his performance. Highlight his strengths based on the questions he likely got right, and gently point out one or two common themes or topics from the incorrect answers that he could focus on next time. Keep the tone positive and motivating for a 10-year-old.`;
 
         try {
@@ -1166,7 +1209,6 @@
               <h2 className="text-4xl font-bold text-cyan-300 font-orbitron mb-2 text-center">Test Complete!</h2>
               <p className="text-2xl text-center mb-4">You scored: <span className="font-bold text-yellow-400">{score} / {test.questions.length}</span></p>
               
-              {/* NEW: Topic breakdown section */}
               <div className="bg-slate-700/50 p-4 rounded-lg my-6 border border-slate-600">
                 <h3 className="font-bold font-orbitron text-cyan-300 mb-4 text-center">Review by Topic</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1197,7 +1239,7 @@
               <div className="space-y-4 mt-8">
                 {test.questions.map((q, index) => {
                   const userAnswer = userAnswers[index];
-                  const isCorrect = isAnswerCorrect(q.answer, userAnswer);
+                  const isCorrect = isAnswerCorrect(q, userAnswer);
                   return (
                     <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
                       <p className="font-semibold text-slate-300 mb-2">{index + 1}. {q.question}</p>
@@ -1259,7 +1301,6 @@
         });
       };
       
-      // NEW: Data export function
       const handleExportData = () => {
         try {
             const data = localStorage.getItem('seagPortalData');
@@ -1282,7 +1323,6 @@
         }
       };
       
-      // NEW: Data import function
       const handleImportData = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -1293,7 +1333,6 @@
                 const text = e.target.result;
                 const importedData = JSON.parse(text);
 
-                // Basic validation
                 if (!importedData.userData || !importedData.allTests) {
                     throw new Error("Invalid backup file format.");
                 }
@@ -1311,7 +1350,6 @@
             } catch (error) {
                 showNotification({ message: `Import failed: ${error.message}`, type: 'error' });
             } finally {
-                // Reset file input
                 if(importFileRef.current) importFileRef.current.value = "";
             }
         };
@@ -1344,7 +1382,6 @@
               <button onClick={() => setAdminView('analysis')} className="bg-purple-600 text-white p-6 rounded-lg font-bold text-xl hover:bg-purple-500">Performance Dashboard</button>
             </div>
 
-            {/* NEW: Data Management Section */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
                 <h2 className="text-2xl font-bold mb-4 font-orbitron text-cyan-300">Data Management</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1414,7 +1451,7 @@
 
         const invalid = questions.find((q, idx) => {
           const hasOptions = Array.isArray(q.options) && q.options.some(o => (o || '').trim() !== '');
-          if (!hasOptions) return false; // free-form allowed
+          if (!hasOptions) return false;
           const answerTrim = (q.answer || '').trim();
           return !q.options.some(o => (o || '').trim() === answerTrim);
         });
@@ -1495,7 +1532,6 @@
           let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
           
           if (rawText) {
-            // Robustly strip markdown fences and extract JSON array
             let cleaned = rawText.replace(/^```(\w+)?\s*/m, '').replace(/```$/m, '').trim();
             if (!cleaned.trim().startsWith('[')) {
               const first = cleaned.indexOf('[');
@@ -1536,7 +1572,6 @@
               <button onClick={() => { setEditingTest(null); setAdminView('main'); }} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
             </div>
             <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl space-y-6">
-              {/* AI Generation Section */}
               <div className="bg-slate-800 p-4 rounded-lg border border-purple-500">
                 <h3 className="text-lg font-bold mb-2 text-purple-300">✨ Generate Test with AI</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1548,7 +1583,6 @@
                 </button>
               </div>
 
-              {/* Bulk Import Section */}
               <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                 <h3 className="text-lg font-bold mb-2">Bulk Import from Text</h3>
                 <textarea 
@@ -1617,7 +1651,7 @@
             return {
               ...test,
               ...progressData,
-              completedAt: progressData.completedAt || Date.now() // Fallback for older data
+              completedAt: progressData.completedAt || Date.now()
             };
           })
           .filter(Boolean)
@@ -1629,7 +1663,6 @@
         const labels = Array.from({length: Math.max(mathsScores.length, englishScores.length)}, (_, i) => `Test ${i + 1}`);
 
         const ctx = chartRef.current.getContext('2d');
-        // Destroy prior chart if exists
         if (chartInstanceRef.current) {
           chartInstanceRef.current.destroy();
           chartInstanceRef.current = null;
@@ -1678,18 +1711,13 @@
       const getAISummary = async () => {
         setIsSummaryLoading(true);
         const incorrectAnswers = [];
-        const isAnswerCorrect = (correctAnswer, userAnswer) => {
-          if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-            return userAnswer && correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
-          }
-          return correctAnswer === userAnswer;
-        };
+        
         Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
           const test = allTests.find(t => t.id === testId);
           if (test) {
             Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
               const question = test.questions[qIndex];
-              if (question && !isAnswerCorrect(question.answer, userAnswer)) {
+              if (question && !isAnswerCorrect(question, userAnswer)) {
                 incorrectAnswers.push(question.question);
               }
             });
@@ -1894,12 +1922,11 @@
             onCancel();
             hideModal();
           } : hideModal,
-          confirmText: confirmText, // Can be null now
+          confirmText: confirmText,
           children
         });
       };
 
-      // Load data from localStorage on initial render
       useEffect(() => {
         const savedData = localStorage.getItem('seagPortalData');
         let loadedData;
@@ -1919,7 +1946,6 @@
           };
         }
 
-        // Initialize/migrate user data to ensure all fields exist
         const defaultUserData = {
           name: "Nicolas",
           progress: {},
@@ -1942,7 +1968,6 @@
 
         loadedData.userData = { ...defaultUserData, ...loadedData.userData };
 
-        // Normalize daily challenge flag for today
         const todayStr = new Date().toDateString();
         const lastCompleted = loadedData.userData.dailyChallenge?.lastCompleted;
         loadedData.userData.dailyChallenge = {
@@ -1954,28 +1979,23 @@
         setView('dashboard');
       }, []);
 
-      // Save data to localStorage whenever it changes
       const updateAllData = useCallback((newData) => {
         setAppData(newData);
         localStorage.setItem('seagPortalData', JSON.stringify(newData));
       }, []);
       
-      // Helper: ISO week key (fixed ms/day constant)
       const weekKey = (d) => {
         const date = new Date(d);
         date.setHours(0,0,0,0);
-        // Thursday in current week decides the year of the week
         date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
         const week1 = new Date(date.getFullYear(), 0, 4);
         const weekNo = 1 + Math.round(((date - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
         return `${date.getFullYear()}-W${weekNo}`;
       };
 
-      // Unified userData updater with achievement checks and optional silence
       const updateUserData = useCallback((newUserData, options = {}) => {
         const { silentAchievements = false, postTestContext } = options;
         if (appData){
-          // Badge Checking Logic (base counters)
           const newlyUnlocked = [];
           for(const badge of achievementsList) {
             if(!newUserData.achievements[badge.id]) {
@@ -1990,24 +2010,21 @@
               }
               if (unlocked) {
                 newUserData.achievements[badge.id] = true;
-                newUserData.xp = (newUserData.xp || 0) + 5; // +5 XP bonus for new badge
+                newUserData.xp = (newUserData.xp || 0) + 5;
                 newlyUnlocked.push(badge.title);
               }
             }
           }
 
-          // Post-test achievements and tracking
           if (postTestContext) {
             const { finishedTestId, totalQuestions, score, mode, timeLeft, initialTotalTime, testHasGeometry, lastQuestionCorrect, isFullPractice, isDailyChallenge, finishedAt } = postTestContext;
 
-            // Daily Challenge completion state + streak
             if (isDailyChallenge) {
               const todayStr = new Date(finishedAt).toDateString();
               const prev = newUserData.dailyChallenge?.lastCompleted;
               const yesterdayStr = new Date(finishedAt - 24*3600*1000).toDateString();
               let newStreak = newUserData.dailyChallengeStreak || 0;
               if (prev === todayStr) {
-                // already counted today
               } else if (prev === yesterdayStr) {
                 newStreak += 1;
               } else {
@@ -2017,11 +2034,9 @@
               newUserData.dailyChallengeStreak = newStreak;
             }
 
-            // Weekly Warrior tracking
             const completions = Array.isArray(newUserData.weeklyTestCompletion) ? newUserData.weeklyTestCompletion.slice() : [];
             completions.push(finishedAt);
             newUserData.weeklyTestCompletion = completions;
-            // evaluate last 4 ISO weeks including current
             const now = finishedAt;
             const weeksSet = new Set();
             const fourWeeksAgo = now - 28*24*3600*1000;
@@ -2029,7 +2044,6 @@
               if (ts >= fourWeeksAgo) weeksSet.add(weekKey(ts));
             });
             if (!newUserData.achievements['weeklyWarrior']) {
-              // count at least one in each of the last 4 weeks
               const weekKeys = [];
               for (let i = 0; i < 4; i++) {
                 weekKeys.push(weekKey(now - i*7*24*3600*1000));
@@ -2042,7 +2056,6 @@
               }
             }
 
-            // Marathon Runner: complete all full practice tests at least once
             if (isFullPractice) {
               const setFull = new Set(newUserData.completedFullTests || []);
               setFull.add(finishedTestId);
@@ -2055,7 +2068,6 @@
               }
             }
 
-            // Geometry Guru: >=90% on 3 different tests that include geometry
             if (testHasGeometry && totalQuestions > 0) {
               const pct = score / totalQuestions;
               if (pct >= 0.9) {
@@ -2070,14 +2082,12 @@
               }
             }
 
-            // Speed Demon: finish with > half time remaining (Test mode only)
             if (mode === 'Test' && initialTotalTime && timeLeft > initialTotalTime / 2 && !newUserData.achievements['speedDemon']) {
               newUserData.achievements['speedDemon'] = true;
               newUserData.xp = (newUserData.xp || 0) + 5;
               newlyUnlocked.push('Speed Demon');
             }
 
-            // Clutch Performer: last Q correct on 56-question full test
             if (isFullPractice && totalQuestions === 56 && lastQuestionCorrect && !newUserData.achievements['clutchPerformer']) {
               newUserData.achievements['clutchPerformer'] = true;
               newUserData.xp = (newUserData.xp || 0) + 5;
@@ -2085,7 +2095,6 @@
             }
           }
 
-          // Level Up Logic AFTER applying badge XP
           let currentLevel = newUserData.level || 1;
           let currentXp = newUserData.xp || 0;
           let xpForNextLevel = currentLevel * 100;
