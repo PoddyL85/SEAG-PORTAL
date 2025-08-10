@@ -98,7 +98,7 @@
     // This is your entire React Application inside a single script tag.
     // Data is saved in the browser's localStorage.
 
-    // PATCH 3: PDF.js Error Handling Missing
+    // PATCH: Fix PDF.js crash at startup
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     } else {
@@ -792,7 +792,6 @@
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       
-      // PATCH 1: Move the useMemo hook to the top of the QuizView component
       const answeredSet = useMemo(() => {
         const keys = Object.keys(userAnswers).map(Number);
         if (!shuffledOrder) return new Set(keys);
@@ -804,7 +803,6 @@
         return pos;
       }, [userAnswers, shuffledOrder]);
 
-      // PATCH 4: Fix Potential Memory Leak in Timer
       useEffect(() => {
         if (!timerEnabled || isPaused || timeLeft <= 0) {
             return;
@@ -868,7 +866,10 @@
         if (isFinished && settings.mode === 'Test') {
           newUserData.xp = (newUserData.xp || 0) + score;
         }
-        const lastAnswer = userAnswers[test.questions.length - 1];
+        
+        const lastOriginalIndex = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
+        const lastAnswer = userAnswers[lastOriginalIndex];
+
         const postTestContext = isFinished ? {
           finishedTestId: testId,
           totalQuestions: test.questions.length,
@@ -877,7 +878,7 @@
           timeLeft,
           initialTotalTime: initialTotalRef.current,
           testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
-          lastQuestionCorrect: isAnswerCorrect(test.questions[test.questions.length - 1], lastAnswer),
+          lastQuestionCorrect: isAnswerCorrect(test.questions[lastOriginalIndex], lastAnswer),
           isFullPractice: testId.startsWith('full-test') || test.questions.length === 56,
           isDailyChallenge: testId === 'daily-challenge',
           finishedAt: now
@@ -952,23 +953,20 @@
         }
       }, [timeLeft, timerEnabled, handleFinish]);
       
-      // PATCH 6: Add debouncing to the auto-save in QuizView
       useEffect(() => {
         if (settings.mode === 'Practice') return;
         const interval = setInterval(() => saveProgress(false, { auto: true }), 10000);
-        let timeoutId;
-        const debouncedSave = () => {
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => saveProgress(false, { auto: true }), 1000);
+        const handleImmediateSave = () => { try { saveProgress(false, { auto: true }); } catch {} };
+        const handleVisibility = () => {
+          if (document.visibilityState === 'hidden') handleImmediateSave();
         };
-        
-        window.addEventListener('beforeunload', debouncedSave);
-        document.addEventListener('visibilitychange', debouncedSave);
+
+        window.addEventListener('beforeunload', handleImmediateSave);
+        document.addEventListener('visibilitychange', handleVisibility);
         return () => {
           clearInterval(interval);
-          window.removeEventListener('beforeunload', debouncedSave);
-          document.removeEventListener('visibilitychange', debouncedSave);
-          clearTimeout(timeoutId);
+          window.removeEventListener('beforeunload', handleImmediateSave);
+          document.removeEventListener('visibilitychange', handleVisibility);
         };
       }, [saveProgress, settings.mode]);
 
@@ -1051,7 +1049,6 @@
         setView('dashboard'); 
       };
 
-      // PATCH 5: Inconsistent Error Handling in AI Functions
       const fetchHint = async () => {
         setIsHintLoading(true);
         setHint(null);
@@ -1177,7 +1174,7 @@
       );
     };
 
-    const ResultsView = ({ userData, setView, testDetails, allTests }) => {
+    const ResultsView = ({ userData, setView, testDetails, allTests, showModal }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
       
@@ -1529,7 +1526,6 @@
           return;
         }
 
-        // PATCH 7: Add validation
         if (title.length > 100) {
           showNotification({message: "Title must be less than 100 characters.", type: 'error'});
           return;
@@ -2231,7 +2227,7 @@
           case 'loading': return <LoadingSpinner message="Loading Portal..." />;
           case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} hideModal={hideModal} updateUserData={updateUserData} appData={appData} updateAllData={updateAllData} showNotification={showNotification} />;
           case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} updateAllData={updateAllData} showNotification={showNotification} showModal={showModal} />;
-          case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />;
+          case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} showModal={showModal} />;
           case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} />;
           case 'settings': return <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
           case 'achievements': return <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
