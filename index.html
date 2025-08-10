@@ -572,21 +572,34 @@
         setView('quiz');
       };
 
+      // PATCH M1: Harden the “Practice Your Mistakes” builder
       const handlePracticeMistakes = () => {
         const incorrectQuestions = [];
         const seenQuestions = new Set();
-        
+
         Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
+          // Exclude the synthetic mistakes test to avoid self-references
+          if (testId === 'mistakes-test') return;
+
           const test = allTests.find(t => t.id === testId);
-          if (test) {
-            Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
-              const question = test.questions[qIndex];
-              if (question && !isAnswerCorrect(question, userAnswer) && !seenQuestions.has(question.question)) {
-                incorrectQuestions.push({ ...question, originalTestId: testId, originalQIndex: qIndex });
-                seenQuestions.add(question.question);
-              }
-            });
-          }
+          if (!test) return;
+
+          Object.entries(progressData.answers || {}).forEach(([qIndexStr, userAnswer]) => {
+            const qIndex = Number(qIndexStr);
+            if (Number.isNaN(qIndex) || qIndex < 0 || qIndex >= test.questions.length) return;
+
+            const question = test.questions[qIndex];
+            if (!question) return;
+
+            if (!isAnswerCorrect(question, userAnswer) && !seenQuestions.has(question.question)) {
+              incorrectQuestions.push({ 
+                ...question, 
+                originalTestId: testId, 
+                originalQIndex: qIndex 
+              });
+              seenQuestions.add(question.question);
+            }
+          });
         });
 
         if (incorrectQuestions.length === 0) {
@@ -600,7 +613,7 @@
           subject: 'Mixed',
           questions: incorrectQuestions
         };
-        
+
         updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
         setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
         setView('quiz');
@@ -623,7 +636,6 @@
         if (completed.length) {
           completed.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
           const { test, p } = completed[0];
-          // PATCH: Guard against NaN in Dashboard score calculation
           const scorePercentage = test.questions.length ? ((p.score || 0) / test.questions.length) * 100 : 0;
           if (scorePercentage >= 90) {
             return `Incredible work on ${test.title}! You're a real pro!`;
@@ -802,7 +814,15 @@
         }
       }, []);
 
-      // PATCH A: Move the inline useMemo out of JSX
+      // PATCH M2 A: Clamp currentQuestionIndex if question count changes or shuffle changes
+      useEffect(() => {
+        if (!test) return;
+        if (currentQuestionIndex >= test.questions.length) {
+          setCurrentQuestionIndex(Math.max(0, test.questions.length - 1));
+        }
+      }, [test, currentQuestionIndex]);
+
+      // Compute answered set once per changes to answers/shuffle to avoid conditional hook calls
       const answeredSet = useMemo(() => {
         const keys = Object.keys(userAnswers).map(Number);
         if (!shuffledOrder) return new Set(keys);
@@ -882,9 +902,14 @@
           });
 
           const affectedTests = new Set();
+          // PATCH M3: Normalize indices when applying corrections after Mistakes Test
           correctlyAnsweredMistakes.forEach(correction => {
-            if (newProgress[correction.testId] && newProgress[correction.testId].answers) {
-              newProgress[correction.testId].answers[correction.qIndex] = correction.answer;
+            const target = newProgress[correction.testId];
+            if (!target) return;
+            if (!target.answers) target.answers = {};
+            const idx = Number(correction.qIndex);
+            if (!Number.isNaN(idx)) {
+              target.answers[idx] = correction.answer;
               affectedTests.add(correction.testId);
             }
           });
@@ -1063,8 +1088,29 @@
         }
       };
 
+      // PATCH M2 B: Guard QuizView against out-of-range/undefined questions
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
-      const currentQ = test.questions[originalIndex];
+      
+      let currentQ;
+      if (Array.isArray(test.questions) && test.questions.length > 0) {
+        currentQ = test.questions[originalIndex] ?? test.questions[currentQuestionIndex] ?? test.questions[0];
+      }
+
+      // If we failed to resolve a current question, fail safely instead of crashing
+      if (!currentQ) {
+        return (
+          <div className="p-8 min-h-screen flex items-center justify-center">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-xl w-full text-center">
+              <h2 className="text-2xl font-bold text-cyan-300 mb-2 font-orbitron">No questions available</h2>
+              <p className="text-slate-300 mb-4">We couldn't load the questions for this session. This can happen if question indexes are out of sync.</p>
+              <button onClick={() => setView('dashboard')} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500">
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
       const isLocked = timerEnabled && timeLeft === 0;
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
@@ -1078,7 +1124,6 @@
               {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
             </div>
             
-            {/* PATCH B2: Update the QuestionNavigator JSX to use the variable */}
             <QuestionNavigator
               total={test.questions.length}
               current={currentQuestionIndex}
@@ -1125,7 +1170,6 @@
       );
     };
 
-    // PATCH A: Move all hooks above any early return, and guard progress-derived values.
     const ResultsView = ({ userData, setView, testDetails, allTests }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
