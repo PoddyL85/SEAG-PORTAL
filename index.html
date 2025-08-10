@@ -98,14 +98,12 @@
     // This is your entire React Application inside a single script tag.
     // Data is saved in the browser's localStorage.
 
-    // PATCH 1: Fix PDF.js crash at startup
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     }
 
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    // PATCH 5: Remove hardcoded API key
     const GEMINI_API_KEY = '';
 
     // --- Default Test Data ---
@@ -410,7 +408,6 @@
 
     // --- Helper Components & Functions ---
 
-    // PATCH 3: Fix answer normalization
     const normalizeAnswer = (answer, tags = []) => {
       if (typeof answer !== 'string') return answer;
       let s = answer.toLowerCase().trim();
@@ -626,7 +623,8 @@
         if (completed.length) {
           completed.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
           const { test, p } = completed[0];
-          const scorePercentage = (p.score / test.questions.length) * 100;
+          // PATCH: Guard against NaN in Dashboard score calculation
+          const scorePercentage = test.questions.length ? ((p.score || 0) / test.questions.length) * 100 : 0;
           if (scorePercentage >= 90) {
             return `Incredible work on ${test.title}! You're a real pro!`;
           } else if (scorePercentage < 50) {
@@ -805,7 +803,7 @@
       }, []);
 
       // PATCH A: Move the inline useMemo out of JSX
-      const answeredSet = React.useMemo(() => {
+      const answeredSet = useMemo(() => {
         const keys = Object.keys(userAnswers).map(Number);
         if (!shuffledOrder) return new Set(keys);
         const pos = new Set();
@@ -1080,7 +1078,7 @@
               {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
             </div>
             
-            {/* PATCH B: Update the QuestionNavigator JSX to use the variable */}
+            {/* PATCH B2: Update the QuestionNavigator JSX to use the variable */}
             <QuestionNavigator
               total={test.questions.length}
               current={currentQuestionIndex}
@@ -1127,42 +1125,48 @@
       );
     };
 
+    // PATCH A: Move all hooks above any early return, and guard progress-derived values.
     const ResultsView = ({ userData, setView, testDetails, allTests }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
-
-      const progress = userData.progress?.[testId];
-      useEffect(() => {
-        if (!progress) {
-            setView('dashboard');
-        }
-      }, [progress, setView]);
-
-      if (!progress) {
-        return <LoadingSpinner message="No results found, redirecting..." />;
-      }
       
-      const userAnswers = progress.answers;
-      const score = progress.score;
+      const progress = userData.progress?.[testId] || null;
+      
+      // Hooks must be declared before any early returns
       const [aiFeedback, setAiFeedback] = useState('');
       const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
       const [conceptExplanations, setConceptExplanations] = useState({});
       const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
       
+      // Safe derived values (guard against null progress)
+      const userAnswers = progress?.answers || {};
+      const score = progress?.score ?? 0;
+      
+      useEffect(() => {
+        if (!progress) {
+          setView('dashboard');
+        }
+      }, [progress, setView]);
+      
+      if (!test) return <LoadingSpinner message="Loading Results..." />;
+      if (!progress) {
+        return <LoadingSpinner message="No results found, redirecting..." />;
+      }
+      
       const topicStats = useMemo(() => {
         const stats = {};
         if (!test || !userAnswers) return [];
         test.questions.forEach((q, index) => {
-            const tags = q.tags || ['General'];
-            tags.forEach(tag => {
-                if (!stats[tag]) {
-                    stats[tag] = { correct: 0, total: 0 };
-                }
-                stats[tag].total += 1;
-                if (isAnswerCorrect(q, userAnswers[index])) {
-                    stats[tag].correct += 1;
-                }
-            });
+          const tags = q.tags || ['General'];
+          tags.forEach(tag => {
+            if (!stats[tag]) {
+              stats[tag] = { correct: 0, total: 0 };
+            }
+            stats[tag].total += 1;
+            if (isAnswerCorrect(q, userAnswers[index])) {
+              stats[tag].correct += 1;
+            }
+          });
         });
         return Object.entries(stats);
       }, [test, userAnswers]);
@@ -1214,8 +1218,6 @@
           setIsLoadingExplanation(null);
         }
       };
-
-      if (!test) return <LoadingSpinner message="Loading Results..." />;
 
       return (
         <div className="p-4 sm:p-8 min-h-screen">
@@ -1659,7 +1661,6 @@
       const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
       useEffect(() => {
-        // PATCH 4: Fix Chart.js crash
         if (!window.Chart || !chartRef.current) return;
 
         const completedTests = Object.entries(userData.progress || {})
