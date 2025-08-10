@@ -98,8 +98,11 @@
     // This is your entire React Application inside a single script tag.
     // Data is saved in the browser's localStorage.
 
+    // PATCH 3: PDF.js Error Handling Missing
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    } else {
+      console.warn('PDF.js failed to load from CDN - PDF import features will be disabled');
     }
 
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
@@ -572,13 +575,11 @@
         setView('quiz');
       };
 
-      // PATCH M1: Harden the “Practice Your Mistakes” builder
       const handlePracticeMistakes = () => {
         const incorrectQuestions = [];
         const seenQuestions = new Set();
 
         Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
-          // Exclude the synthetic mistakes test to avoid self-references
           if (testId === 'mistakes-test') return;
 
           const test = allTests.find(t => t.id === testId);
@@ -754,8 +755,10 @@
                         buttonClass = 'bg-slate-600 border border-slate-500';
                     }
                     return (
-                        <button key={i} onClick={() => onNavigate(i)} className={`w-10 h-10 rounded-md font-mono font-bold transition-all ${buttonClass}`}>
-                            {i + 1}
+                        <button key={i} onClick={() => onNavigate(i)}
+                          aria-label={`Go to question ${i + 1}${isAnswered ? ' (answered)' : ''}`}
+                          className={`w-10 h-10 rounded-md font-mono font-bold transition-all ${buttonClass}`}>
+                          {i + 1}
                         </button>
                     );
                 })}
@@ -789,15 +792,28 @@
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       
+      // PATCH 1: Move the useMemo hook to the top of the QuizView component
+      const answeredSet = useMemo(() => {
+        const keys = Object.keys(userAnswers).map(Number);
+        if (!shuffledOrder) return new Set(keys);
+        const pos = new Set();
+        keys.forEach(origIdx => {
+          const shuffledPos = shuffledOrder.indexOf(origIdx);
+          if (shuffledPos !== -1) pos.add(shuffledPos);
+        });
+        return pos;
+      }, [userAnswers, shuffledOrder]);
+
+      // PATCH 4: Fix Potential Memory Leak in Timer
       useEffect(() => {
-        if (!timerEnabled || isPaused) {
+        if (!timerEnabled || isPaused || timeLeft <= 0) {
             return;
         }
         const intervalId = setInterval(() => {
             setTimeLeft(t => (t > 0 ? t - 1 : 0));
         }, 1000);
         return () => clearInterval(intervalId);
-      }, [timerEnabled, isPaused]);
+      }, [timerEnabled, isPaused, timeLeft]);
       
       useEffect(() => {
         if (settings.shuffle && !existingProgress.shuffledOrder) {
@@ -814,25 +830,12 @@
         }
       }, []);
 
-      // PATCH M2 A: Clamp currentQuestionIndex if question count changes or shuffle changes
       useEffect(() => {
         if (!test) return;
         if (currentQuestionIndex >= test.questions.length) {
           setCurrentQuestionIndex(Math.max(0, test.questions.length - 1));
         }
       }, [test, currentQuestionIndex]);
-
-      // Compute answered set once per changes to answers/shuffle to avoid conditional hook calls
-      const answeredSet = useMemo(() => {
-        const keys = Object.keys(userAnswers).map(Number);
-        if (!shuffledOrder) return new Set(keys);
-        const pos = new Set();
-        keys.forEach(origIdx => {
-          const shuffledPos = shuffledOrder.indexOf(origIdx);
-          if (shuffledPos !== -1) pos.add(shuffledPos);
-        });
-        return pos;
-      }, [userAnswers, shuffledOrder]);
 
       const calculateScore = useCallback(() => {
         return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
@@ -902,7 +905,6 @@
           });
 
           const affectedTests = new Set();
-          // PATCH M3: Normalize indices when applying corrections after Mistakes Test
           correctlyAnsweredMistakes.forEach(correction => {
             const target = newProgress[correction.testId];
             if (!target) return;
@@ -950,17 +952,23 @@
         }
       }, [timeLeft, timerEnabled, handleFinish]);
       
+      // PATCH 6: Add debouncing to the auto-save in QuizView
       useEffect(() => {
         if (settings.mode === 'Practice') return;
         const interval = setInterval(() => saveProgress(false, { auto: true }), 10000);
-        const handleBeforeUnload = () => saveProgress(false, { auto: true });
-        const handleVisibility = () => { if (document.hidden) saveProgress(false, { auto: true }); };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        document.addEventListener('visibilitychange', handleVisibility);
+        let timeoutId;
+        const debouncedSave = () => {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => saveProgress(false, { auto: true }), 1000);
+        };
+        
+        window.addEventListener('beforeunload', debouncedSave);
+        document.addEventListener('visibilitychange', debouncedSave);
         return () => {
           clearInterval(interval);
-          window.removeEventListener('beforeunload', handleBeforeUnload);
-          document.removeEventListener('visibilitychange', handleVisibility);
+          window.removeEventListener('beforeunload', debouncedSave);
+          document.removeEventListener('visibilitychange', debouncedSave);
+          clearTimeout(timeoutId);
         };
       }, [saveProgress, settings.mode]);
 
@@ -1043,16 +1051,17 @@
         setView('dashboard'); 
       };
 
+      // PATCH 5: Inconsistent Error Handling in AI Functions
       const fetchHint = async () => {
         setIsHintLoading(true);
         setHint(null);
-        const question = test.questions[originalIndex];
-        const prompt = `You are a helpful teaching assistant for a 10-year-old student. Provide a short, simple hint for the following question. Do NOT give the answer. Just provide a small clue to help the student think about the problem correctly. Question: "${question.question}"`;
-        
         try {
           if (!GEMINI_API_KEY) {
             throw new Error("API Key is missing.");
           }
+          const question = test.questions[originalIndex];
+          const prompt = `You are a helpful teaching assistant for a 10-year-old student. Provide a short, simple hint for the following question. Do NOT give the answer. Just provide a small clue to help the student think about the problem correctly. Question: "${question.question}"`;
+          
           let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
           const payload = { contents: chatHistory };
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
@@ -1075,10 +1084,10 @@
             throw new Error("Invalid API response structure.");
           }
         } catch (error) {
-          console.error("Error fetching hint:", error);
+          console.error("AI API Error:", error);
           showModal({
             title: "AI Feature Error",
-            message: `Could not get a hint. Please check the API Key and connection. Error: ${error.message}`,
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
             onConfirm: () => {},
             confirmText: "OK"
           });
@@ -1088,7 +1097,6 @@
         }
       };
 
-      // PATCH M2 B: Guard QuizView against out-of-range/undefined questions
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       
       let currentQ;
@@ -1096,7 +1104,6 @@
         currentQ = test.questions[originalIndex] ?? test.questions[currentQuestionIndex] ?? test.questions[0];
       }
 
-      // If we failed to resolve a current question, fail safely instead of crashing
       if (!currentQ) {
         return (
           <div className="p-8 min-h-screen flex items-center justify-center">
@@ -1176,13 +1183,11 @@
       
       const progress = userData.progress?.[testId] || null;
       
-      // Hooks must be declared before any early returns
       const [aiFeedback, setAiFeedback] = useState('');
       const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
       const [conceptExplanations, setConceptExplanations] = useState({});
       const [isLoadingExplanation, setIsLoadingExplanation] = useState(null);
       
-      // Safe derived values (guard against null progress)
       const userAnswers = progress?.answers || {};
       const score = progress?.score ?? 0;
       
@@ -1217,11 +1222,11 @@
 
       const getAIFeedback = async () => {
         setIsFeedbackLoading(true);
-        const incorrectQuestions = test.questions.filter((q, i) => !isAnswerCorrect(q, userAnswers[i]));
-        const prompt = `My son, Nicolas, just completed a test. He scored ${score} out of ${test.questions.length}. Here are the questions he got wrong: ${JSON.stringify(incorrectQuestions)}. Please provide a short, encouraging summary of his performance. Highlight his strengths based on the questions he likely got right, and gently point out one or two common themes or topics from the incorrect answers that he could focus on next time. Keep the tone positive and motivating for a 10-year-old.`;
-
         try {
           if (!GEMINI_API_KEY) throw new Error("API Key is missing.");
+          const incorrectQuestions = test.questions.filter((q, i) => !isAnswerCorrect(q, userAnswers[i]));
+          const prompt = `My son, Nicolas, just completed a test. He scored ${score} out of ${test.questions.length}. Here are the questions he got wrong: ${JSON.stringify(incorrectQuestions)}. Please provide a short, encouraging summary of his performance. Highlight his strengths based on the questions he likely got right, and gently point out one or two common themes or topics from the incorrect answers that he could focus on next time. Keep the tone positive and motivating for a 10-year-old.`;
+
           let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
           const payload = { contents: chatHistory };
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
@@ -1234,6 +1239,13 @@
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
           if(text) setAiFeedback(text); else throw new Error("Invalid AI response");
         } catch (error) {
+          console.error("AI API Error:", error);
+          showModal({
+            title: "AI Feature Error",
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
+            onConfirm: () => {},
+            confirmText: "OK"
+          });
           setAiFeedback("Sorry, couldn't generate feedback at this time.");
         } finally {
           setIsFeedbackLoading(false);
@@ -1242,9 +1254,9 @@
       
       const getConceptExplanation = async (question, index) => {
         setIsLoadingExplanation(index);
-        const prompt = `Please explain the concept behind this question for a 10-year-old. Question: "${question.question}". Correct Answer: "${question.answer}". Keep it simple and clear.`;
         try {
           if (!GEMINI_API_KEY) throw new Error("API Key is missing.");
+          const prompt = `Please explain the concept behind this question for a 10-year-old. Question: "${question.question}". Correct Answer: "${question.answer}". Keep it simple and clear.`;
           let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
           const payload = { contents: chatHistory };
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
@@ -1257,6 +1269,13 @@
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
           if(text) setConceptExplanations(prev => ({...prev, [index]: text})); else throw new Error("Invalid AI response");
         } catch (error) {
+          console.error("AI API Error:", error);
+          showModal({
+            title: "AI Feature Error",
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
+            onConfirm: () => {},
+            confirmText: "OK"
+          });
           setConceptExplanations(prev => ({...prev, [index]: "Sorry, couldn't get an explanation."}));
         } finally {
           setIsLoadingExplanation(null);
@@ -1510,6 +1529,17 @@
           return;
         }
 
+        // PATCH 7: Add validation
+        if (title.length > 100) {
+          showNotification({message: "Title must be less than 100 characters.", type: 'error'});
+          return;
+        }
+        const invalidQuestion = questions.find(q => q.question.length > 1000);
+        if (invalidQuestion) {
+          showNotification({message: "Questions must be less than 1000 characters.", type: 'error'});
+          return;
+        }
+
         const invalid = questions.find((q, idx) => {
           const hasOptions = Array.isArray(q.options) && q.options.some(o => (o || '').trim() !== '');
           if (!hasOptions) return false;
@@ -1613,10 +1643,10 @@
             throw new Error("Failed to get a valid response from the AI.");
           }
         } catch (error) {
-          console.error("Error generating with AI:", error);
+          console.error("AI API Error:", error);
           showModal({
             title: "AI Feature Error",
-            message: `Could not generate test. Please check the API Key and connection. Error: ${error.message}`,
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
             onConfirm: () => {},
             confirmText: "OK"
           });
@@ -1705,7 +1735,12 @@
       const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
       useEffect(() => {
-        if (!window.Chart || !chartRef.current) return;
+        if (!chartRef.current) return;
+    
+        if (!window.Chart) {
+          console.warn('Chart.js failed to load from CDN');
+          return;
+        }
 
         const completedTests = Object.entries(userData.progress || {})
           .map(([testId, progressData]) => {
@@ -1773,26 +1808,24 @@
 
       const getAISummary = async () => {
         setIsSummaryLoading(true);
-        const incorrectAnswers = [];
-        
-        Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
-          const test = allTests.find(t => t.id === testId);
-          if (test) {
-            Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
-              const question = test.questions[qIndex];
-              if (question && !isAnswerCorrect(question, userAnswer)) {
-                incorrectAnswers.push(question.question);
-              }
-            });
-          }
-        });
-
-        const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`;
-
         try {
-          if (!GEMINI_API_KEY) {
-            throw new Error("API Key is missing.");
-          }
+          if (!GEMINI_API_KEY) throw new Error("API Key is missing.");
+          const incorrectAnswers = [];
+          
+          Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
+            const test = allTests.find(t => t.id === testId);
+            if (test) {
+              Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
+                const question = test.questions[qIndex];
+                if (question && !isAnswerCorrect(question, userAnswer)) {
+                  incorrectAnswers.push(question.question);
+                }
+              });
+            }
+          });
+
+          const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`;
+
           const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
           const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1808,9 +1841,10 @@
             throw new Error("Invalid API response structure.");
           }
         } catch (error) {
+          console.error("AI API Error:", error);
           showModal({
             title: "AI Feature Error",
-            message: `Could not generate summary. Error: ${error.message}`,
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
             onConfirm: () => {},
             confirmText: "OK"
           });
