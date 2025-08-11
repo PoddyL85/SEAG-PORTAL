@@ -18,11 +18,12 @@ exports.handler = async function (event, context) {
     };
   }
 
-  // The official Google AI API endpoint
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+  // *** FIX STARTS HERE ***
+  // The official Google AI API endpoint now uses a current model name.
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+  // *** FIX ENDS HERE ***
 
   try {
-    // *** FIX STARTS HERE ***
     // Get the referer from the original request to pass it to Google for security checks.
     const referer = event.headers.referer;
 
@@ -36,7 +37,6 @@ exports.handler = async function (event, context) {
       // Pass the body from the client's request directly to the Google API
       body: event.body,
     });
-    // *** FIX ENDS HERE ***
 
     const data = await response.json();
 
