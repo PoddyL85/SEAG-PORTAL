@@ -459,25 +459,21 @@
 
     Focus on the concept, not just saying they're wrong. Be encouraging and educational.`;
 
-          const response = await fetch('/.netlify/functions/gemini-proxy', {
+          const response = await fetch('/api/ai-hint', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                maxOutputTokens: 150,
-                temperature: 0.7
-              }
+              prompt: prompt,
+              maxTokens: 150
             })
           });
 
           if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(errorBody.error?.message || 'API error');
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
 
           const data = await response.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const text = data.text;
           
           if (text) {
             setExplanation(text.trim());
@@ -2362,3 +2358,5 @@
   </script>
 </body>
 </html>
+
+Here is the code before the above update to fix the AI explain feature, can you update the code directly and provide a full new version
