@@ -443,52 +443,27 @@
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
 
-      useEffect(() => {
-        generateExplanation();
-      }, [question, userAnswer, correctAnswer]);
-
-      const generateExplanation = async () => {
-        setLoading(true);
+      const parseAIResponse = (data) => {
+        if (typeof data?.explanation === 'string' && data.explanation.trim()) return data.explanation.trim();
+        if (typeof data?.response === 'string' && data.response.trim()) return data.response.trim();
+        if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim();
+        if (typeof data?.text === 'string' && data.text.trim()) return data.text.trim();
         try {
-          const prompt = `Explain this mistake to a child in 2-3 simple sentences:
-
-    Question: ${question.question}
-    Child's answer: ${userAnswer}
-    Correct answer: ${correctAnswer}
-
-    Focus on the concept, not just saying they're wrong. Be encouraging and educational.`;
-
-          const response = await fetch('/api/ai-hint', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: prompt,
-              maxTokens: 150
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          const parts = data?.candidates?.[0]?.content?.parts;
+          if (Array.isArray(parts)) {
+            const combined = parts
+              .map(p => (typeof p?.text === 'string' ? p.text : ''))
+              .join(' ')
+              .trim();
+            if (combined) return combined;
           }
-
-          const data = await response.json();
-          const text = data.text;
-          
-          if (text) {
-            setExplanation(text.trim());
-          } else {
-            throw new Error('No explanation generated');
-          }
-        } catch (err) {
-          console.error('AI explanation error:', err);
-          setExplanation(getFallbackExplanation(question, userAnswer, correctAnswer));
-        } finally {
-          setLoading(false);
-        }
+        } catch (_) {}
+        return '';
       };
 
-      const getFallbackExplanation = (question, userAnswer, correctAnswer) => {
+      const getGenericExplanation = (question, userAnswer, correctAnswer) => {
         const tag = question.tags?.[0] || 'general';
         const fallbacks = {
           'fractions': `When working with fractions, remember to find common denominators first. The correct answer is ${correctAnswer}. Try breaking it down step by step!`,
@@ -496,9 +471,61 @@
           'grammar': `Grammar rules can be tricky! The correct answer is "${correctAnswer}". Try reading the sentence out loud to hear what sounds right.`,
           'general': `Don't worry about getting it wrong - that's how we learn! The correct answer is ${correctAnswer}. Think about what makes this answer right.`
         };
-        
         return fallbacks[tag] || fallbacks.general;
       };
+
+      const generateExplanation = async () => {
+        if (!question?.question || userAnswer === undefined || correctAnswer === null) {
+          return;
+        }
+        setLoading(true);
+        setError(null);
+        setExplanation('');
+        try {
+          const response = await fetch('/.netlify/functions/gemini-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: `
+      You are a helpful tutor. Explain the answer kindly and succinctly.
+      Question: ${question.question}
+      User's incorrect answer: ${userAnswer}
+      Correct answer: ${correctAnswer}
+      Respond with a short explanation the learner will understand.`,
+              context: 'quiz_explanation'
+            }),
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          const aiExplanation = parseAIResponse(data);
+          if (aiExplanation) {
+            setExplanation(aiExplanation);
+          } else {
+            setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
+          }
+        } catch (error) {
+          console.error('Error generating AI explanation:', error);
+          setError('Failed to generate explanation');
+          setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        setExplanation('');
+        const hasQuestion = typeof question?.question === 'string' && question.question.trim().length > 0;
+        const hasCorrectAnswer = correctAnswer !== null && correctAnswer !== undefined;
+        const hasUserAnswer = userAnswer !== undefined && userAnswer !== null;
+        if (hasQuestion && hasCorrectAnswer && hasUserAnswer) {
+          generateExplanation();
+        }
+      }, [question, userAnswer, correctAnswer]);
+
 
       if (loading) {
         return (
@@ -2358,5 +2385,3 @@
   </script>
 </body>
 </html>
-
-Here is the code before the above update to fix the AI explain feature, can you update the code directly and provide a full new version
