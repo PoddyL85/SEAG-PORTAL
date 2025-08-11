@@ -1,8 +1,6 @@
-// This is the code for your Netlify Function.
-// Create a folder named "netlify" in your project's root directory.
-// Inside "netlify", create another folder named "functions".
-// Save this file as "gemini-proxy.js" inside the "functions" folder.
-// So the final path will be: /netlify/functions/gemini-proxy.js
+// This is the updated code for your Netlify Function.
+// You will need to edit the existing file at:
+// /netlify/functions/gemini-proxy.js
 
 exports.handler = async function (event, context) {
   // Only allow POST requests
@@ -24,14 +22,21 @@ exports.handler = async function (event, context) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
   try {
+    // *** FIX STARTS HERE ***
+    // Get the referer from the original request to pass it to Google for security checks.
+    const referer = event.headers.referer;
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Add the referer header to the request to Google
+        'Referer': referer
       },
       // Pass the body from the client's request directly to the Google API
       body: event.body,
     });
+    // *** FIX ENDS HERE ***
 
     const data = await response.json();
 
