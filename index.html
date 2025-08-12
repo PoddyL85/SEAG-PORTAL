@@ -2306,7 +2306,7 @@
       const updateUserData = useCallback((newUserData, options = {}) => {
         const { silentAchievements = false, event = { type: 'NO_OP' } } = options;
         if (!appData) return;
-
+        
         // Make a mutable copy
         let userData = { ...newUserData };
         const { type, payload = {} } = event;
@@ -2394,6 +2394,11 @@
         }
         // --- Check for Achievements ---
         const newlyUnlocked = [];
+        const xpRewards = {
+            'Quick Wins': 3,
+            'Medium-Term': 5,
+            'Longer-Term': 10,
+        };
         for (const ach of achievementsList) {
             if (!userData.achievements[ach.id]) {
                 let unlocked = false;
@@ -2433,9 +2438,6 @@
                         if ((userData.loginStreak || 0) >= 2) unlocked = true;
                         break;
                     case 'varietyChamp': {
-                        // 3 different topics answered correctly in this session/day
-                        // We’ll evaluate "today" from perTopicStats delta: at least 3 topics with >=1 correct today.
-                        // Simple approach: use uniqueTagsToday count as a proxy when the current answer is correct.
                         const ut = userData.uniqueTagsToday || { date: null, tags: [] };
                         if (type === 'ANSWER_SUBMITTED' && payload.correct && ut.tags.length >= 3) unlocked = true;
                         break;
@@ -2454,7 +2456,6 @@
                         if (type === 'PACK_COMPLETED' && payload.score === payload.totalQuestions) unlocked = true;
                         break;
                     case 'masteryBadge': {
-                        // 90% accuracy over 30 in one topic
                         const stats = userData.perTopicStats || {};
                         unlocked = Object.values(stats).some(s => s.total >= 30 && (s.correct / s.total) >= 0.9);
                         break;
@@ -2463,7 +2464,6 @@
                         if ((userData.reviewCorrections || 0) >= 10) unlocked = true;
                         break;
                     case 'weeklyWarrior': {
-                        // Practice on 5 separate days in last 7 days
                         const dates = (userData.dailyActivityDates || []).map(d => new Date(d));
                         const now = Date.now();
                         const last7 = new Set(
@@ -2477,8 +2477,9 @@
                 }
                 if (unlocked) {
                     userData.achievements[ach.id] = true;
-                    userData.xp = (userData.xp || 0) + 5;
-                    newlyUnlocked.push(ach.title);
+                    const reward = xpRewards[ach.category] || 0;
+                    userData.xp = (userData.xp || 0) + reward;
+                    newlyUnlocked.push({ title: ach.title, xp: reward });
                 }
             }
         }
@@ -2501,9 +2502,10 @@
         }
 
         if (newlyUnlocked.length > 0 && !silentAchievements) {
+            const message = newlyUnlocked.map(u => `"${u.title}" (+${u.xp} XP)`).join(', ');
             showModal({
                 title: "🏆 Achievement Unlocked! 🏆",
-                message: `Congratulations! You've earned: ${newlyUnlocked.map(t => `"${t}"`).join(', ')} and a +5 XP bonus for each!`,
+                message: `Congratulations! You've earned: ${message}`,
                 onConfirm: () => {},
                 confirmText: "Awesome!"
             });
