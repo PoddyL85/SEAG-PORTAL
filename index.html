@@ -483,7 +483,10 @@
       
       // STRICT RULE: only unlock achievements during Test mode actions
       if ((type === 'ANSWER_SUBMITTED' || type === 'PACK_COMPLETED') && mode !== 'Test') {
-        return { updated: userData, unlockedIds: [] };
+        // Allow review-based progress in "Practice Mistakes"
+        if (!(type === 'ANSWER_SUBMITTED' && p.wasReviewed)) {
+          return { updated: userData, unlockedIds: [] };
+        }
       }
       
       if (type === 'ANSWER_SUBMITTED') {
@@ -507,7 +510,9 @@
         if (!has('mistakeFixer') && p.correct && p.wasReviewed) unlock('mistakeFixer');
         if (!has('noHintHeroMini') && (userData.noHintCorrectCount || 0) >= 5) unlock('noHintHeroMini');
         if (!has('accurateStart') && (userData.totalAttempts || 0) >= 10 && ((userData.totalCorrectAnswers || 0) / userData.totalAttempts) >= 0.7) unlock('accurateStart');
-        if (!has('speedStreak') && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) unlock('speedStreak');
+        if (!has('speedStreak') && (userData.currentStreak || 0) >= 3 && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) {
+            unlock('speedStreak');
+        }
         if (!has('consistencyStar') && (userData.loginStreak || 0) >= 2) unlock('consistencyStar');
         if (!has('varietyChamp') && p.correct && (userData.uniqueTagsToday?.tags?.length || 0) >= 3) unlock('varietyChamp');
         if (!has('noHintHeroPro') && (userData.noHintStreak || 0) >= 10) unlock('noHintHeroPro');
@@ -544,21 +549,21 @@
           }
         }
       
-        // Weekly Warrior: one test completed in each of 4 distinct recent weeks
+        // Weekly Warrior: 5 separate days within the same ISO week
         if (p.finishedAt) {
-          const wk = isoWeekString(p.finishedAt);
-          const wset = new Set(userData.weeklyCompletionWeeks);
-          wset.add(wk);
-          userData.weeklyCompletionWeeks = Array.from(wset);
-      
-          const last4 = [];
-          const today = new Date(p.finishedAt);
-          for (let i = 0; i < 28; i += 7) {
-            const d = new Date(today.getTime() - i * 86400000);
-            last4.push(isoWeekString(d));
+          const finishedDate = new Date(p.finishedAt);
+          // Track per-week day set
+          userData.weeklyDayMap = userData.weeklyDayMap || {}; // { '2025-W33': { '2025-08-11': true, ... } }
+          const weekKey = isoWeekString(finishedDate);
+          const dayKey = finishedDate.toISOString().split('T')[0];
+          const days = userData.weeklyDayMap[weekKey] || {};
+          days[dayKey] = true;
+          userData.weeklyDayMap[weekKey] = days;
+          
+          const dayCount = Object.keys(days).length;
+          if (!has('weeklyWarrior') && dayCount >= 5) {
+            unlock('weeklyWarrior');
           }
-          const hasAll4 = last4.every(w => wset.has(w));
-          if (!has('weeklyWarrior') && hasAll4) unlock('weeklyWarrior');
         }
       
         // Marathon Runner: finish all full practice tests
