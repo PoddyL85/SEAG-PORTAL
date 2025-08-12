@@ -94,9 +94,12 @@
       border: 2px dashed #38bdf8; /* cyan-400 */
     }
     .dyslexia-friendly {
-      font-family: 'Open Sans', Arial, sans-serif;
+      font-family: 'Open Sans', Arial, sans-serif !important;
       line-height: 1.8;
       letter-spacing: 0.05em;
+    }
+    .dyslexia-friendly * {
+        font-family: 'Open Sans', Arial, sans-serif !important;
     }
   </style>
 </head>
@@ -2269,6 +2272,14 @@
         setAppData(loadedData);
         setView('dashboard');
       }, []);
+      
+      useEffect(() => {
+        if (appData?.userData?.dyslexiaFriendly) {
+            document.body.classList.add('dyslexia-friendly');
+        } else {
+            document.body.classList.remove('dyslexia-friendly');
+        }
+      }, [appData?.userData?.dyslexiaFriendly]);
 
       const updateAllData = useCallback((newData) => {
         setAppData(newData);
@@ -2434,7 +2445,7 @@
       };
 
       return (
-        <div className={appData?.userData?.dyslexiaFriendly ? 'dyslexia-friendly' : ''}>
+        <div className="font-sans">
           {renderView()}
           {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
