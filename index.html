@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- OpenDyslexic Font for accessibility -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
 
   <!-- Tailwind CSS for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -422,6 +426,7 @@
         s = s
           .replace(/[£$€]/g, '')
           .replace(/[°,]/g, '')
+          .replace(/%/g, '') // allow 25 == 25%
           .replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles|mile|meters|metres|meter|metre|deg|degrees)\b/g, '')
           .replace(/\s+/g, ' ')
           .trim();
@@ -963,14 +968,12 @@
       }, [userAnswers, shuffledOrder]);
 
       useEffect(() => {
-        if (!timerEnabled || isPaused || timeLeft <= 0) {
-            return;
-        }
-        const intervalId = setInterval(() => {
-            setTimeLeft(t => (t > 0 ? t - 1 : 0));
+        if (!timerEnabled || isPaused) return;
+        const id = setInterval(() => {
+          setTimeLeft(t => (t > 0 ? t - 1 : 0));
         }, 1000);
-        return () => clearInterval(intervalId);
-      }, [timerEnabled, isPaused, timeLeft]);
+        return () => clearInterval(id);
+      }, [timerEnabled, isPaused]);
       
       useEffect(() => {
         if (settings.shuffle && !existingProgress.shuffledOrder) {
@@ -1005,13 +1008,13 @@
       }, [userAnswers, test.questions]);
 
       const saveProgress = useCallback((isFinished = false, options = {}) => {
-        const { silentAchievements = false, auto = false } = options;
+        const { silentAchievements = false, auto = false, overrideIndex } = options;
         const score = calculateScore();
         const now = Date.now();
         let newUserData = { ...userData };
         const newProgressEntry = { 
           answers: userAnswers, 
-          lastQuestionIndex: currentQuestionIndex, 
+          lastQuestionIndex: (typeof overrideIndex === 'number') ? overrideIndex : currentQuestionIndex, 
           score: score, 
           timeLeft: timeLeft, 
           streak: streak, 
@@ -1042,6 +1045,7 @@
           isDailyChallenge: testId === 'daily-challenge',
           finishedAt: now
         } : undefined;
+        
         updateUserData(newUserData, { 
           silentAchievements: !!silentAchievements || !!auto, 
           postTestContext 
@@ -1195,7 +1199,7 @@
             setShowExplanation(false);
             setLastAnswerResult(null);
             setCurrentQuestionIndex(index);
-            saveProgress(false);
+            saveProgress(false, { overrideIndex: index });
         }
       };
 
