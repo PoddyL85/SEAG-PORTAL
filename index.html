@@ -402,21 +402,29 @@
 
     // --- Achievements Data ---
     const achievementsList = [
-      // Mastery Badges
-      { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Answer 50 questions involving fractions correctly.', category: 'Mastery', unlocksTitle: 'The Denominator' },
-      { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary-based English questions.', category: 'Mastery', unlocksTitle: 'The Lexicographer' },
-      { id: 'geometryGuru', title: 'Geometry Guru', description: 'Achieve a 90% or higher score on three different tests that include geometry questions.', category: 'Mastery', unlocksTitle: 'The Shape Shifter' },
-      { id: 'punctuationPro', title: 'Punctuation Pro', description: 'Correctly answer 25 questions related to punctuation.', category: 'Mastery', unlocksTitle: 'Captain Comma' },
-      // Performance Badges
-      { id: 'speedDemon', title: 'Speed Demon', description: 'Finish any test with more than half the time remaining (Test Mode only).', category: 'Performance', unlocksTitle: 'The Flash' },
-      { id: 'comebackKid', title: 'Comeback Kid', description: 'After getting a question wrong, answer the next three correctly.', category: 'Performance', unlocksTitle: 'The Unstoppable' },
-      { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a 56-question "Full Practice Test."', category: 'Performance', unlocksTitle: 'The Finisher' },
-      // Consistency Badges
-      { id: 'weeklyWarrior', title: 'Weekly Warrior', description: 'Complete at least one test every week for a month.', category: 'Consistency', unlocksTitle: 'The Consistent' },
-      { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Log in and complete the "Daily Challenge" for 7 days in a row.', category: 'Consistency', unlocksTitle: 'The Dedicated' },
-      { id: 'centuryClub', title: 'Century Club', description: 'Correctly answer 100 total questions across all tests.', category: 'Consistency', unlocksTitle: 'Centurion' },
-      { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete all available "Full Practice Tests" at least once.', category: 'Consistency', unlocksTitle: 'The Marathoner' },
+        // Quick Wins
+        { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins' },
+        { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins' },
+        { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins' },
+        { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins' },
+        { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins' },
+        { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins' },
+        { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins' },
+        { id: 'comebackKid', title: 'Comeback Kid', description: 'Get a question wrong, then get the next one correct.', category: 'Quick Wins' },
+        // Medium-Term
+        { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term' },
+        { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term' },
+        { id: 'varietyChamp', title: 'Variety Champ', description: 'Answer correctly in 3 different topics in one session.', category: 'Medium-Term' },
+        { id: 'noHintHeroPro', title: 'No-Hint Hero (Pro)', description: '10 correct in a row without hints.', category: 'Medium-Term' },
+        { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 20-question session.', category: 'Medium-Term' },
+        // Longer-Term
+        { id: 'packFinisher', title: 'Pack Finisher', description: 'Complete any test pack.', category: 'Longer-Term' },
+        { id: 'perfectPack', title: 'Perfect Pack', description: 'Get 100% on any test pack.', category: 'Longer-Term' },
+        { id: 'masteryBadge', title: 'Mastery Badge', description: 'Reach 90% accuracy over 30 questions in one topic.', category: 'Longer-Term' },
+        { id: 'reviewPro', title: 'Review Pro', description: 'Correctly fix 10 mistakes in the "Practice Mistakes" mode.', category: 'Longer-Term' },
+        { id: 'weeklyWarrior', title: 'Weekly Warrior', description: 'Practice on 5 separate days in one calendar week.', category: 'Longer-Term' },
     ];
+
 
     // --- Helper Components & Functions ---
 
@@ -947,6 +955,7 @@
       const [shuffledOrder, setShuffledOrder] = useState(null);
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
+      const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
       const totalTime = test?.subject === 'Mixed' ? 60 * 60 : 30 * 60;
       const getInitialTime = () => {
@@ -987,7 +996,7 @@
             }
             setShuffledOrder(indices);
             const newProgress = { ...userData.progress, [testId]: { ...existingProgress, shuffledOrder: indices, settings } };
-            updateUserData({ ...userData, progress: newProgress }, { silentAchievements: true });
+            updateUserData({ ...userData, progress: newProgress }, { event: { type: 'NO_OP' } });
         } else if (existingProgress.shuffledOrder) {
             setShuffledOrder(existingProgress.shuffledOrder);
         }
@@ -1035,23 +1044,28 @@
         const lastOriginalIndex = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
         const lastAnswer = userAnswers[lastOriginalIndex];
 
-        const postTestContext = isFinished ? {
-          finishedTestId: testId,
-          totalQuestions: test.questions.length,
-          score,
-          mode: settings.mode,
-          timeLeft,
-          initialTotalTime: initialTotalRef.current,
-          testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
-          lastQuestionCorrect: isAnswerCorrect(test.questions[lastOriginalIndex], lastAnswer),
-          isFullPractice: testId.startsWith('full-test') || test.questions.length === 56,
-          isDailyChallenge: testId === 'daily-challenge',
-          finishedAt: now
-        } : undefined;
-        
+        const event = isFinished ? {
+            type: 'PACK_COMPLETED',
+            payload: {
+                finishedTestId: testId,
+                totalQuestions: test.questions.length,
+                score,
+                mode: settings.mode,
+                timeLeft,
+                initialTotalTime: initialTotalRef.current,
+                testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
+                lastQuestionCorrect: isAnswerCorrect(test.questions[lastOriginalIndex], lastAnswer),
+                isFullPractice: testId.startsWith('full-test') || test.questions.length === 56,
+                isDailyChallenge: testId === 'daily-challenge',
+                finishedAt: now,
+                allAnswers: userAnswers,
+                testQuestions: test.questions
+            }
+        } : { type: 'NO_OP' };
+
         updateUserData(newUserData, { 
           silentAchievements: !!silentAchievements || !!auto, 
-          postTestContext 
+          event
         });
       }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test, shuffledOrder]);
 
@@ -1095,7 +1109,12 @@
           });
           
           const updatedUser = { ...userData, progress: newProgress };
-          updateUserData(updatedUser);
+          updateUserData(updatedUser, { 
+            event: { 
+                type: 'MISTAKES_REVIEWED', 
+                payload: { corrections: correctlyAnsweredMistakes.length } 
+            }
+          });
           
           showModal({
             title: "Practice Complete!",
@@ -1159,30 +1178,22 @@
 
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
+        const timeToAnswer = (Date.now() - questionStartTime) / 1000;
         
         setLastAnswerResult({ isCorrect, userAnswer: answer, question });
 
-        let newUserData = { ...userData };
+        const event = {
+            type: 'ANSWER_SUBMITTED',
+            payload: {
+                correct: isCorrect,
+                timeToAnswer,
+                usedHint: !!hint,
+                tags: question.tags || [],
+                wasReviewed: testId === 'mistakes-test',
+            }
+        };
         
-        if (isCorrect) {
-          newUserData.totalCorrectAnswers = (newUserData.totalCorrectAnswers || 0) + 1;
-          
-          const tags = question.tags || [];
-          tags.forEach(tag => {
-            if (!newUserData.correctAnswersByTag) newUserData.correctAnswersByTag = {};
-            newUserData.correctAnswersByTag[tag] = (newUserData.correctAnswersByTag[tag] || 0) + 1;
-          });
-
-          if (newUserData.lastAnswerWasIncorrect) {
-            newUserData.consecutiveCorrectAfterWrong = (newUserData.consecutiveCorrectAfterWrong || 0) + 1;
-          }
-          newUserData.lastAnswerWasIncorrect = false;
-        } else {
-          newUserData.lastAnswerWasIncorrect = true;
-          newUserData.consecutiveCorrectAfterWrong = 0;
-        }
-        
-        updateUserData(newUserData);
+        updateUserData({ ...userData }, { event });
 
         const newStreak = isCorrect ? streak + 1 : 0;
         setStreak(newStreak);
@@ -1208,6 +1219,7 @@
             setShowExplanation(false);
             setLastAnswerResult(null);
             setCurrentQuestionIndex(index);
+            setQuestionStartTime(Date.now());
             saveProgress(false, { overrideIndex: index });
         }
       };
@@ -2069,7 +2081,7 @@
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
 
       const handleSave = () => {
-        updateUserData({ ...userData, name, avatar, dyslexiaFriendly });
+        updateUserData({ ...userData, name, avatar, dyslexiaFriendly }, { event: { type: 'NO_OP' } });
         showNotification({message: "Settings saved!", type: "success"});
         setView('dashboard');
       };
@@ -2120,7 +2132,7 @@
       const unlockedTitles = achievementsList.filter(ach => userData.achievements[ach.id] && ach.unlocksTitle);
 
       const handleEquipTitle = (title) => {
-        updateUserData({ ...userData, title: title });
+        updateUserData({ ...userData, title: title }, { event: { type: 'NO_OP' } });
         showNotification({message: `Title "${title}" equipped!`, type: 'success'});
       };
 
@@ -2139,9 +2151,9 @@
 
             {activeTab === 'Badges' && (
               <div>
-                {['Mastery', 'Performance', 'Consistency'].map(category => (
+                {['Quick Wins', 'Medium-Term', 'Longer-Term'].map(category => (
                   <div key={category} className="mb-8">
-                    <h2 className="text-2xl font-orbitron text-cyan-300 mb-4">{category} Badges</h2>
+                    <h2 className="text-2xl font-orbitron text-cyan-300 mb-4">{category}</h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {achievementsList.filter(ach => ach.category === category).map(ach => {
                         const isUnlocked = userData.achievements[ach.id];
@@ -2234,43 +2246,43 @@
         
         if (!loadedData) {
           loadedData = {
-            userData: { name: "Nicolas", progress: {}, achievements: {}},
+            userData: {},
             allTests: defaultTests
           };
         }
 
         const defaultUserData = {
-          name: "Nicolas",
-          progress: {},
-          achievements: {},
-          xp: 0,
-          level: 1,
-          avatar: '👨‍🚀',
-          title: null,
-          dyslexiaFriendly: false,
-          dailyChallenge: { lastCompleted: null, completedToday: false },
-          dailyChallengeStreak: 0,
-          loginStreak: 0,
-          totalCorrectAnswers: 0,
-          correctAnswersByTag: {},
-          lastAnswerWasIncorrect: false,
-          consecutiveCorrectAfterWrong: 0,
-          weeklyTestCompletion: [],
-          completedFullTests: [],
-          testsWithHighGeometryScore: []
+            name: "Nicolas",
+            progress: {},
+            achievements: {},
+            xp: 0,
+            level: 1,
+            avatar: '👨‍🚀',
+            title: null,
+            dyslexiaFriendly: false,
+            // New achievement tracking fields
+            totalAttempts: 0,
+            totalCorrect: 0,
+            currentStreak: 0,
+            noHintStreak: 0,
+            noHintCorrectCount: 0,
+            uniqueTagsToday: { date: null, tags: [] },
+            lastAnswerWasIncorrect: false,
+            lastCorrectAnswerTimes: [],
+            dailyActivityDates: [],
+            reviewCorrections: 0,
+            perTopicStats: {},
+            lastActiveDate: null,
         };
 
         loadedData.userData = { ...defaultUserData, ...loadedData.userData };
-
-        const todayStr = new Date().toDateString();
-        const lastCompleted = loadedData.userData.dailyChallenge?.lastCompleted;
-        loadedData.userData.dailyChallenge = {
-          lastCompleted: lastCompleted || null,
-          completedToday: lastCompleted === todayStr
-        };
         
         setAppData(loadedData);
         setView('dashboard');
+        
+        // Fire DAY_STARTED event
+        updateUserData(loadedData.userData, { event: { type: 'DAY_STARTED' } });
+
       }, []);
       
       useEffect(() => {
@@ -2286,145 +2298,114 @@
         localStorage.setItem('seagPortalData', JSON.stringify(newData));
       }, []);
       
-      const weekKey = (d) => {
-        const date = new Date(d);
-        date.setHours(0,0,0,0);
-        date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-        const week1 = new Date(date.getFullYear(), 0, 4);
-        const weekNo = 1 + Math.round(((date - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-        return `${date.getFullYear()}-W${weekNo}`;
-      };
-
       const updateUserData = useCallback((newUserData, options = {}) => {
-        const { silentAchievements = false, postTestContext } = options;
-        if (appData){
-          const newlyUnlocked = [];
-          for(const badge of achievementsList) {
-            if(!newUserData.achievements[badge.id]) {
-              let unlocked = false;
-              switch(badge.id) {
-                case 'centuryClub': if ((newUserData.totalCorrectAnswers || 0) >= 100) unlocked = true; break;
-                case 'fractionFanatic': if ((newUserData.correctAnswersByTag?.fractions || 0) >= 50) unlocked = true; break;
-                case 'vocabularyVirtuoso': if ((newUserData.correctAnswersByTag?.vocabulary || 0) >= 100) unlocked = true; break;
-                case 'punctuationPro': if ((newUserData.correctAnswersByTag?.punctuation || 0) >= 25) unlocked = true; break;
-                case 'comebackKid': if ((newUserData.consecutiveCorrectAfterWrong || 0) >= 3) unlocked = true; break;
-                default: break;
-              }
-              if (unlocked) {
-                newUserData.achievements[badge.id] = true;
-                newUserData.xp = (newUserData.xp || 0) + 5;
-                newlyUnlocked.push(badge.title);
-              }
-            }
-          }
+        const { silentAchievements = false, event = { type: 'NO_OP' } } = options;
+        if (!appData) return;
 
-          if (postTestContext) {
-            const { finishedTestId, totalQuestions, score, mode, timeLeft, initialTotalTime, testHasGeometry, lastQuestionCorrect, isFullPractice, isDailyChallenge, finishedAt } = postTestContext;
+        let userData = { ...newUserData }; // Make a mutable copy
+        const { type, payload } = event;
 
-            if (isDailyChallenge) {
-              const todayStr = new Date(finishedAt).toDateString();
-              const prev = newUserData.dailyChallenge?.lastCompleted;
-              const yesterdayStr = new Date(finishedAt - 24*3600*1000).toDateString();
-              let newStreak = newUserData.dailyChallengeStreak || 0;
-              if (prev === todayStr) {
-              } else if (prev === yesterdayStr) {
-                newStreak += 1;
-              } else {
-                newStreak = 1;
-              }
-              newUserData.dailyChallenge = { lastCompleted: todayStr, completedToday: true };
-              newUserData.dailyChallengeStreak = newStreak;
-            }
-
-            const completions = Array.isArray(newUserData.weeklyTestCompletion) ? newUserData.weeklyTestCompletion.slice() : [];
-            completions.push(finishedAt);
-            newUserData.weeklyTestCompletion = completions;
-            const now = finishedAt;
-            const weeksSet = new Set();
-            const fourWeeksAgo = now - 28*24*3600*1000;
-            completions.forEach(ts => {
-              if (ts >= fourWeeksAgo) weeksSet.add(weekKey(ts));
-            });
-            if (!newUserData.achievements['weeklyWarrior']) {
-              const weekKeys = [];
-              for (let i = 0; i < 4; i++) {
-                weekKeys.push(weekKey(now - i*7*24*3600*1000));
-              }
-              const ok = weekKeys.every(wk => weeksSet.has(wk));
-              if (ok) {
-                newUserData.achievements['weeklyWarrior'] = true;
-                newUserData.xp = (newUserData.xp || 0) + 5;
-                newlyUnlocked.push('Weekly Warrior');
-              }
-            }
-
-            if (isFullPractice) {
-              const setFull = new Set(newUserData.completedFullTests || []);
-              setFull.add(finishedTestId);
-              newUserData.completedFullTests = Array.from(setFull);
-              const fullTestIds = (appData.allTests || []).filter(t => t.id.startsWith('full-test')).map(t => t.id);
-              if (fullTestIds.length > 0 && fullTestIds.every(id => setFull.has(id)) && !newUserData.achievements['marathonRunner']) {
-                newUserData.achievements['marathonRunner'] = true;
-                newUserData.xp = (newUserData.xp || 0) + 5;
-                newlyUnlocked.push('Marathon Runner');
-              }
-            }
-
-            if (testHasGeometry && totalQuestions > 0) {
-              const pct = score / totalQuestions;
-              if (pct >= 0.9) {
-                const gset = new Set(newUserData.testsWithHighGeometryScore || []);
-                gset.add(finishedTestId);
-                newUserData.testsWithHighGeometryScore = Array.from(gset);
-                if (gset.size >= 3 && !newUserData.achievements['geometryGuru']) {
-                  newUserData.achievements['geometryGuru'] = true;
-                  newUserData.xp = (newUserData.xp || 0) + 5;
-                  newlyUnlocked.push('Geometry Guru');
+        // --- Update Stats Based on Event ---
+        if (type === 'ANSWER_SUBMITTED') {
+            userData.totalAttempts = (userData.totalAttempts || 0) + 1;
+            userData.lastAnswerWasIncorrect = !payload.correct;
+            
+            if (payload.correct) {
+                userData.totalCorrect = (userData.totalCorrect || 0) + 1;
+                userData.currentStreak = (userData.currentStreak || 0) + 1;
+                
+                if (!payload.usedHint) {
+                    userData.noHintStreak = (userData.noHintStreak || 0) + 1;
+                    userData.noHintCorrectCount = (userData.noHintCorrectCount || 0) + 1;
                 }
-              }
+
+                const newTimes = [...(userData.lastCorrectAnswerTimes || []), payload.timeToAnswer];
+                userData.lastCorrectAnswerTimes = newTimes.slice(-3); // Keep last 3 for speed streak
+                
+                if(payload.wasReviewed) {
+                    userData.reviewCorrections = (userData.reviewCorrections || 0) + 1;
+                }
+            } else {
+                userData.currentStreak = 0;
+                userData.noHintStreak = 0;
             }
-
-            if (mode === 'Test' && initialTotalTime && timeLeft > initialTotalTime / 2 && !newUserData.achievements['speedDemon']) {
-              newUserData.achievements['speedDemon'] = true;
-              newUserData.xp = (newUserData.xp || 0) + 5;
-              newlyUnlocked.push('Speed Demon');
-            }
-
-            if (isFullPractice && totalQuestions === 56 && lastQuestionCorrect && !newUserData.achievements['clutchPerformer']) {
-              newUserData.achievements['clutchPerformer'] = true;
-              newUserData.xp = (newUserData.xp || 0) + 5;
-              newlyUnlocked.push('Clutch Performer');
-            }
-          }
-
-          let currentLevel = newUserData.level || 1;
-          let currentXp = newUserData.xp || 0;
-          let xpForNextLevel = currentLevel * 100;
-
-          if (currentXp >= xpForNextLevel) {
-            while(currentXp >= xpForNextLevel) {
-              currentLevel++;
-              currentXp -= xpForNextLevel;
-              xpForNextLevel = currentLevel * 100;
-            }
-            newUserData.level = currentLevel;
-            newUserData.xp = currentXp;
-            if (!silentAchievements) {
-              showNotification({message: `🎉 Level Up! You are now Level ${currentLevel}!`, type: 'success'});
-            }
-          }
-
-          if (newlyUnlocked.length > 0 && !silentAchievements) {
-            showModal({
-              title: "🏆 Achievement Unlocked! 🏆",
-              message: `Congratulations! You've earned: ${newlyUnlocked.map(t => `"${t}"`).join(', ')} and a +5 XP bonus for each!`,
-              onConfirm: () => {},
-              confirmText: "Awesome!"
-            });
-          }
-
-          updateAllData({ ...appData, userData: newUserData });
         }
+        
+        if(type === 'DAY_STARTED') {
+            const today = new Date().toISOString().split('T')[0];
+            if (userData.lastActiveDate !== today) {
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                if (userData.lastActiveDate === yesterday) {
+                    userData.loginStreak = (userData.loginStreak || 1) + 1;
+                } else {
+                    userData.loginStreak = 1;
+                }
+                userData.lastActiveDate = today;
+                const activity = new Set(userData.dailyActivityDates || []);
+                activity.add(today);
+                userData.dailyActivityDates = [...activity];
+            }
+        }
+
+        // --- Check for Achievements ---
+        const newlyUnlocked = [];
+        for (const ach of achievementsList) {
+            if (!userData.achievements[ach.id]) {
+                let unlocked = false;
+                switch (ach.id) {
+                    // Quick Wins
+                    case 'firstSteps': if (userData.totalAttempts >= 5) unlocked = true; break;
+                    case 'quickThinker': if (type === 'ANSWER_SUBMITTED' && payload.correct && payload.timeToAnswer <= 20) unlocked = true; break;
+                    case 'firstStreak': if (userData.currentStreak >= 3) unlocked = true; break;
+                    case 'mistakeFixer': if (type === 'ANSWER_SUBMITTED' && payload.correct && payload.wasReviewed) unlocked = true; break;
+                    case 'noHintHeroMini': if (userData.noHintCorrectCount >= 5) unlocked = true; break;
+                    case 'accurateStart': if (userData.totalAttempts >= 10 && (userData.totalCorrect / userData.totalAttempts) >= 0.7) unlocked = true; break;
+                    case 'comebackKid': if (type === 'ANSWER_SUBMITTED' && payload.correct && userData.lastAnswerWasIncorrect) unlocked = true; break;
+                    // Medium-Term
+                    case 'speedStreak': if (userData.lastCorrectAnswerTimes.length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) unlocked = true; break;
+                    case 'consistencyStar': if (userData.loginStreak >= 2) unlocked = true; break;
+                    case 'noHintHeroPro': if (userData.noHintStreak >= 10) unlocked = true; break;
+                    case 'solidAccuracy': if (type === 'PACK_COMPLETED' && payload.totalQuestions >= 20 && (payload.score / payload.totalQuestions) >= 0.8) unlocked = true; break;
+                    // Longer-Term
+                    case 'packFinisher': if (type === 'PACK_COMPLETED') unlocked = true; break;
+                    case 'perfectPack': if (type === 'PACK_COMPLETED' && payload.score === payload.totalQuestions) unlocked = true; break;
+                    case 'reviewPro': if (userData.reviewCorrections >= 10) unlocked = true; break;
+                }
+                if (unlocked) {
+                    userData.achievements[ach.id] = true;
+                    userData.xp = (userData.xp || 0) + 5;
+                    newlyUnlocked.push(ach.title);
+                }
+            }
+        }
+
+        // --- XP & Level Up ---
+        let currentLevel = userData.level || 1;
+        let currentXp = userData.xp || 0;
+        let xpForNextLevel = currentLevel * 100;
+        if (currentXp >= xpForNextLevel) {
+            while (currentXp >= xpForNextLevel) {
+                currentLevel++;
+                currentXp -= xpForNextLevel;
+                xpForNextLevel = currentLevel * 100;
+            }
+            userData.level = currentLevel;
+            userData.xp = currentXp;
+            if (!silentAchievements) {
+                showNotification({ message: `🎉 Level Up! You are now Level ${currentLevel}!`, type: 'success' });
+            }
+        }
+
+        if (newlyUnlocked.length > 0 && !silentAchievements) {
+            showModal({
+                title: "🏆 Achievement Unlocked! 🏆",
+                message: `Congratulations! You've earned: ${newlyUnlocked.map(t => `"${t}"`).join(', ')} and a +5 XP bonus for each!`,
+                onConfirm: () => {},
+                confirmText: "Awesome!"
+            });
+        }
+
+        updateAllData({ ...appData, userData });
       }, [appData, updateAllData, showModal, showNotification]);
 
       if (!appData) {
