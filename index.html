@@ -1797,7 +1797,20 @@
       const handleEditTest = (test) => {
         setEditingTest(test);
         setAdminView('create');
-      }
+      };
+
+      const handleResetAllData = () => {
+        showModal({
+          title: "Reset All Data?",
+          message: "Are you sure you want to completely reset all player data, including progress, XP, and achievements? This action cannot be undone.",
+          confirmText: "Reset Everything",
+          onConfirm: () => {
+            localStorage.removeItem('seagPortalData');
+            showNotification({ message: "All data has been reset. The app will now reload.", type: 'success' });
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        });
+      };
       
       if (adminView === 'create') {
         return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} showModal={showModal} />;
@@ -1830,6 +1843,9 @@
                             Import from Backup
                         </label>
                     </div>
+                    <button onClick={handleResetAllData} className="bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 col-span-1 md:col-span-2">
+                      Reset All Player Data
+                    </button>
                 </div>
                  <p className="text-slate-400 mt-4 text-sm">All progress and created tests are saved in this browser's local storage. Use Export to create a backup file. Clearing browser data will erase everything.</p>
             </div>
