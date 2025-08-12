@@ -475,48 +475,72 @@
       };
 
       const generateExplanation = async () => {
-        if (!question?.question || userAnswer === undefined || correctAnswer === null) {
+        if (!question?.question || userAnswer == null || correctAnswer == null) {
           return;
         }
+
         setLoading(true);
         setError(null);
         setExplanation('');
+
         try {
+          const hasOptions = Array.isArray(question.options) && question.options.length > 0;
+          const optionsText = hasOptions
+            ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}`
+            : '';
+
+          const prompt = `
+      You are a kind, concise tutor for a 10-year-old student. Explain clearly why the user's answer is not correct and why the correct answer is right. Keep it short and encouraging.
+
+      Question: ${question.question}
+      ${optionsText ? optionsText + '\n' : ''}User's answer: ${String(userAnswer)}
+      Correct answer: ${String(correctAnswer)}
+      `;
+
+          const payload = {
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }]
+              }
+            ]
+          };
+
           const response = await fetch('/.netlify/functions/gemini-proxy', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt: `
-      You are a helpful tutor. Explain the answer kindly and succinctly.
-      Question: ${question.question}
-      Options: ${question.options.map((opt, i) => `${i}: ${opt}`).join(', ')}
-      User selected index: ${userAnswer} (${question.options[userAnswer]})
-      Correct index: ${correctAnswer} (${question.options[correctAnswer]})
-      Respond with a short explanation the learner will understand.`,
-              context: 'quiz_explanation'
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
           });
+
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorBody = await response.json().catch(() => ({}));
+            throw new Error(errorBody.error?.message || `HTTP ${response.status}`);
           }
+
           const data = await response.json();
-          const aiExplanation = parseAIResponse(data);
-          if (aiExplanation) {
-            setExplanation(aiExplanation);
+
+          const aiText =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            data?.explanation ||
+            data?.response ||
+            data?.message ||
+            data?.text ||
+            '';
+
+          if (typeof aiText === 'string' && aiText.trim()) {
+            setExplanation(aiText.trim());
           } else {
             setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
           }
-        } catch (error) {
-          console.error('Error generating AI explanation:', error);
+        } catch (err) {
+          console.error('Error generating AI explanation:', err);
           setError('Failed to generate explanation');
           setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
         } finally {
           setLoading(false);
         }
       };
-
+      
       useEffect(() => {
         setExplanation('');
         const hasQuestion = typeof question?.question === 'string' && question.question.trim().length > 0;
