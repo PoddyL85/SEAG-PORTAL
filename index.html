@@ -2062,10 +2062,11 @@
     const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
       const [name, setName] = useState(userData.name);
       const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀');
+      const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false);
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
 
       const handleSave = () => {
-        updateUserData({ ...userData, name, avatar });
+        updateUserData({ ...userData, name, avatar, dyslexiaFriendly });
         showNotification({message: "Settings saved!", type: "success"});
         setView('dashboard');
       };
@@ -2085,6 +2086,21 @@
                   <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-lg transition-all ${avatar === av ? 'bg-cyan-600 ring-2 ring-cyan-300' : 'bg-slate-700 hover:bg-slate-600'}`}>{av}</button>
                 ))}
               </div>
+            </div>
+            <div className="mb-8 p-4 border border-slate-600 rounded-lg">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label htmlFor="dyslexia-toggle" className="font-bold text-slate-200">Dyslexia Friendly Font</label>
+                        <p className="text-sm text-slate-400">Increases readability with a special font.</p>
+                    </div>
+                    <input 
+                        id="dyslexia-toggle" 
+                        type="checkbox" 
+                        checked={dyslexiaFriendly} 
+                        onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} 
+                        className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" 
+                    />
+                </div>
             </div>
             <div className="flex gap-4">
               <button onClick={() => setView('dashboard')} className="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500">Cancel</button>
@@ -2228,6 +2244,7 @@
           level: 1,
           avatar: '👨‍🚀',
           title: null,
+          dyslexiaFriendly: false,
           dailyChallenge: { lastCompleted: null, completedToday: false },
           dailyChallengeStreak: 0,
           loginStreak: 0,
@@ -2417,7 +2434,7 @@
       };
 
       return (
-        <div className="font-sans">
+        <div className={appData?.userData?.dyslexiaFriendly ? 'dyslexia-friendly' : ''}>
           {renderView()}
           {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
