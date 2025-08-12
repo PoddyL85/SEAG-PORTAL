@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   
-  <!-- OpenDyslexic Font for accessibility -->
+  <!-- Open Sans Font for accessibility -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
 
 
@@ -94,7 +94,7 @@
       border: 2px dashed #38bdf8; /* cyan-400 */
     }
     .dyslexia-friendly {
-      font-family: 'OpenDyslexic', Arial, sans-serif;
+      font-family: 'Open Sans', Arial, sans-serif;
       line-height: 1.8;
       letter-spacing: 0.05em;
     }
@@ -1117,17 +1117,22 @@
       }, [timeLeft, timerEnabled, handleFinish]);
       
       useEffect(() => {
-        if (settings.mode === 'Practice') return;
-        const interval = setInterval(() => saveProgress(false, { auto: true }), 10000);
+        // Always save on tab close or when the page becomes hidden
         const handleImmediateSave = () => { try { saveProgress(false, { auto: true }); } catch {} };
         const handleVisibility = () => {
           if (document.visibilityState === 'hidden') handleImmediateSave();
         };
-
         window.addEventListener('beforeunload', handleImmediateSave);
         document.addEventListener('visibilitychange', handleVisibility);
+        
+        // For timed modes, also autosave every 10s
+        let interval;
+        if (settings.mode !== 'Practice') {
+          interval = setInterval(() => saveProgress(false, { auto: true }), 10000);
+        }
+        
         return () => {
-          clearInterval(interval);
+          if (interval) clearInterval(interval);
           window.removeEventListener('beforeunload', handleImmediateSave);
           document.removeEventListener('visibilitychange', handleVisibility);
         };
@@ -1161,6 +1166,7 @@
           
           const tags = question.tags || [];
           tags.forEach(tag => {
+            if (!newUserData.correctAnswersByTag) newUserData.correctAnswersByTag = {};
             newUserData.correctAnswersByTag[tag] = (newUserData.correctAnswersByTag[tag] || 0) + 1;
           });
 
@@ -1645,7 +1651,7 @@
                     <div>
                         <input type="file" accept=".json" ref={importFileRef} onChange={handleImportData} className="hidden" id="import-file" />
                         <label htmlFor="import-file" className="cursor-pointer w-full text-center block bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-500">
-                           Import from Backup
+                            Import from Backup
                         </label>
                     </div>
                 </div>
@@ -1908,7 +1914,7 @@
 
       useEffect(() => {
         if (!chartRef.current) return;
-    
+      
         if (!window.Chart) {
           console.warn('Chart.js failed to load from CDN');
           return;
