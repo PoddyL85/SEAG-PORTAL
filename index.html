@@ -520,6 +520,7 @@
           const data = await response.json();
 
           const aiText =
+            parseAIResponse(data) ||
             data?.candidates?.[0]?.content?.parts?.[0]?.text ||
             data?.explanation ||
             data?.response ||
@@ -604,7 +605,9 @@
 
     const Notification = ({ message, type, onDismiss }) => {
       useEffect(() => {
-        const timer = setTimeout(onDismiss, 3000);
+        const timer = setTimeout(() => {
+          if (typeof onDismiss === 'function') onDismiss();
+        }, 3000);
         return () => clearTimeout(timer);
       }, [onDismiss]);
 
@@ -626,7 +629,14 @@
             {children}
             <div className="flex justify-center gap-4 mt-8">
               {onCancel && <button onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-500">Cancel</button>}
-              {onConfirm && <button onClick={onConfirm} className={`font-bold py-2 px-6 rounded-lg ${isDestructive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>{confirmText}</button>}
+              {onConfirm && !!confirmText && (
+                <button
+                  onClick={onConfirm}
+                  className={`font-bold py-2 px-6 rounded-lg ${isDestructive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+                >
+                  {confirmText}
+                </button>
+              )}
             </div>
           </div>
         </div>
