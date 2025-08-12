@@ -440,7 +440,7 @@
         return normalizedCorrect === normalizedUser;
     };
 
-    const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
+    const AIExplanation = ({ question, userAnswer, correctAnswer, onClose, currentQuestionIndex }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
@@ -491,8 +491,9 @@
               prompt: `
       You are a helpful tutor. Explain the answer kindly and succinctly.
       Question: ${question.question}
-      User's incorrect answer: ${userAnswer}
-      Correct answer: ${correctAnswer}
+      Options: ${question.options.map((opt, i) => `${i}: ${opt}`).join(', ')}
+      User selected index: ${userAnswer} (${question.options[userAnswer]})
+      Correct index: ${correctAnswer} (${question.options[correctAnswer]})
       Respond with a short explanation the learner will understand.`,
               context: 'quiz_explanation'
             }),
@@ -1295,6 +1296,7 @@
 
             {showExplanation && (
               <AIExplanation
+                key={currentQuestionIndex}
                 question={lastAnswerResult.question}
                 userAnswer={lastAnswerResult.userAnswer}
                 correctAnswer={lastAnswerResult.question.answer}
