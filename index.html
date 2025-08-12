@@ -1705,7 +1705,7 @@
       )
     };
 
-    const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
+    const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification, handleFullReset }) => {
       const [adminView, setAdminView] = useState('main');
       const [editingTest, setEditingTest] = useState(null);
       const importFileRef = useRef(null);
@@ -1801,14 +1801,10 @@
 
       const handleResetAllData = () => {
         showModal({
-          title: "Reset All Data?",
-          message: "Are you sure you want to completely reset all player data, including progress, XP, and achievements? This action cannot be undone.",
+          title: "Reset All Player Data?",
+          message: "Are you sure you want to completely reset all player data, including progress, XP, and achievements? This action will keep all created tests but cannot be undone.",
           confirmText: "Reset Everything",
-          onConfirm: () => {
-            localStorage.removeItem('seagPortalData');
-            showNotification({ message: "All data has been reset. The app will now reload.", type: 'success' });
-            setTimeout(() => window.location.reload(), 1500);
-          }
+          onConfirm: handleFullReset
         });
       };
       
@@ -2479,6 +2475,46 @@
         localStorage.setItem('seagPortalData', JSON.stringify(newData));
       }, []);
       
+      const handleFullReset = useCallback(() => {
+        if (!appData) return;
+
+        const testsToKeep = appData.allTests;
+
+        // Re-create the default user data object
+        const newCleanUserData = {
+            name: "Nicolas",
+            avatar: '👨‍🚀',
+            title: null,
+            dyslexiaFriendly: false,
+            level: 1,
+            xp: 0,
+            achievements: {},
+            progress: {},
+            totalCorrectAnswers: 0,
+            correctAnswersByTag: {},
+            lastAnswerWasIncorrect: false,
+            correctRunAfterWrong: 0,
+            dailyChallengeStreak: 0,
+            dailyChallenge: { completedToday: false, lastCompletedDate: null },
+            badgeProgress: { geometryGuruTests: [] },
+            weeklyCompletionWeeks: [],
+            fullTestsCompleted: [],
+            pendingAchievementIdsByTest: {}
+        };
+
+        const newData = {
+            allTests: testsToKeep,
+            userData: newCleanUserData
+        };
+
+        // This will save to localStorage and update state
+        updateAllData(newData);
+
+        showNotification({ message: "All player data has been reset. The app will now reload.", type: 'success' });
+        setTimeout(() => window.location.reload(), 1500);
+
+      }, [appData, updateAllData]);
+
       const updateUserData = useCallback((newUserData, options = {}) => {
         if (!appData) return;
         
@@ -2643,7 +2679,7 @@
           case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} hideModal={hideModal} updateUserData={updateUserData} appData={appData} updateAllData={updateAllData} showNotification={showNotification} />;
           case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} updateAllData={updateAllData} showNotification={showNotification} showModal={showModal} />;
           case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} showModal={showModal} />;
-          case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} />;
+          case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} handleFullReset={handleFullReset} />;
           case 'settings': return <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
           case 'achievements': return <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
           default: return <LoadingSpinner message="Loading Portal..." />;
