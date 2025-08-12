@@ -2462,7 +2462,8 @@
         if (!appData) return;
         
         const { event, silentAchievements } = options || {};
-        let mutableUserData = { ...newUserData };
+        // Rebase on the latest store to prevent stale overwrites from rapid successive calls
+        let mutableUserData = { ...(appData.userData || {}), ...(newUserData || {}) };
         const { type, payload = {} } = event || {};
         
         // Ensure new structure exists
@@ -2494,6 +2495,14 @@
             if (isCorrect) {
                 mutableUserData.totalCorrectAnswers = (mutableUserData.totalCorrectAnswers || 0) + 1;
                 mutableUserData.currentStreak = (mutableUserData.currentStreak || 0) + 1;
+
+                // NEW: per-tag correct counters for achievements
+                const tags = Array.isArray(payload.tags) ? payload.tags : [];
+                mutableUserData.correctAnswersByTag = mutableUserData.correctAnswersByTag || {};
+                tags.forEach(tag => {
+                    mutableUserData.correctAnswersByTag[tag] = (mutableUserData.correctAnswersByTag[tag] || 0) + 1;
+                });
+
                 if (!payload.usedHint) {
                     mutableUserData.noHintStreak = (mutableUserData.noHintStreak || 0) + 1;
                     mutableUserData.noHintCorrectCount = (mutableUserData.noHintCorrectCount || 0) + 1;
