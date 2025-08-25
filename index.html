@@ -610,33 +610,211 @@
 
 
     // --- Helper Components & Functions ---
+    
+    // ===== Time formatting for the header timer =====
+    function formatMs(ms) {
+      const sec = Math.floor(ms / 1000);
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return h > 0
+        ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        : `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    // ===== Extract letter-labeled options e.g. "a) ... b) ... c) ..." inside question text =====
+    function extractLabeledOptionsFromPrompt(prompt) {
+      if (!prompt) return null;
+      let s = prompt.replace(/\s+/g, ' ').trim();
+      
+      // Capture a) option text ... up to next letter marker or end
+      const pattern = /([a-dA-D])[\)\.]\s*([^a-dA-D]+?)(?=\s*[a-dA-D][\)\.]|$)/g;
+      const options = [];
+      const labels = [];
+      let m;
+      while ((m = pattern.exec(s)) !== null) {
+        labels.push(m[1].toLowerCase());
+        options.push(m[2].trim());
+      }
+      if (options.length >= 2) {
+        const firstLabelIdx = s.search(/[a-dA-D][\)\.]\s*/);
+        const stem = firstLabelIdx > 0 ? s.slice(0, firstLabelIdx).trim() : s;
+        return { stem, options, labels };
+      }
+      return null;
+    }
+
+    // ===== Numeric normalization and comparison helpers =====
+    const unicodeFractionMap = new Map([
+      ['½', '1/2'], ['⅓', '1/3'], ['⅔', '2/3'],
+      ['¼', '1/4'], ['¾', '3/4'], ['⅕', '1/5'],
+      ['⅖', '2/5'], ['⅗', '3/5'], ['⅘', '4/5'],
+      ['⅙', '1/6'], ['⅚', '5/6'], ['⅛', '1/8'],
+      ['⅜', '3/8'], ['⅝', '5/8'], ['⅞', '7/8']
+    ]);
+
+    function replaceUnicodeFractions(s) {
+      let out = s;
+      unicodeFractionMap.forEach((ascii, uni) => { out = out.replaceAll(uni, ascii); });
+      return out;
+    }
+
+    // Normalize decimal commas and leading dots: "0,15" -> "0.15", ".5" -> "0.5"
+    function normalizeDecimalSyntax(s) {
+      let t = s.trim();
+      if (/\d/.test(t) && (t.match(/,/g)?.length === 1) && !t.includes('.')) {
+        t = t.replace(',', '.');
+      }
+      t = t.replace(/(^|\s)\.(\d)/g, '$10.$2');
+      return t;
+    }
+
+    function parseAsciiFraction(frac) {
+      const m = frac.trim().match(/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/);
+      if (!m) return null;
+      const num = parseFloat(m[1]);
+      const den = parseFloat(m[2]);
+      if (!isFinite(num) || !isFinite(den) || den === 0) return null;
+      return num / den;
+    }
+
+    function parseMixedFraction(s) {
+      const m = s.trim().match(/^([+-]?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+      if (!m) return null;
+      const w = parseFloat(m[1]);
+      const n = parseFloat(m[2]);
+      const d = parseFloat(m[3]);
+      if (!isFinite(w) || !isFinite(n) || !isFinite(d) || d === 0) return null;
+      const sign = w < 0 ? -1 : 1;
+      return w + sign * (n / d);
+    }
+
+    function detectPercentUnit(raw) {
+      const s = raw.toLowerCase();
+      return /%|\bpercent\b|\bper\s*cent\b/.test(s);
+    }
+    function stripPercentText(raw) {
+      return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, '');
+    }
+
+    // Strip currency/measurement but KEEP percent and numeric syntax.
+    function unitStripForNumeric(raw) {
+      if (raw == null) return '';
+      return String(raw)
+        .replace(/[£$€]/g, '')
+        .replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '')
+        .trim();
+    }
+
+    function normalizeNumericLike(raw) {
+      if (raw == null) return { ok: false };
+      let s = String(raw).trim();
+      
+      s = replaceUnicodeFractions(s);
+      const hadPercent = detectPercentUnit(s);
+      if (hadPercent) s = stripPercentText(s);
+      s = normalizeDecimalSyntax(s);
+      
+      let val = parseMixedFraction(s);
+      if (val == null) {
+        const fracVal = parseAsciiFraction(s);
+        if (fracVal != null) val = fracVal;
+      }
+      if (val == null) {
+        const num = parseFloat(s);
+        if (!Number.isNaN(num) && isFinite(num)) val = num;
+      }
+      if (val == null) return { ok: false };
+      return { ok: true, value: val, isPercent: hadPercent };
+    }
+
+    // Percent and numeric-aware comparison with tolerance
+    function compareNumericAnswers(studentRaw, correctRaw, options = {}) {
+      const {
+        toleranceAbs = 1e-4,
+        toleranceRel = 1e-3,
+        percentEquivalence = 'both'
+      } = options;
+      
+      const s = normalizeNumericLike(studentRaw);
+      const c = normalizeNumericLike(correctRaw);
+      if (!s.ok || !c.ok) return { equal: false, reason: 'non-numeric' };
+      
+      const candidates = [];
+      if (s.isPercent === c.isPercent) {
+        candidates.push([s.value, c.value]);
+      }
+      const allowStudentToPercent = percentEquivalence === 'both' || percentEquivalence === 'studentToPercent';
+      const allowCorrectToPercent = percentEquivalence === 'both' || percentEquivalence === 'correctToPercent';
+      
+      if (allowStudentToPercent && c.isPercent && !s.isPercent) {
+        candidates.push([s.value * 100, c.value]);
+      }
+      if (allowCorrectToPercent && s.isPercent && !c.isPercent) {
+        candidates.push([s.value, c.value * 100]);
+      }
+      
+      for (const [sv, cv] of candidates) {
+        const diff = Math.abs(sv - cv);
+        const rel = Math.abs(diff / (Math.abs(cv) > 0 ? Math.abs(cv) : 1));
+        if (diff <= toleranceAbs || rel <= toleranceRel) {
+          return { equal: true };
+        }
+      }
+      return { equal: false };
+    }
 
     const normalizeAnswer = (answer, tags = []) => {
-      if (typeof answer !== 'string') return answer;
+      if (answer == null) return '';
+      if (typeof answer !== 'string') answer = String(answer);
       let s = answer.toLowerCase().trim();
       s = s.replace(/\s+/g, ' ');
-      const numericish = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
-      if (numericish) {
-        s = s
-          .replace(/[£$€]/g, '')
-          .replace(/[°,]/g, '')
-          .replace(/%/g, '') // allow 25 == 25%
-          .replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles|mile|meters|metres|meter|metre|deg|degrees)\b/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-      }
       return s;
     };
-
+    
     const isAnswerCorrect = (question, userAnswer) => {
-        if (!question) return false;
-        const correctAnswer = question.answer;
-        const tags = question.tags || [];
-
-        const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
-        const normalizedUser = normalizeAnswer(userAnswer, tags);
-
-        return normalizedCorrect === normalizedUser;
+      if (!question) return false;
+      const correctAnswer = question.answer;
+      const tags = question.tags || [];
+      const qText = question.question || '';
+      
+      // 1) Handle letter-labeled options embedded in free-text prompts
+      const labeled = extractLabeledOptionsFromPrompt(qText);
+      if (labeled && labeled.options?.length >= 2) {
+        const s = String(userAnswer ?? '').trim().toLowerCase();
+        const c = String(correctAnswer ?? '').trim().toLowerCase();
+      
+        // If the stored correct answer is a letter like 'b'
+        if (/^[a-d]$/.test(c)) return s === c;
+      
+        // If student selected a letter but author stored full option text
+        if (/^[a-d]$/.test(s)) {
+          const idx = s.charCodeAt(0) - 97; // a=0
+          const chosen = labeled.options[idx]?.trim().toLowerCase();
+          return chosen && chosen === c;
+        }
+      
+        // Otherwise fall back to text equality
+        return s === c;
+      }
+      
+      // 2) Numeric-ish content (fractions/percentages/geometry)
+      const numericish = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
+      if (numericish) {
+        const sVal = unitStripForNumeric(userAnswer);
+        const cVal = unitStripForNumeric(correctAnswer);
+        const res = compareNumericAnswers(sVal, cVal, {
+          toleranceAbs: 1e-4,
+          toleranceRel: 1e-3,
+          percentEquivalence: 'both'
+        });
+        if (res.equal) return true;
+      }
+      
+      // 3) Fallback: normalized string comparison
+      const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
+      const normalizedUser = normalizeAnswer(userAnswer, tags);
+      return normalizedCorrect === normalizedUser;
     };
 
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose, currentQuestionIndex }) => {
