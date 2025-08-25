@@ -820,9 +820,40 @@
 
     const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
       const isDestructive = ['Delete', 'Reset', 'Remove', 'Overwrite'].includes(confirmText);
+      const dialogRef = useRef(null);
+
+      useEffect(() => {
+        const dialog = dialogRef.current;
+        const focusable = dialog?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable?.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        first.focus();
+
+        function onKeyDown(e) {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            if (onCancel) onCancel();
+          }
+          if (e.key !== 'Tab') return;
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+      }, [onCancel]);
+
       return (
         <div className="modal-backdrop">
-          <div className="bg-slate-800 border border-cyan-500 rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
+          <div ref={dialogRef} className="bg-slate-800 border border-cyan-500 rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
             <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-4">{title}</h2>
             {message && <p className="text-slate-300 mb-8">{message}</p>}
             {children}
@@ -1129,7 +1160,7 @@
       const existingProgress = userData?.progress?.[testId] || {};
       const [currentQuestionIndex, setCurrentQuestionIndex] = useState(existingProgress?.lastQuestionIndex || 0);
       const [userAnswers, setUserAnswers] = useState(existingProgress?.answers || {});
-      const [submittedAnswers, setSubmittedAnswers] = useState({});
+      const [submittedAnswers, setSubmittedAnswers] = useState(existingProgress?.submittedAnswers || {});
       const [streak, setStreak] = useState(existingProgress?.streak || 0);
       const [hint, setHint] = useState(null);
       const [isHintLoading, setIsHintLoading] = useState(false);
@@ -1150,17 +1181,24 @@
       const initialTotalRef = useRef(existingProgress?.initialTotalTime || totalTime);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
+
+      const shuffledPosByOrig = useMemo(() => {
+        if (!shuffledOrder) return null;
+        const m = new Map();
+        shuffledOrder.forEach((orig, pos) => m.set(orig, pos));
+        return m;
+      }, [shuffledOrder]);
       
       const answeredSet = useMemo(() => {
         const keys = Object.keys(userAnswers).map(Number);
-        if (!shuffledOrder) return new Set(keys);
+        if (!shuffledPosByOrig) return new Set(keys);
         const pos = new Set();
         keys.forEach(origIdx => {
-          const shuffledPos = shuffledOrder.indexOf(origIdx);
-          if (shuffledPos !== -1) pos.add(shuffledPos);
+          const p = shuffledPosByOrig.get(origIdx);
+          if (p != null) pos.add(p);
         });
         return pos;
-      }, [userAnswers, shuffledOrder]);
+      }, [userAnswers, shuffledPosByOrig]);
 
       useEffect(() => {
         if (!timerEnabled || isPaused) return;
@@ -1215,6 +1253,7 @@
           streak: streak, 
           settings: settings,
           initialTotalTime: initialTotalRef.current,
+          submittedAnswers, // persist
           ...(shuffledOrder && { shuffledOrder }),
           ...(isFinished ? { completedAt: now } : {})
         };
@@ -1244,7 +1283,7 @@
           silentAchievements: !!silentAchievements || !!auto,
           event: isFinished ? { type: 'PACK_COMPLETED', payload: postTestContext } : undefined
         });
-      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test, shuffledOrder]);
+      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test, shuffledOrder, submittedAnswers]);
 
       const handleFinish = useCallback((auto = false) => { 
         if (testId === 'mistakes-test') {
@@ -1351,7 +1390,7 @@
         const answer = userAnswers[originalIndex];
         if (answer === undefined || answer === null || answer === "") return;
 
-        setSubmittedAnswers({...submittedAnswers, [currentQuestionIndex]: true});
+        setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
 
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
@@ -1479,7 +1518,7 @@
         );
       }
 
-      const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
+      const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex] || (showInstantFeedback && userAnswers[originalIndex] !== undefined);
       const isLocked = timerEnabled && timeLeft === 0;
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
       
@@ -2397,6 +2436,7 @@
       const [selectedTest, setSelectedTest] = useState(null);
       const [notification, setNotification] = useState({ show: false, message: '', type: '' });
       const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, onCancel: null, confirmText: "Confirm", children: null });
+      const debounceTimerRef = useRef(null);
 
       const showNotification = ({message, type = 'success'}) => {
         setNotification({ show: true, message, type });
@@ -2490,7 +2530,10 @@
 
       const updateAllData = useCallback((newData) => {
         setAppData(newData);
-        localStorage.setItem('seagPortalData', JSON.stringify(newData));
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+        }, 300);
       }, []);
       
       const handleFullReset = useCallback(() => {
