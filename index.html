@@ -625,21 +625,28 @@
     // ===== Extract letter-labeled options e.g. "a) ... b) ... c) ..." inside question text =====
     function extractLabeledOptionsFromPrompt(prompt) {
       if (!prompt) return null;
-      let s = prompt.replace(/\s+/g, ' ').trim();
+      // Collapse whitespace but otherwise preserve content
+      const s = String(prompt).replace(/\s+/g, ' ').trim();
       
-      // Capture a) option text ... up to next letter marker or end
-      const pattern = /([a-dA-D])[\)\.]\s*([^a-dA-D]+?)(?=\s*[a-dA-D][\)\.]|$)/g;
+      // Find the first marker like "a) " or "a. " or "a: "
+      const firstLabelIdx = s.search(/[A-Za-z][\)\.\:]\s/);
+      if (firstLabelIdx === -1) return null;
+      
+      const stem = s.slice(0, firstLabelIdx).trim();
+      const rest = s.slice(firstLabelIdx);
+      
+      // Match segments like: a) <text> ... up to next "<letter>) " or end of string
+      const pattern = /([A-Za-z])[\)\.\:]\s*([\s\S]*?)(?=\s*[A-Za-z][\)\.\:]\s|$)/g;
       const options = [];
       const labels = [];
       let m;
-      while ((m = pattern.exec(s)) !== null) {
+      while ((m = pattern.exec(rest)) !== null) {
         labels.push(m[1].toLowerCase());
         options.push(m[2].trim());
       }
+      
       if (options.length >= 2) {
-        const firstLabelIdx = s.search(/[a-dA-D][\)\.]\s*/);
-        const stem = firstLabelIdx > 0 ? s.slice(0, firstLabelIdx).trim() : s;
-        return { stem, options, labels };
+        return { stem: stem || s, options, labels };
       }
       return null;
     }
@@ -785,10 +792,10 @@
         const c = String(correctAnswer ?? '').trim().toLowerCase();
       
         // If the stored correct answer is a letter like 'b'
-        if (/^[a-d]$/.test(c)) return s === c;
+        if (/^[a-z]$/.test(c)) return s === c;
       
         // If student selected a letter but author stored full option text
-        if (/^[a-d]$/.test(s)) {
+        if (/^[a-z]$/.test(s)) {
           const idx = s.charCodeAt(0) - 97; // a=0
           const chosen = labeled.options[idx]?.trim().toLowerCase();
           return chosen && chosen === c;
@@ -798,7 +805,7 @@
         return s === c;
       }
       
-      // 2) Numeric-ish content (fractions/percentages/geometry)
+      // 2) Numeric-ish content by tags
       const numericish = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
       if (numericish) {
         const sVal = unitStripForNumeric(userAnswer);
@@ -809,6 +816,20 @@
           percentEquivalence: 'both'
         });
         if (res.equal) return true;
+      }
+      
+      // 2b) Fallback: if both look numeric, compare numerically even without tags
+      {
+        const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
+        const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
+        if (sNorm.ok && cNorm.ok) {
+          const res2 = compareNumericAnswers(sNorm.value, cNorm.value, {
+            toleranceAbs: 1e-4,
+            toleranceRel: 1e-3,
+            percentEquivalence: 'both'
+          });
+          if (res2.equal) return true;
+        }
       }
       
       // 3) Fallback: normalized string comparison
@@ -1546,7 +1567,7 @@
         
         // For timed modes, also autosave every 10s
         let interval;
-        if (settings.mode !== 'Practice') {
+        if (timerEnabled) {
           interval = setInterval(() => saveProgress(false, { auto: true }), 20000); // Increased to 20s
         }
         
@@ -1555,7 +1576,7 @@
           window.removeEventListener('beforeunload', handleImmediateSave);
           document.removeEventListener('visibilitychange', handleVisibility);
         };
-      }, [saveProgress, settings.mode]);
+      }, [saveProgress, timerEnabled]);
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
 
@@ -1970,6 +1991,13 @@
                   const userAnswer = userAnswers[index];
                   const isCorrect = isAnswerCorrect(q, userAnswer);
                   const displayPos = shuffledPosByOrig?.get(index);
+                  const labeledQ = extractLabeledOptionsFromPrompt(q.question || '');
+                  let shownUserAnswer = userAnswer;
+                  if (labeledQ && /^[a-z]$/i.test(userAnswer || '')) {
+                    const idx = userAnswer.toLowerCase().charCodeAt(0) - 97;
+                    const optText = labeledQ.options[idx];
+                    if (optText) shownUserAnswer = `${userAnswer.toUpperCase()}) ${optText}`;
+                  }
                   return (
                     <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
                       <p className="font-semibold text-slate-300 mb-2">
@@ -1978,7 +2006,7 @@
                           <span className="ml-2 text-xs text-slate-400">(shown as #{displayPos + 1})</span>
                         )}
                       </p>
-                      <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{userAnswer || "Not answered"}</span></p>
+                      <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{shownUserAnswer || "Not answered"}</span></p>
                       {!isCorrect && <p className="text-sm text-yellow-400">Correct answer: <span className="font-bold">{q.answer}</span></p>}
                       {!isCorrect && (
                         <div className="mt-2">
