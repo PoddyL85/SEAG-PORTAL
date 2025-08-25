@@ -1246,6 +1246,7 @@
         const delta = now - questionStartTime;
         setAccumulatedElapsedMs(prev => prev + delta);
         setQuestionStartTime(now);
+        return delta;
       };
 
       const saveProgress = useCallback((isFinished = false, options = {}) => {
@@ -1392,11 +1393,11 @@
         if (answer === undefined || answer === null || answer === "") return;
 
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
-        commitElapsed();
-
+        const deltaMs = commitElapsed();
+        
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
-        const timeToAnswer = (Date.now() - questionStartTime) / 1000;
+        const timeToAnswer = deltaMs / 1000;
         
         setLastAnswerResult({ isCorrect, userAnswer: answer, question });
 
@@ -1523,6 +1524,11 @@
       const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex] || (showInstantFeedback && userAnswers[originalIndex] !== undefined);
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
       
+      const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
+      const hasOptions = Array.isArray(currentQ.options) && currentQ.options.length > 0;
+      const isLabeled = !hasOptions && labeled && labeled.options.length >= 2;
+      const displayStem = isLabeled ? labeled.stem : (currentQ.question || '');
+
       return (
         <div className={`p-4 sm:p-8 min-h-screen flex items-center justify-center ${flash === 'correct' ? 'flash-correct' : ''} ${flash === 'incorrect' ? 'flash-incorrect' : ''}`}>
           <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl">
@@ -1542,11 +1548,52 @@
             <hr className="border-slate-600 my-4" />
 
             <p className="text-center font-mono text-slate-400 mb-4">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-            <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-300">{currentQ.question}</p></div>
+            <div className="mb-6 min-h-[6rem]">
+              <p className="text-lg text-gray-300">{displayStem}</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {currentQ.options ? currentQ.options.map((option, index) => (
-                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
-              )) : <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
+              {hasOptions ? (
+                currentQ.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswerSelect(option)}
+                    disabled={isCurrentQSubmitted}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
+                  >
+                    {option}
+                  </button>
+                ))
+              ) : isLabeled ? (
+                labeled.options.map((opt, idx) => {
+                  const letter = String.fromCharCode(97 + idx); // a,b,c,...
+                  const checked = userAnswers[originalIndex] === letter;
+                  return (
+                    <label
+                      key={letter}
+                      className={`p-4 rounded-lg border-2 flex items-center gap-3 transition-all cursor-pointer ${checked ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`q-${originalIndex}`}
+                        disabled={isCurrentQSubmitted}
+                        checked={checked}
+                        onChange={() => handleAnswerSelect(letter)}
+                      />
+                      <span className="font-bold uppercase">{letter})</span>
+                      <span>{opt}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <textarea
+                  value={userAnswers[originalIndex] || ''}
+                  onChange={(e) => handleAnswerSelect(e.target.value)}
+                  disabled={isCurrentQSubmitted}
+                  className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70"
+                  placeholder="Type your answer here..."
+                  rows="4"
+                ></textarea>
+              )}
             </div>
 
             {!isCurrentQSubmitted && (
@@ -1609,6 +1656,14 @@
       const userAnswers = progress?.answers || {};
       const score = progress?.score ?? 0;
       
+      const shuffledOrder = progress?.shuffledOrder || null;
+      const shuffledPosByOrig = useMemo(() => {
+        if (!shuffledOrder) return null;
+        const m = new Map();
+        shuffledOrder.forEach((orig, pos) => m.set(orig, pos));
+        return m;
+      }, [shuffledOrder]);
+
       useEffect(() => {
         if (!progress) {
           setView('dashboard');
@@ -1736,9 +1791,15 @@
                 {test.questions.map((q, index) => {
                   const userAnswer = userAnswers[index];
                   const isCorrect = isAnswerCorrect(q, userAnswer);
+                  const displayPos = shuffledPosByOrig?.get(index);
                   return (
                     <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
-                      <p className="font-semibold text-slate-300 mb-2">{index + 1}. {q.question}</p>
+                      <p className="font-semibold text-slate-300 mb-2">
+                        {index + 1}. {q.question}
+                        {displayPos != null && (
+                          <span className="ml-2 text-xs text-slate-400">(shown as #{displayPos + 1})</span>
+                        )}
+                      </p>
                       <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{userAnswer || "Not answered"}</span></p>
                       {!isCorrect && <p className="text-sm text-yellow-400">Correct answer: <span className="font-bold">{q.answer}</span></p>}
                       {!isCorrect && (
