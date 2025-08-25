@@ -1169,16 +1169,25 @@
       const [shuffledOrder, setShuffledOrder] = useState(null);
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
-      const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+      const [questionStartTime, setQuestionStartTime] = useState(existingProgress?.questionStartTime ?? Date.now());
+      const [accumulatedElapsedMs, setAccumulatedElapsedMs] = useState(existingProgress?.accumulatedElapsedMs ?? 0);
+      const [elapsedDisplay, setElapsedDisplay] = useState(0);
 
-      const totalTime = test?.subject === 'Mixed' ? 60 * 60 : 30 * 60;
-      const getInitialTime = () => {
-        const savedTime = existingProgress?.timeLeft;
-        return (savedTime !== undefined && savedTime > 0) ? savedTime : totalTime;
-      };
-      const [timeLeft, setTimeLeft] = useState(getInitialTime);
-      const [isPaused, setIsPaused] = useState(false);
-      const initialTotalRef = useRef(existingProgress?.initialTotalTime || totalTime);
+      useEffect(() => {
+        if (!existingProgress?.questionStartTime) {
+          setQuestionStartTime(Date.now());
+        }
+      }, []);
+
+      useEffect(() => {
+        const update = () => {
+          const now = Date.now();
+          setElapsedDisplay(accumulatedElapsedMs + (now - questionStartTime));
+        };
+        update();
+        const id = setInterval(update, 1000);
+        return () => clearInterval(id);
+      }, [accumulatedElapsedMs, questionStartTime]);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
 
@@ -1200,14 +1209,6 @@
         return pos;
       }, [userAnswers, shuffledPosByOrig]);
 
-      useEffect(() => {
-        if (!timerEnabled || isPaused) return;
-        const id = setInterval(() => {
-          setTimeLeft(t => (t > 0 ? t - 1 : 0));
-        }, 1000);
-        return () => clearInterval(id);
-      }, [timerEnabled, isPaused]);
-      
       useEffect(() => {
         if (settings.shuffle && !existingProgress.shuffledOrder) {
             const indices = Array.from(test.questions.keys());
@@ -1240,6 +1241,13 @@
         }, 0);
       }, [userAnswers, test.questions]);
 
+      const commitElapsed = () => {
+        const now = Date.now();
+        const delta = now - questionStartTime;
+        setAccumulatedElapsedMs(prev => prev + delta);
+        setQuestionStartTime(now);
+      };
+
       const saveProgress = useCallback((isFinished = false, options = {}) => {
         const { silentAchievements = false, auto = false, overrideIndex } = options;
         const score = calculateScore();
@@ -1249,10 +1257,10 @@
           answers: userAnswers, 
           lastQuestionIndex: (typeof overrideIndex === 'number') ? overrideIndex : currentQuestionIndex, 
           score: score, 
-          timeLeft: timeLeft, 
+          accumulatedElapsedMs,
+          questionStartTime,
           streak: streak, 
           settings: settings,
-          initialTotalTime: initialTotalRef.current,
           submittedAnswers, // persist
           ...(shuffledOrder && { shuffledOrder }),
           ...(isFinished ? { completedAt: now } : {})
@@ -1268,8 +1276,8 @@
             totalQuestions: test.questions.length,
             score,
             mode: settings.mode,
-            timeLeft,
-            initialTotalTime: initialTotalRef.current,
+            timeLeft: 0, // Deprecated, but kept for old logic if needed
+            initialTotalTime: 0,
             testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
             lastQuestionCorrect: isAnswerCorrect(test.questions[lastOriginalIndex], lastAnswer),
             isFullPractice: testId.startsWith('full-test') || test.questions.length === 56,
@@ -1283,9 +1291,10 @@
           silentAchievements: !!silentAchievements || !!auto,
           event: isFinished ? { type: 'PACK_COMPLETED', payload: postTestContext } : undefined
         });
-      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, timeLeft, streak, settings, updateUserData, test, shuffledOrder, submittedAnswers]);
+      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, accumulatedElapsedMs, questionStartTime, streak, settings, updateUserData, test, shuffledOrder, submittedAnswers]);
 
-      const handleFinish = useCallback((auto = false) => { 
+      const handleFinish = useCallback((auto = false) => {
+        commitElapsed();
         if (testId === 'mistakes-test') {
           const newProgress = { ...userData.progress };
           const correctlyAnsweredMistakes = [];
@@ -1348,13 +1357,6 @@
       }, [testId, test, userAnswers, userData, allTests, setView, showModal, showNotification, updateUserData, saveProgress]);
 
       useEffect(() => {
-        if (timerEnabled && timeLeft === 0) {
-          setIsPaused(true);
-          handleFinish(true);
-        }
-      }, [timeLeft, timerEnabled, handleFinish]);
-      
-      useEffect(() => {
         // Always save on tab close or when the page becomes hidden
         const handleImmediateSave = () => { try { saveProgress(false, { auto: true }); } catch {} };
         const handleVisibility = () => {
@@ -1366,7 +1368,7 @@
         // For timed modes, also autosave every 10s
         let interval;
         if (settings.mode !== 'Practice') {
-          interval = setInterval(() => saveProgress(false, { auto: true }), 10000);
+          interval = setInterval(() => saveProgress(false, { auto: true }), 20000); // Increased to 20s
         }
         
         return () => {
@@ -1379,7 +1381,6 @@
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
 
       const handleAnswerSelect = (answer) => {
-        if (timerEnabled && timeLeft === 0) return;
         const newAnswers = { ...userAnswers, [originalIndex]: answer };
         setUserAnswers(newAnswers);
       };
@@ -1391,6 +1392,7 @@
         if (answer === undefined || answer === null || answer === "") return;
 
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
+        commitElapsed();
 
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
@@ -1432,12 +1434,12 @@
 
       const navigateToQuestion = (index) => {
         if (index >= 0 && index < test.questions.length) {
+            commitElapsed();
             setFeedback(null);
             setHint(null);
             setShowExplanation(false);
             setLastAnswerResult(null);
             setCurrentQuestionIndex(index);
-            setQuestionStartTime(Date.now());
             saveProgress(false, { overrideIndex: index });
         }
       };
@@ -1449,7 +1451,7 @@
       };
 
       const handlePause = () => { 
-        setIsPaused(true); 
+        commitElapsed();
         saveProgress(false, { auto: true }); 
         showNotification({message: 'Progress saved!', type: 'success'});
         setView('dashboard'); 
@@ -1519,7 +1521,6 @@
       }
 
       const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex] || (showInstantFeedback && userAnswers[originalIndex] !== undefined);
-      const isLocked = timerEnabled && timeLeft === 0;
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
       
       return (
@@ -1528,7 +1529,7 @@
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl sm:text-2xl font-bold font-orbitron text-cyan-300">{test.title}</h2>
               {streak > 1 && <span className="text-lg text-orange-400 font-orbitron">🔥 {streak} Streak!</span>}
-              {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{Math.floor(timeLeft / 60)}:{('0' + timeLeft % 60).slice(-2)}</div>}
+              {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{formatMs(elapsedDisplay)}</div>}
             </div>
             
             <QuestionNavigator
@@ -1544,13 +1545,13 @@
             <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-300">{currentQ.question}</p></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {currentQ.options ? currentQ.options.map((option, index) => (
-                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted || isLocked} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted || isLocked ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
-              )) : <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted || isLocked} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
+                <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isCurrentQSubmitted} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
+              )) : <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isCurrentQSubmitted} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>}
             </div>
 
             {!isCurrentQSubmitted && (
               <div className="text-center my-4">
-                <button onClick={handleSubmitAnswer} disabled={!userAnswers[originalIndex] || isLocked} className="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                <button onClick={handleSubmitAnswer} disabled={!userAnswers[originalIndex]} className="bg-green-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
                     {showInstantFeedback ? 'Submit Answer' : 'Confirm Answer'}
                 </button>
               </div>
@@ -1584,9 +1585,9 @@
             <div className="flex justify-between mt-8">
               <button onClick={handlePause} className="bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-500">Pause & Save</button>
               {currentQuestionIndex < test.questions.length - 1 ? (
-                <button onClick={goToNext} disabled={(!isCurrentQSubmitted && showInstantFeedback) || isLocked} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Next</button>
+                <button onClick={goToNext} disabled={!isCurrentQSubmitted && showInstantFeedback} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Next</button>
               ) : (
-                <button onClick={() => handleFinish(false)} disabled={(!isCurrentQSubmitted && showInstantFeedback) || isLocked} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Finish Test</button>
+                <button onClick={() => handleFinish(false)} disabled={!isCurrentQSubmitted && showInstantFeedback} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed">Finish Test</button>
               )}
             </div>
           </div>
