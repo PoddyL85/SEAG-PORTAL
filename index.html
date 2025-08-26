@@ -545,10 +545,13 @@
       
       if (type === 'PACK_COMPLETED') {
         // Speed Demon: > half time remaining
-        if (!has('speedDemon')
-            && typeof p.timeLeft === 'number'
-            && typeof p.initialTotalTime === 'number'
-            && p.timeLeft >= (p.initialTotalTime / 2)) {
+        if (
+          !has('speedDemon') &&
+          typeof p.timeLeft === 'number' &&
+          typeof p.initialTotalTime === 'number' &&
+          p.initialTotalTime > 0 &&
+          p.timeLeft >= (p.initialTotalTime / 2)
+        ) {
           unlock('speedDemon');
         }
       
@@ -628,25 +631,67 @@
       // Collapse whitespace but otherwise preserve content
       const s = String(prompt).replace(/\s+/g, ' ').trim();
       
-      // Find the first marker like "a) " or "a. " or "a: "
-      const firstLabelIdx = s.search(/[A-Za-z][\)\.\:]\s/);
-      if (firstLabelIdx === -1) return null;
+      // Find the first real "a)" (or A) / a. / a:) marker at a word boundary
+      const firstA = /(?:^|[\s(])[Aa][\)\.\:]\s*/.exec(s);
+      if (!firstA) return null;
       
-      const stem = s.slice(0, firstLabelIdx).trim();
-      const rest = s.slice(firstLabelIdx);
+      const stem = s.slice(0, firstA.index).trim();
+      const rest = s.slice(firstA.index);
       
       // Match segments like: a) <text> ... up to next "<letter>) " or end of string
-      const pattern = /([A-Za-z])[\)\.\:]\s*([\s\S]*?)(?=\s*[A-Za-z][\)\.\:]\s|$)/g;
-      const options = [];
+      const labelRe = /(?:^|[\s(])([A-Da-d])[\)\.\:]\s*/g;
+      let match;
       const labels = [];
-      let m;
-      while ((m = pattern.exec(rest)) !== null) {
-        labels.push(m[1].toLowerCase());
-        options.push(m[2].trim());
+      const spans = []; // {label, start}
+      
+      while ((match = labelRe.exec(rest)) !== null) {
+        labels.push(match[1].toLowerCase());
+        spans.push({ label: match[1].toLowerCase(), start: labelRe.lastIndex });
       }
       
-      if (options.length >= 2) {
+      if (spans.length < 2) return null; // need at least a) and b)
+      
+      const options = [];
+      for (let i = 0; i < spans.length; i++) {
+        const start = spans[i].start;
+        const end = i + 1 < spans.length ? spans[i + 1].start : rest.length;
+        const text = rest.slice(start, end).trim();
+        options.push(text);
+      }
+      
+      const nonEmptyCount = options.filter(o => o && o.trim()).length;
+      const startsWithAorB = labels[0] === 'a' || labels[0] === 'b';
+      if (nonEmptyCount >= 2 && startsWithAorB) {
+        // Return full options (including blanks) so indices/letters stay aligned
         return { stem: stem || s, options, labels };
+      }
+      return null;
+    }
+
+    // Parse exactly-two inline choices separated by " or " when no letter labels present
+    function tryParseTwoOptionsFromOr(prompt) {
+      if (!prompt) return null;
+      const s = String(prompt).replace(/\s+/g, ' ').trim();
+      
+      // If already letter-labelled, skip
+      if (/(?:^|[\s(])[A-Da-d][\)\.\:]\s/.test(s)) return null;
+      
+      const parts = s.split(/\s+or\s+/i);
+      if (parts.length !== 2) return null;
+      
+      // Heuristic: stem up to last colon, if any
+      const colonIdx = s.lastIndexOf(':');
+      const stem = colonIdx >= 0 ? s.slice(0, colonIdx + 1).trim() : s;
+      
+      const leftSource = parts[0];
+      const left = colonIdx >= 0
+        ? leftSource.slice(leftSource.lastIndexOf(':') + 1).trim()
+        : leftSource.trim();
+      const right = parts[1].trim();
+      
+      const ok = (t) => t && t.length >= 2;
+      if (ok(left) && ok(right)) {
+        return { stem, options: [left, right] };
       }
       return null;
     }
@@ -1379,6 +1424,7 @@
       }, []);
 
       useEffect(() => {
+        if (!timerEnabled) return;
         const update = () => {
           const now = Date.now();
           setElapsedDisplay(accumulatedElapsedMs + (now - questionStartTime));
@@ -1386,7 +1432,7 @@
         update();
         const id = setInterval(update, 1000);
         return () => clearInterval(id);
-      }, [accumulatedElapsedMs, questionStartTime]);
+      }, [accumulatedElapsedMs, questionStartTime, timerEnabled]);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
 
@@ -1580,9 +1626,13 @@
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
 
-      const handleAnswerSelect = (answer) => {
+      const handleAnswerSelect = (answer, source = 'mcq') => {
         const newAnswers = { ...userAnswers, [originalIndex]: answer };
         setUserAnswers(newAnswers);
+        if (showInstantFeedback && source === 'mcq' && !submittedAnswers[currentQuestionIndex]) {
+          // Defer to let state update before reading it in handleSubmitAnswer
+          setTimeout(() => handleSubmitAnswer(), 0);
+        }
       };
 
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
@@ -1720,13 +1770,17 @@
         );
       }
 
-      const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex] || (showInstantFeedback && userAnswers[originalIndex] !== undefined);
+      const isCurrentQSubmitted = !!submittedAnswers[currentQuestionIndex];
       const hintsEnabled = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
       
       const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
-      const hasOptions = Array.isArray(currentQ.options) && currentQ.options.length > 0;
-      const isLabeled = !hasOptions && labeled && labeled.options.length >= 2;
-      const displayStem = isLabeled ? labeled.stem : (currentQ.question || '');
+      const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
+      const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
+      const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
+      const displayStem = isLabeled ? labeled.stem : (implicitOr ? implicitOr.stem : (currentQ.question || ''));
+      const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
+      const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
+      const willUseTextarea = !renderAsButtonsOptions && !renderAsLabeled;
 
       return (
         <div className={`p-4 sm:p-8 min-h-screen flex items-center justify-center ${flash === 'correct' ? 'flash-correct' : ''} ${flash === 'incorrect' ? 'flash-incorrect' : ''}`}>
@@ -1751,42 +1805,50 @@
               <p className="text-lg text-gray-300">{displayStem}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {hasOptions ? (
-                currentQ.options.map((option, index) => (
+              {renderAsButtonsOptions ? (
+                renderAsButtonsOptions.map((option, index) => (
                   <button
                     key={index}
-                    onClick={() => handleAnswerSelect(option)}
+                    onClick={() => handleAnswerSelect(option, 'mcq')}
                     disabled={isCurrentQSubmitted}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+                    } ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
                   >
                     {option}
                   </button>
                 ))
-              ) : isLabeled ? (
-                labeled.options.map((opt, idx) => {
-                  const letter = String.fromCharCode(97 + idx); // a,b,c,...
-                  const checked = userAnswers[originalIndex] === letter;
-                  return (
-                    <label
-                      key={letter}
-                      className={`p-4 rounded-lg border-2 flex items-center gap-3 transition-all cursor-pointer ${checked ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`q-${originalIndex}`}
-                        disabled={isCurrentQSubmitted}
-                        checked={checked}
-                        onChange={() => handleAnswerSelect(letter)}
-                      />
-                      <span className="font-bold uppercase">{letter})</span>
-                      <span>{opt}</span>
-                    </label>
-                  );
-                })
+              ) : renderAsLabeled ? (
+                labeled.options
+                  .map((o, idx) => ({ opt: String(o ?? '').trim(), idx }))
+                  .map(({ opt, idx }) => {
+                    if (!opt) return null; // skip rendering blank, but keep original idx -> letter mapping
+                    const letter = String.fromCharCode(97 + idx);
+                    const checked = userAnswers[originalIndex] === letter;
+                    return (
+                      <label
+                        key={letter}
+                        className={`p-4 rounded-lg border-2 flex items-center gap-3 transition-all cursor-pointer ${
+                          checked ? 'bg-cyan-900 border-cyan-400'
+                                  : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+                        } ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q-${originalIndex}`}
+                          disabled={isCurrentQSubmitted}
+                          checked={checked}
+                          onChange={() => handleAnswerSelect(letter, 'mcq')}
+                        />
+                        <span className="font-bold uppercase">{letter})</span>
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })
               ) : (
                 <textarea
                   value={userAnswers[originalIndex] || ''}
-                  onChange={(e) => handleAnswerSelect(e.target.value)}
+                  onChange={(e) => handleAnswerSelect(e.target.value, 'text')}
                   disabled={isCurrentQSubmitted}
                   className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70"
                   placeholder="Type your answer here..."
