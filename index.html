@@ -630,40 +630,39 @@
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
       
-      // Find first explicit "a)" (or A) / a. / a:) marker
+      // Find first "a)"-style marker at a boundary
       const firstA = /(?:^|[\s(])[Aa][\)\.\:]\s*/.exec(s);
       if (!firstA) return null;
       
-      // Stem is everything before that marker
       const stem = s.slice(0, firstA.index).trim();
       const rest = s.slice(firstA.index);
       
-      // Scan for [a-d] markers, capturing the index right AFTER each marker
-      const labelRe = /(?:^|[\s(])([A-Da-d])[\)\.\:]\s*/g;
+      // Allow up to A–E; adjust higher if needed
+      const labelRe = /(?:^|[\s(])([A-Ea-e])[\)\.\:]\s*/g;
+      
       let match;
-      const labels = [];
-      const spans = []; // start AFTER label token
+      const spans = []; // { label, labelStart, textStart }
       
       while ((match = labelRe.exec(rest)) !== null) {
-        labels.push(match[1].toLowerCase());
-        spans.push({ label: match[1].toLowerCase(), start: labelRe.lastIndex });
+        spans.push({
+          label: match[1].toLowerCase(),
+          labelStart: match.index,
+          textStart: labelRe.lastIndex
+        });
       }
       
       if (spans.length < 2) return null; // need at least a) and b)
       
       const options = [];
       for (let i = 0; i < spans.length; i++) {
-        const start = spans[i].start;
-        // IMPORTANT: use the next start directly; do NOT subtract anything
-        const end = i + 1 < spans.length ? spans[i + 1].start : rest.length;
-        const text = rest.slice(start, end).trim();
-        options.push(text);
+        const start = spans[i].textStart;
+        const end = (i + 1 < spans.length) ? spans[i + 1].labelStart : rest.length; // stop at next label start
+        options.push(rest.slice(start, end).trim());
       }
       
-      const nonEmptyCount = options.filter(o => o && o.trim()).length;
-      const startsWithAorB = labels[0] === 'a' || labels[0] === 'b';
-      if (nonEmptyCount >= 2 && startsWithAorB) {
-        // Return full options (including blanks) so indices/letters stay aligned
+      const labels = spans.map(s => s.label);
+      const nonEmptyCount = options.filter(Boolean).length;
+      if (nonEmptyCount >= 2) {
         return { stem: stem || s, options, labels };
       }
       return null;
@@ -817,6 +816,16 @@
       return { equal: false };
     }
 
+    function stripOuterQuotesAndEndPunct(s) {
+      return s
+        .replace(/^[“”"']+|[“”"']+$/g, '') // outer quotes
+        .replace(/[.?!]+$/g, '')           // trailing sentence punctuation
+        .trim();
+    }
+    function stripLeadingArticles(s) {
+      return s.replace(/^(?:an?|the)\s+/i, '').trim();
+    }
+
     const normalizeAnswer = (answer, tags = []) => {
       if (answer == null) return '';
       if (typeof answer !== 'string') answer = String(answer);
@@ -883,7 +892,14 @@
       // 3) Fallback: normalized string comparison
       const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
       const normalizedUser = normalizeAnswer(userAnswer, tags);
-      return normalizedCorrect === normalizedUser;
+      if (normalizedCorrect === normalizedUser) return true;
+
+      // Tolerate leading articles + outer quotes + trailing punctuation
+      const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
+      const looseUser = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedUser));
+      if (looseCorrect === looseUser) return true;
+
+      return false;
     };
 
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose, currentQuestionIndex }) => {
