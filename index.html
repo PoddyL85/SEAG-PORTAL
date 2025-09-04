@@ -628,21 +628,21 @@
     // ===== Extract letter-labeled options e.g. "a) ... b) ... c) ..." inside question text =====
     function extractLabeledOptionsFromPrompt(prompt) {
       if (!prompt) return null;
-      // Collapse whitespace but otherwise preserve content
       const s = String(prompt).replace(/\s+/g, ' ').trim();
       
-      // Find the first real "a)" (or A) / a. / a:) marker at a word boundary
+      // Find first explicit "a)" (or A) / a. / a:) marker
       const firstA = /(?:^|[\s(])[Aa][\)\.\:]\s*/.exec(s);
       if (!firstA) return null;
       
+      // Stem is everything before that marker
       const stem = s.slice(0, firstA.index).trim();
       const rest = s.slice(firstA.index);
       
-      // Match segments like: a) <text> ... up to next "<letter>) " or end of string
+      // Scan for [a-d] markers, capturing the index right AFTER each marker
       const labelRe = /(?:^|[\s(])([A-Da-d])[\)\.\:]\s*/g;
       let match;
       const labels = [];
-      const spans = []; // {label, start}
+      const spans = []; // start AFTER label token
       
       while ((match = labelRe.exec(rest)) !== null) {
         labels.push(match[1].toLowerCase());
@@ -654,6 +654,7 @@
       const options = [];
       for (let i = 0; i < spans.length; i++) {
         const start = spans[i].start;
+        // IMPORTANT: use the next start directly; do NOT subtract anything
         const end = i + 1 < spans.length ? spans[i + 1].start : rest.length;
         const text = rest.slice(start, end).trim();
         options.push(text);
@@ -821,6 +822,8 @@
       if (typeof answer !== 'string') answer = String(answer);
       let s = answer.toLowerCase().trim();
       s = s.replace(/\s+/g, ' ');
+      // Strip common articles for more lenient free-text checking
+      s = s.replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
     
@@ -3092,3 +3095,4 @@
   </script>
 </body>
 </html>
+
