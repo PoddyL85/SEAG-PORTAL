@@ -3002,4 +3002,534 @@
             const test = allTests.find(t => t.id === testId);
             if (test) {
               Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
-                const question = test.questions
+                const question = test.questions[qIndex];
+                if (question && !isAnswerCorrect(question, userAnswer)) {
+                  incorrectAnswers.push(question.question);
+                }
+              });
+            }
+          });
+
+          const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`;
+
+          const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+          const apiUrl = `/.netlify/functions/gemini-proxy`;
+          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(`API Error: ${errorBody.error?.message || response.statusText}`);
+          }
+          const result = await response.json();
+          const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            setAiSummary(text);
+          } else {
+            throw new Error("Invalid API response structure.");
+          }
+        } catch (error) {
+          console.error("AI API Error:", error);
+          showModal({
+            title: "AI Feature Error",
+            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
+            onConfirm: () => {},
+            confirmText: "OK"
+          });
+        } finally {
+          setIsSummaryLoading(false);
+        }
+      };
+
+      return (
+        <div className="p-8 min-h-screen">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold font-orbitron text-cyan-300">Performance Dashboard</h1>
+              <button onClick={() => setAdminView('main')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Admin</button>
+            </div>
+
+            <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl mb-8">
+              <h2 className="text-xl font-bold mb-4">Score Over Time</h2>
+              <canvas ref={chartRef}></canvas>
+            </div>
+            
+            <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl mb-8">
+              <h2 className="text-xl font-bold mb-4">AI Performance Summary</h2>
+              <button onClick={getAISummary} disabled={isSummaryLoading} className="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-500 disabled:bg-slate-600">
+                {isSummaryLoading ? '✨ Analyzing Performance...' : '✨ Generate AI Summary'}
+              </button>
+              {aiSummary && (
+                <div className="bg-slate-700/50 p-4 rounded-lg mt-4 border border-slate-600">
+                  <p className="text-slate-300 whitespace-pre-wrap">{aiSummary}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
+      const [name, setName] = useState(userData.name);
+      const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀');
+      const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false);
+      const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
+
+      const handleSave = () => {
+        updateUserData({ ...userData, name, avatar, dyslexiaFriendly }, { event: { type: 'NO_OP' } });
+        showNotification({message: "Settings saved!", type: "success"});
+        setView('dashboard');
+      };
+
+      return (
+        <div className="p-8 min-h-screen flex items-center justify-center">
+          <div className="max-w-md mx-auto w-full bg-slate-800 border border-slate-700 rounded-xl p-8">
+            <h1 className="text-3xl font-bold font-orbitron text-cyan-300 mb-6 text-center">Profile Settings</h1>
+            <div className="mb-6">
+              <label className="block mb-2 font-bold">Player Name</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" />
+            </div>
+            <div className="mb-8">
+              <label className="block mb-2 font-bold">Choose Your Avatar</label>
+              <div className="grid grid-cols-4 gap-4">
+                {avatars.map(av => (
+                  <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-lg transition-all ${avatar === av ? 'bg-cyan-600 ring-2 ring-cyan-300' : 'bg-slate-700 hover:bg-slate-600'}`}>{av}</button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-8 p-4 border border-slate-600 rounded-lg">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label htmlFor="dyslexia-toggle" className="font-bold text-slate-200">Dyslexia Friendly Font</label>
+                        <p className="text-sm text-slate-400">Increases readability with a special font.</p>
+                    </div>
+                    <input 
+                        id="dyslexia-toggle" 
+                        type="checkbox" 
+                        checked={dyslexiaFriendly} 
+                        onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} 
+                        className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" 
+                    />
+                </div>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => setView('dashboard')} className="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500">Cancel</button>
+              <button onClick={handleSave} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-500">Save</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    const AchievementsView = ({ userData, setView, updateUserData, showNotification }) => {
+      const [activeTab, setActiveTab] = useState('Badges');
+
+      const unlockedTitles = achievementsList.filter(ach => userData.achievements[ach.id] && ach.unlocksTitle);
+      const hasTitles = achievementsList.some(a => !!a.unlocksTitle);
+
+      const handleEquipTitle = (title) => {
+        updateUserData({ ...userData, title: title }, { event: { type: 'NO_OP' } });
+        showNotification({message: `Title "${title}" equipped!`, type: 'success'});
+      };
+
+      return (
+        <div className="p-8 min-h-screen">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-4xl font-bold font-orbitron text-cyan-300">Achievements</h1>
+              <button onClick={() => setView('dashboard')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Dashboard</button>
+            </div>
+
+            <div className="flex border-b border-slate-700 mb-6">
+              <button onClick={() => setActiveTab('Badges')} className={`py-2 px-4 font-semibold ${activeTab === 'Badges' ? 'border-b-2 border-cyan-400 text-cyan-300' : 'text-slate-400'}`}>Badges</button>
+              {hasTitles && <button onClick={() => setActiveTab('Titles')} className={`py-2 px-4 font-semibold ${activeTab === 'Titles' ? 'border-b-2 border-cyan-400 text-cyan-300' : 'text-slate-400'}`}>Titles</button>}
+            </div>
+
+            {activeTab === 'Badges' && (
+              <div>
+                {['Quick Wins', 'Medium-Term', 'Longer-Term'].map(category => (
+                  <div key={category} className="mb-8">
+                    <h2 className="text-2xl font-orbitron text-cyan-300 mb-4">{category}</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {achievementsList.filter(ach => ach.category === category).map(ach => {
+                        const isUnlocked = userData.achievements[ach.id];
+                        return (
+                          <div key={ach.id} className={`p-4 rounded-lg border-2 text-center ${isUnlocked ? 'border-yellow-400 bg-slate-800' : 'border-slate-700 bg-slate-800/50'}`}>
+                            <div className={`text-5xl mb-2 transition-all duration-300 ${isUnlocked ? 'text-yellow-400' : 'text-slate-600 scale-90 grayscale'}`}>🏆</div>
+                            <h3 className={`font-bold ${isUnlocked ? 'text-yellow-300' : 'text-slate-400'}`}>{ach.title}</h3>
+                            <p className="text-sm text-slate-500">{ach.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'Titles' && (
+              <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-xl">
+                <h2 className="text-2xl font-orbitron text-cyan-300 mb-4">Equip a Title</h2>
+                {unlockedTitles.length > 0 ? (
+                  <div className="space-y-3">
+                    {unlockedTitles.map(ach => (
+                      <div key={ach.id} className="bg-slate-800 p-4 rounded-lg flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-lg text-yellow-300">{ach.unlocksTitle}</p>
+                          <p className="text-sm text-slate-400">Unlocked from: "{ach.title}"</p>
+                        </div>
+                        <button onClick={() => handleEquipTitle(ach.unlocksTitle)} disabled={userData.title === ach.unlocksTitle} className="bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cyan-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                          {userData.title === ach.unlocksTitle ? 'Equipped' : 'Equip'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No titles unlocked yet. Earn badges to unlock them!</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // --- Main App Component ---
+    function App() {
+      const [appData, setAppData] = useState(null);
+      const [view, setView] = useState('loading');
+      const [selectedTest, setSelectedTest] = useState(null);
+      const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+      const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, onCancel: null, confirmText: "Confirm", children: null });
+      const debounceTimerRef = useRef(null);
+
+      const showNotification = ({message, type = 'success'}) => {
+        setNotification({ show: true, message, type });
+      };
+
+      const hideModal = () => {
+        setModal({ show: false });
+      };
+
+      const showModal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
+        setModal({ 
+          show: true, 
+          title, 
+          message, 
+          onConfirm: onConfirm ? () => {
+            onConfirm();
+            hideModal();
+          } : null,
+          onCancel: onCancel ? () => {
+            onCancel();
+            hideModal();
+          } : hideModal,
+          confirmText: confirmText,
+          children
+        });
+      };
+
+      useEffect(() => {
+        const savedData = localStorage.getItem('seagPortalData');
+        let loadedData;
+        if (savedData) {
+          try {
+            loadedData = JSON.parse(savedData);
+          } catch(e) {
+            console.error("Failed to parse saved data, initializing fresh.", e);
+            loadedData = null;
+          }
+        }
+        
+        if (!loadedData) {
+          loadedData = {
+            userData: {},
+            allTests: defaultTests
+          };
+        }
+
+        const defaultUserData = {
+            name: "Nicolas",
+            avatar: '👨‍🚀',
+            title: null,
+            dyslexiaFriendly: false,
+            level: 1,
+            xp: 0,
+            achievements: {},
+            progress: {},
+            // Counters/stats used by achievements
+            totalCorrectAnswers: 0,
+            correctAnswersByTag: {}, // e.g. { fractions: 12, punctuation: 5 }
+            lastAnswerWasIncorrect: false,
+            correctRunAfterWrong: 0,
+            // Daily challenge tracking
+            dailyChallengeStreak: 0,
+            dailyChallenge: { completedToday: false, lastCompletedDate: null },
+            // Longitudinal tracking
+            badgeProgress: { geometryGuruTests: [] },
+            weeklyCompletionWeeks: [],
+            fullTestsCompleted: [],
+            // NEW: track achievements unlocked during an in-progress test
+            pendingAchievementIdsByTest: {} // { [testId]: string[] }
+        };
+
+        loadedData.userData = { ...defaultUserData, ...loadedData.userData };  
+  
+        // Merge newly added built-in SEAG tests into existing saved browser data.  
+        // This prevents localStorage from hiding new default tests.  
+        loadedData.allTests = mergeDefaultTests(loadedData.allTests, seagPrepExtensionTests);  
+  
+        // Persist the merged test list immediately so the new tests survive refresh.  
+        safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));  
+          
+        setAppData(loadedData);  
+        setView('dashboard');  
+      }, []);
+      
+      useEffect(() => {
+        if (appData && appData.userData) {
+            updateUserData(appData.userData, { event: { type: 'DAY_STARTED' } });
+        }
+      }, [!!appData]);
+
+      useEffect(() => {
+        if (appData?.userData?.dyslexiaFriendly) {
+            document.body.classList.add('dyslexia-friendly');
+        } else {
+            document.body.classList.remove('dyslexia-friendly');
+        }
+      }, [appData?.userData?.dyslexiaFriendly]);
+
+      const updateAllData = useCallback((newData) => {
+        setAppData(newData);
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+        }, 300);
+      }, []);
+      
+      const handleFullReset = useCallback(() => {
+        if (!appData) return;
+
+        const testsToKeep = appData.allTests;
+
+        // Re-create the default user data object
+        const newCleanUserData = {
+            name: "Nicolas",
+            avatar: '👨‍🚀',
+            title: null,
+            dyslexiaFriendly: false,
+            level: 1,
+            xp: 0,
+            achievements: {},
+            progress: {},
+            totalCorrectAnswers: 0,
+            correctAnswersByTag: {},
+            lastAnswerWasIncorrect: false,
+            correctRunAfterWrong: 0,
+            dailyChallengeStreak: 0,
+            dailyChallenge: { completedToday: false, lastCompletedDate: null },
+            badgeProgress: { geometryGuruTests: [] },
+            weeklyCompletionWeeks: [],
+            fullTestsCompleted: [],
+            pendingAchievementIdsByTest: {}
+        };
+
+        const newData = {
+            allTests: testsToKeep,
+            userData: newCleanUserData
+        };
+
+        // This will save to localStorage and update state
+        updateAllData(newData);
+
+        showNotification({ message: "All player data has been reset. The app will now reload.", type: 'success' });
+        setTimeout(() => window.location.reload(), 1500);
+
+      }, [appData, updateAllData]);
+
+      const updateUserData = useCallback((newUserData, options = {}) => {
+        if (!appData) return;
+        
+        const { event, silentAchievements } = options || {};
+        // Rebase on the latest store to prevent stale overwrites from rapid successive calls
+        let mutableUserData = { ...(appData.userData || {}), ...(newUserData || {}) };
+        const { type, payload = {} } = event || {};
+        
+        // Ensure new structure exists
+        mutableUserData.pendingAchievementIdsByTest = mutableUserData.pendingAchievementIdsByTest || {};
+        
+        // 1) Update stats based on the event (these count regardless of mode; unlocks will be gated)
+        if (type === 'ANSWER_SUBMITTED') {
+            mutableUserData.totalAttempts = (mutableUserData.totalAttempts || 0) + 1;
+            const today = new Date().toISOString().split('T')[0];
+            const currentTags = Array.isArray(payload.tags) ? payload.tags : [];
+            const uniqueTagsToday = mutableUserData.uniqueTagsToday || { date: null, tags: [] };
+            if (uniqueTagsToday.date !== today) {
+                mutableUserData.uniqueTagsToday = { date: today, tags: [...new Set(currentTags)] };
+            } else {
+                const merged = new Set([...uniqueTagsToday.tags, ...currentTags]);
+                mutableUserData.uniqueTagsToday = { date: today, tags: [...merged] };
+            }
+            const primaryTag = currentTags[0] || 'general';
+            mutableUserData.perTopicStats = mutableUserData.perTopicStats || {};
+            const prevTopic = mutableUserData.perTopicStats[primaryTag] || { correct: 0, total: 0 };
+            const isCorrect = !!payload.correct;
+            mutableUserData.perTopicStats[primaryTag] = {
+                correct: prevTopic.correct + (isCorrect ? 1 : 0),
+                total: prevTopic.total + 1
+            };
+            
+            const prevWasIncorrect = !!mutableUserData.lastAnswerWasIncorrect;
+            mutableUserData.lastAnswerWasIncorrect = !isCorrect;
+            if (isCorrect) {
+                mutableUserData.totalCorrectAnswers = (mutableUserData.totalCorrectAnswers || 0) + 1;
+                mutableUserData.currentStreak = (mutableUserData.currentStreak || 0) + 1;
+
+                // NEW: per-tag correct counters for achievements
+                const tags = Array.isArray(payload.tags) ? payload.tags : [];
+                mutableUserData.correctAnswersByTag = mutableUserData.correctAnswersByTag || {};
+                tags.forEach(tag => {
+                    mutableUserData.correctAnswersByTag[tag] = (mutableUserData.correctAnswersByTag[tag] || 0) + 1;
+                });
+
+                if (!payload.usedHint) {
+                    mutableUserData.noHintStreak = (mutableUserData.noHintStreak || 0) + 1;
+                    mutableUserData.noHintCorrectCount = (mutableUserData.noHintCorrectCount || 0) + 1;
+                }
+                const timeToAnswer = Number(payload.timeToAnswer) || 0;
+                const newTimes = [...(mutableUserData.lastCorrectAnswerTimes || []), timeToAnswer];
+                mutableUserData.lastCorrectAnswerTimes = newTimes.slice(-3);
+                if (payload.wasReviewed) {
+                    mutableUserData.reviewCorrections = (mutableUserData.reviewCorrections || 0) + 1;
+                }
+                mutableUserData.correctRunAfterWrong = prevWasIncorrect ? (mutableUserData.correctRunAfterWrong || 0) + 1 : (mutableUserData.correctRunAfterWrong || 0);
+            } else {
+                mutableUserData.currentStreak = 0;
+                mutableUserData.noHintStreak = 0;
+                mutableUserData.correctRunAfterWrong = 0;
+            }
+        }
+        
+        if (type === 'DAY_STARTED') {
+            const today = new Date().toISOString().split('T')[0];
+            if (mutableUserData.lastActiveDate !== today) {
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                if (mutableUserData.lastActiveDate === yesterday) {
+                    mutableUserData.loginStreak = (mutableUserData.loginStreak || 1) + 1;
+                } else {
+                    mutableUserData.loginStreak = 1;
+                }
+                mutableUserData.lastActiveDate = today;
+                const activity = new Set(mutableUserData.dailyActivityDates || []);
+                activity.add(today);
+                mutableUserData.dailyActivityDates = [...activity];
+                mutableUserData.dailyChallenge = mutableUserData.dailyChallenge || {};
+                mutableUserData.dailyChallenge.completedToday = false;
+            }
+        }
+
+        if (type === 'PACK_COMPLETED' && payload.isDailyChallenge) {
+          const today = new Date().toISOString().split('T')[0];
+          mutableUserData.dailyChallenge = mutableUserData.dailyChallenge || {};
+          if (!mutableUserData.dailyChallenge.completedToday) {
+            mutableUserData.dailyChallenge.completedToday = true;
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            const lastDay = mutableUserData.dailyChallenge.lastCompletedDate;
+            if (lastDay === yesterday) {
+              mutableUserData.dailyChallengeStreak = (mutableUserData.dailyChallengeStreak || 0) + 1;
+            } else if (lastDay !== today) {
+              mutableUserData.dailyChallengeStreak = 1;
+            }
+            mutableUserData.dailyChallenge.lastCompletedDate = today;
+          }
+        }
+        
+        // 2) Run unlocker
+        const { updated: withAchievements, unlockedIds } = unlockAchievements(mutableUserData, event);
+        let finalUserData = withAchievements;
+        
+        // 3) Buffer newly unlocked achievements (Test mode only was enforced inside unlocker)
+        if (unlockedIds?.length) {
+          const bufferTestId = payload?.testId || payload?.finishedTestId || null;
+        
+          if (bufferTestId) {
+            const existing = new Set(finalUserData.pendingAchievementIdsByTest[bufferTestId] || []);
+            unlockedIds.forEach(id => existing.add(id));
+            finalUserData.pendingAchievementIdsByTest[bufferTestId] = Array.from(existing);
+          }
+        }
+        
+        // 4) On PACK_COMPLETED in Test mode, award XP
+        if (type === 'PACK_COMPLETED' && payload?.mode === 'Test') {
+          const finishedId = payload.finishedTestId;
+          const pendingIds = finalUserData.pendingAchievementIdsByTest[finishedId] || [];
+        
+          let xpToAdd = payload.score; // 1 XP per correct answer
+          if (pendingIds.length > 0) {
+            xpToAdd += pendingIds.reduce((sum, id) => sum + xpForAchievementId(id), 0);
+          }
+          finalUserData.xp = (finalUserData.xp || 0) + xpToAdd;
+        
+          // Level-up consumption
+          finalUserData.level = finalUserData.level || 1;
+          let threshold = finalUserData.level * 100;
+          while (finalUserData.xp >= threshold) {
+            finalUserData.xp -= threshold;
+            finalUserData.level += 1;
+            threshold = finalUserData.level * 100;
+          }
+        
+          // Clear pending for this completed test
+          delete finalUserData.pendingAchievementIdsByTest[finishedId];
+        }
+        
+        // 5) Persist
+        updateAllData({ ...appData, userData: finalUserData });
+        
+        // 6) Celebrate unlocks (modal)
+        if (unlockedIds?.length && !silentAchievements) {
+          const unlockedAchievementsDetails = unlockedIds
+            .map(id => achievementsList.find(a => a.id === id))
+            .filter(Boolean);
+          const message = unlockedAchievementsDetails.map(u => `"${u.title}"`).join(', ');
+          showModal({
+            title: "🏆 Achievement Unlocked! 🏆",
+            message: `Congratulations! You've earned: ${message}`,
+            onConfirm: () => {},
+            confirmText: "Awesome!"
+          });
+        }
+      }, [appData, updateAllData, showModal, showNotification]);
+
+      if (!appData) {
+        return <LoadingSpinner message="Initializing System..." />;
+      }
+
+      const renderView = () => {
+        switch (view) {
+          case 'loading': return <LoadingSpinner message="Loading Portal..." />;
+          case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} hideModal={hideModal} updateUserData={updateUserData} appData={appData} updateAllData={updateAllData} showNotification={showNotification} />;
+          case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} updateAllData={updateAllData} showNotification={showNotification} showModal={showModal} />;
+          case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} showModal={showModal} />;
+          case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} handleFullReset={handleFullReset} />;
+          case 'settings': return <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
+          case 'achievements': return <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />;
+          default: return <LoadingSpinner message="Loading Portal..." />;
+        }
+      };
+
+      return (
+        <div className="font-sans">
+          {renderView()}
+          {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
+          {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
+        </div>
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
