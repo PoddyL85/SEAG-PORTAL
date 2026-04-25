@@ -5,28 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nicolas's SEAG Portal</title>
 
-  <!-- Google Fonts: Orbitron for a gaming feel -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   
-  <!-- Open Sans Font for accessibility -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- React Libraries (Production) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-  <!-- Babel to compile JSX in the browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- PDF.js for parsing PDF files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
-  <!-- Chart.js for data visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -288,7 +281,7 @@
         subject: "Mixed",
         notes: "Full-length practice exam 1.",
         questions: [
-          // English Section (28 Qs)
+          // English Section
           { question: "Identify the sentence with the correct punctuation: The cat sat on the mat. or The cat, sat on the mat.", answer: "The cat sat on the mat.", tags: ['punctuation'] },
           { question: "Which word is the adjective in this sentence: The quick brown fox jumps over the lazy dog.", answer: "quick", tags: ['grammar'] },
           { question: "Choose the correct spelling: a) accomodate b) accommodate c) acommodate", answer: "b", tags: ['spelling'] },
@@ -317,8 +310,7 @@
           { question: "Choose the correct homophone: 'I want to go ___, over there.'", options: ["their", "there", "they're"], answer: "there", tags: ['vocabulary'] },
           { question: "What is the function of an apostrophe in 'the cat's toy'?", answer: "To show possession", tags: ['punctuation'] },
           { question: "Which word completes the simile: 'as brave as a ___'?", answer: "lion", tags: ['vocabulary'] },
-
-          // Maths Section (28 Qs)
+          // Maths Section
           { question: "A football pitch measures 115 metres long and 80 metres wide. The area of a rugby pitch is 6,392 square metres. How many square metres smaller is the area of the rugby pitch than the area of the football pitch?", options: ["9200 m²", "2908 m²", "2809 m²", "2808 m²", "6197 m²"], answer: "2808 m²" },
           { question: "Convert this measurement: 1701 g = ___ kg", options: ["17.01 kg", "1.701 kg", "170.1 kg", "1.7 kg", "0.1701 kg"], answer: "1.701 kg" },
           { question: "How many lines of symmetry does a rhombus have?", options: ["0", "1", "2", "3", "4"], answer: "2" },
@@ -355,7 +347,7 @@
         subject: "Mixed",
         notes: "Full-length practice exam 2.",
         questions: [
-          // English Section (28 Qs)
+          // English Section
           { question: "Which sentence is grammatically correct?", options: ["She done her homework.", "She did her homework."], answer: "She did her homework.", tags: ['grammar'] },
           { question: "What is the plural of 'goose'?", answer: "geese", tags: ['grammar'] },
           { question: "Identify the adverb: 'The turtle walked slowly.'", answer: "slowly", tags: ['grammar'] },
@@ -385,7 +377,7 @@
           { question: "Correct the sentence: 'I could of gone to the party.'", answer: "I could have gone to the party.", tags: ['grammar'] },
           { question: "What does the prefix 're-' mean in 'rewrite'?", answer: "again", tags: ['vocabulary'] },
 
-          // Maths Section (28 Qs)
+          // Maths Section
           { question: "A baker uses 250g of flour for every cake. How many cakes can he bake with a 5kg bag of flour?", options: ["10", "15", "20", "25", "30"], answer: "20" },
           { question: "What is the value of x if 4x + 5 = 25?", options: ["3", "4", "5", "6", "7"], answer: "5" },
           { question: "A train travels at 60 mph. How long does it take to travel 150 miles?", options: ["2 hours", "2.5 hours", "3 hours", "3.5 hours", "4 hours"], answer: "2.5 hours" },
@@ -447,7 +439,7 @@
         { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term' },
         { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term' },
         { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster' },
-        { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full 56-question practice test.', category: 'Longer-Term' },
+        { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full practice test.', category: 'Longer-Term' },
         { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer' },
         { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term' },
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete all available full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ' },
@@ -465,12 +457,9 @@
     }
 
     // --- Central Achievement Unlocker ---
-    // ISO Week helper
     function isoWeekString(d) {
       const date = new Date(d);
-      // Copy date so don't modify original
       const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      // Thursday in current week decides the year.
       tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
       const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
       const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
@@ -478,7 +467,6 @@
     }
 
     function unlockAchievements(userData, event, allTestsMaybe) {
-      // Ensure structures exist
       userData.achievements = userData.achievements || {};
       userData.correctAnswersByTag = userData.correctAnswersByTag || {};
       userData.badgeProgress = userData.badgeProgress || {};
@@ -499,28 +487,19 @@
       const p = event?.payload || {};
       const mode = p.mode;
       
-      // STRICT RULE: only unlock achievements during Test mode actions
       if ((type === 'ANSWER_SUBMITTED' || type === 'PACK_COMPLETED') && mode !== 'Test') {
-        // Allow review-based progress in "Practice Mistakes"
         if (!(type === 'ANSWER_SUBMITTED' && p.wasReviewed)) {
           return { updated: userData, unlockedIds: [] };
         }
       }
       
       if (type === 'ANSWER_SUBMITTED') {
-        // Threshold/cumulative unlocks that depend on per-answer stats (already updated in updateUserData)
         const tagCounts = userData.correctAnswersByTag || {};
         if (!has('fractionFanatic') && (tagCounts.fractions || 0) >= 50) unlock('fractionFanatic');
         if (!has('punctuationPro') && (tagCounts.punctuation || 0) >= 25) unlock('punctuationPro');
         if (!has('vocabularyVirtuoso') && (tagCounts.vocabulary || 0) >= 100) unlock('vocabularyVirtuoso');
         if (!has('centuryClub') && (userData.totalCorrectAnswers || 0) >= 100) unlock('centuryClub');
-      
-        // Comeback Kid: after any wrong, get three correct in a row
-        if (!has('comebackKid') && p.correct && (userData.correctRunAfterWrong || 0) >= 3) {
-          unlock('comebackKid');
-        }
-        
-        // --- Merged Quick Wins & Medium Term from original logic ---
+        if (!has('comebackKid') && p.correct && (userData.correctRunAfterWrong || 0) >= 3) unlock('comebackKid');
         if (!has('firstSteps') && (userData.totalAttempts || 0) >= 5) unlock('firstSteps');
         if (!has('quickThinker') && p.correct && (p.timeToAnswer || 0) <= 20) unlock('quickThinker');
         if (!has('firstStreak') && (userData.currentStreak || 0) >= 3) unlock('firstStreak');
@@ -528,476 +507,225 @@
         if (!has('mistakeFixer') && p.correct && p.wasReviewed) unlock('mistakeFixer');
         if (!has('noHintHeroMini') && (userData.noHintCorrectCount || 0) >= 5) unlock('noHintHeroMini');
         if (!has('accurateStart') && (userData.totalAttempts || 0) >= 10 && ((userData.totalCorrectAnswers || 0) / userData.totalAttempts) >= 0.7) unlock('accurateStart');
-        if (!has('speedStreak') && (userData.currentStreak || 0) >= 3 && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) {
-            unlock('speedStreak');
-        }
+        if (!has('speedStreak') && (userData.currentStreak || 0) >= 3 && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) unlock('speedStreak');
         if (!has('consistencyStar') && (userData.loginStreak || 0) >= 2) unlock('consistencyStar');
         if (!has('varietyChamp') && p.correct && (userData.uniqueTagsToday?.tags?.length || 0) >= 3) unlock('varietyChamp');
         if (!has('noHintHeroPro') && (userData.noHintStreak || 0) >= 10) unlock('noHintHeroPro');
         if (!has('masteryBadge')) {
             const stats = userData.perTopicStats || {};
-            if (Object.values(stats).some(s => s.total >= 30 && (s.correct / s.total) >= 0.9)) {
-                unlock('masteryBadge');
-            }
+            if (Object.values(stats).some(s => s.total >= 30 && (s.correct / s.total) >= 0.9)) unlock('masteryBadge');
         }
         if (!has('reviewPro') && (userData.reviewCorrections || 0) >= 10) unlock('reviewPro');
       }
       
       if (type === 'PACK_COMPLETED') {
-        // Speed Demon: > half time remaining
-        if (
-          !has('speedDemon') &&
-          typeof p.timeLeft === 'number' &&
-          typeof p.initialTotalTime === 'number' &&
-          p.initialTotalTime > 0 &&
-          p.timeLeft >= (p.initialTotalTime / 2)
-        ) {
-          unlock('speedDemon');
-        }
-      
-        // Clutch Performer: final Q correct on a 56-question full practice
-        if (!has('clutchPerformer') && p.isFullPractice && p.totalQuestions === 56 && p.lastQuestionCorrect) {
-          unlock('clutchPerformer');
-        }
-      
-        // Geometry Guru: >=90% on three different tests that include geometry
+        if (!has('speedDemon') && typeof p.timeLeft === 'number' && typeof p.initialTotalTime === 'number' && p.initialTotalTime > 0 && p.timeLeft >= (p.initialTotalTime / 2)) unlock('speedDemon');
+        if (!has('clutchPerformer') && p.isFullPractice && p.lastQuestionCorrect) unlock('clutchPerformer');
         if (p.testHasGeometry && p.totalQuestions > 0 && (p.score / p.totalQuestions) >= 0.9) {
           const list = new Set(userData.badgeProgress.geometryGuruTests);
           list.add(p.finishedTestId);
           userData.badgeProgress.geometryGuruTests = Array.from(list);
-          if (!has('geometryGuru') && userData.badgeProgress.geometryGuruTests.length >= 3) {
-            unlock('geometryGuru');
-          }
+          if (!has('geometryGuru') && userData.badgeProgress.geometryGuruTests.length >= 3) unlock('geometryGuru');
         }
-      
-        // Weekly Warrior: 5 separate days within the same ISO week
         if (p.finishedAt) {
           const finishedDate = new Date(p.finishedAt);
-          // Track per-week day set
-          userData.weeklyDayMap = userData.weeklyDayMap || {}; // { '2025-W33': { '2025-08-11': true, ... } }
+          userData.weeklyDayMap = userData.weeklyDayMap || {};
           const weekKey = isoWeekString(finishedDate);
           const dayKey = finishedDate.toISOString().split('T')[0];
           const days = userData.weeklyDayMap[weekKey] || {};
           days[dayKey] = true;
           userData.weeklyDayMap[weekKey] = days;
-          
-          const dayCount = Object.keys(days).length;
-          if (!has('weeklyWarrior') && dayCount >= 5) {
-            unlock('weeklyWarrior');
-          }
+          if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
-      
-        // Marathon Runner: finish all full practice tests
         if (p.finishedTestId && /^full-test-/.test(p.finishedTestId)) {
           const ft = new Set(userData.fullTestsCompleted);
           ft.add(p.finishedTestId);
           userData.fullTestsCompleted = Array.from(ft);
-      
-          const has1 = userData.fullTestsCompleted.includes('full-test-1');
-          const has2 = userData.fullTestsCompleted.includes('full-test-2');
-          if (!has('marathonRunner') && has1 && has2) {
-            unlock('marathonRunner');
-          }
+          if (!has('marathonRunner') && userData.fullTestsCompleted.includes('full-test-1') && userData.fullTestsCompleted.includes('full-test-2')) unlock('marathonRunner');
         }
-
-        // --- Merged PACK_COMPLETED from original logic ---
         if (!has('solidAccuracy') && (p.totalQuestions || 0) >= 20 && ((p.score || 0) / (p.totalQuestions || 1)) >= 0.8) unlock('solidAccuracy');
         if (!has('packFinisher')) unlock('packFinisher');
         if (!has('perfectPack') && p.score === p.totalQuestions) unlock('perfectPack');
         if (!has('dedicatedDabbler') && p.isDailyChallenge && (userData.dailyChallengeStreak || 0) >= 7) unlock('dedicatedDabbler');
       }
       
-      // IMPORTANT: Do NOT add XP here. XP is awarded in updateUserData only after PACK_COMPLETED.
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-
     // --- Helper Components & Functions ---
-    
-    // ===== Time formatting for the header timer =====
     function formatMs(ms) {
       const sec = Math.floor(ms / 1000);
       const h = Math.floor(sec / 3600);
       const m = Math.floor((sec % 3600) / 60);
       const s = sec % 60;
-      return h > 0
-        ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-        : `${m}:${String(s).padStart(2,'0')}`;
+      return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
     }
 
-    // ===== Extract letter-labeled options e.g. "a) ... b) ... c) ..." inside question text =====
     function extractLabeledOptionsFromPrompt(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
-      
-      // Find first "a)"-style marker at a boundary
       const firstA = /(?:^|[\s(])[Aa][\)\.\:]\s*/.exec(s);
       if (!firstA) return null;
-      
       const stem = s.slice(0, firstA.index).trim();
       const rest = s.slice(firstA.index);
-      
-      // Allow up to A–E; adjust higher if needed
       const labelRe = /(?:^|[\s(])([A-Ea-e])[\)\.\:]\s*/g;
-      
       let match;
-      const spans = []; // { label, labelStart, textStart }
-      
+      const spans = [];
       while ((match = labelRe.exec(rest)) !== null) {
-        spans.push({
-          label: match[1].toLowerCase(),
-          labelStart: match.index,
-          textStart: labelRe.lastIndex
-        });
+        spans.push({ label: match[1].toLowerCase(), labelStart: match.index, textStart: labelRe.lastIndex });
       }
-      
-      if (spans.length < 2) return null; // need at least a) and b)
-      
+      if (spans.length < 2) return null;
       const options = [];
       for (let i = 0; i < spans.length; i++) {
         const start = spans[i].textStart;
-        const end = (i + 1 < spans.length) ? spans[i + 1].labelStart : rest.length; // stop at next label start
+        const end = (i + 1 < spans.length) ? spans[i + 1].labelStart : rest.length;
         options.push(rest.slice(start, end).trim());
       }
-      
       const labels = spans.map(s => s.label);
-      const nonEmptyCount = options.filter(Boolean).length;
-      if (nonEmptyCount >= 2) {
-        return { stem: stem || s, options, labels };
-      }
+      if (options.filter(Boolean).length >= 2) return { stem: stem || s, options, labels };
       return null;
     }
 
-    // Parse exactly-two inline choices separated by " or " when no letter labels present
     function tryParseTwoOptionsFromOr(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
-      
-      // If already letter-labelled, skip
       if (/(?:^|[\s(])[A-Da-d][\)\.\:]\s/.test(s)) return null;
-      
       const parts = s.split(/\s+or\s+/i);
       if (parts.length !== 2) return null;
-      
-      // Heuristic: stem up to last colon, if any
       const colonIdx = s.lastIndexOf(':');
       const stem = colonIdx >= 0 ? s.slice(0, colonIdx + 1).trim() : s;
-      
       const leftSource = parts[0];
-      const left = colonIdx >= 0
-        ? leftSource.slice(leftSource.lastIndexOf(':') + 1).trim()
-        : leftSource.trim();
+      const left = colonIdx >= 0 ? leftSource.slice(leftSource.lastIndexOf(':') + 1).trim() : leftSource.trim();
       const right = parts[1].trim();
-      
-      const ok = (t) => t && t.length >= 2;
-      if (ok(left) && ok(right)) {
-        return { stem, options: [left, right] };
-      }
+      if (left && left.length >= 2 && right && right.length >= 2) return { stem, options: [left, right] };
       return null;
     }
 
-    // ===== Numeric normalization and comparison helpers =====
-    const unicodeFractionMap = new Map([
-      ['½', '1/2'], ['⅓', '1/3'], ['⅔', '2/3'],
-      ['¼', '1/4'], ['¾', '3/4'], ['⅕', '1/5'],
-      ['⅖', '2/5'], ['⅗', '3/5'], ['⅘', '4/5'],
-      ['⅙', '1/6'], ['⅚', '5/6'], ['⅛', '1/8'],
-      ['⅜', '3/8'], ['⅝', '5/8'], ['⅞', '7/8']
-    ]);
-
+    const unicodeFractionMap = new Map([['½', '1/2'], ['⅓', '1/3'], ['⅔', '2/3'], ['¼', '1/4'], ['¾', '3/4'], ['⅕', '1/5'], ['⅖', '2/5'], ['⅗', '3/5'], ['⅘', '4/5'], ['⅙', '1/6'], ['⅚', '5/6'], ['⅛', '1/8'], ['⅜', '3/8'], ['⅝', '5/8'], ['⅞', '7/8']]);
     function replaceUnicodeFractions(s) {
       let out = s;
       unicodeFractionMap.forEach((ascii, uni) => { out = out.replaceAll(uni, ascii); });
       return out;
     }
-
-    // Normalize decimal commas and leading dots: "0,15" -> "0.15", ".5" -> "0.5"
     function normalizeDecimalSyntax(s) {
       let t = s.trim();
-      if (/\d/.test(t) && (t.match(/,/g)?.length === 1) && !t.includes('.')) {
-        t = t.replace(',', '.');
-      }
-      t = t.replace(/(^|\s)\.(\d)/g, '$10.$2');
-      return t;
+      if (/\d/.test(t) && (t.match(/,/g)?.length === 1) && !t.includes('.')) t = t.replace(',', '.');
+      return t.replace(/(^|\s)\.(\d)/g, '$10.$2');
     }
-
     function parseAsciiFraction(frac) {
       const m = frac.trim().match(/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/);
       if (!m) return null;
-      const num = parseFloat(m[1]);
-      const den = parseFloat(m[2]);
+      const num = parseFloat(m[1]), den = parseFloat(m[2]);
       if (!isFinite(num) || !isFinite(den) || den === 0) return null;
       return num / den;
     }
-
     function parseMixedFraction(s) {
       const m = s.trim().match(/^([+-]?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
       if (!m) return null;
-      const w = parseFloat(m[1]);
-      const n = parseFloat(m[2]);
-      const d = parseFloat(m[3]);
+      const w = parseFloat(m[1]), n = parseFloat(m[2]), d = parseFloat(m[3]);
       if (!isFinite(w) || !isFinite(n) || !isFinite(d) || d === 0) return null;
-      const sign = w < 0 ? -1 : 1;
-      return w + sign * (n / d);
+      return w + (w < 0 ? -1 : 1) * (n / d);
     }
-
-    function detectPercentUnit(raw) {
-      const s = raw.toLowerCase();
-      return /%|\bpercent\b|\bper\s*cent\b/.test(s);
-    }
-    function stripPercentText(raw) {
-      return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, '');
-    }
-
-    // Strip currency/measurement but KEEP percent and numeric syntax.
+    function detectPercentUnit(raw) { return /%|\bpercent\b|\bper\s*cent\b/.test(raw.toLowerCase()); }
+    function stripPercentText(raw) { return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
     function unitStripForNumeric(raw) {
       if (raw == null) return '';
-      return String(raw)
-        .replace(/[£$€]/g, '')
-        .replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '')
-        .trim();
+      return String(raw).replace(/[£$€]/g, '').replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '').trim();
     }
-
     function normalizeNumericLike(raw) {
       if (raw == null) return { ok: false };
-      let s = String(raw).trim();
-      
-      s = replaceUnicodeFractions(s);
+      let s = replaceUnicodeFractions(String(raw).trim());
       const hadPercent = detectPercentUnit(s);
       if (hadPercent) s = stripPercentText(s);
       s = normalizeDecimalSyntax(s);
-      
       let val = parseMixedFraction(s);
-      if (val == null) {
-        const fracVal = parseAsciiFraction(s);
-        if (fracVal != null) val = fracVal;
-      }
+      if (val == null) val = parseAsciiFraction(s);
       if (val == null) {
         const num = parseFloat(s);
         if (!Number.isNaN(num) && isFinite(num)) val = num;
       }
-      if (val == null) return { ok: false };
-      return { ok: true, value: val, isPercent: hadPercent };
+      return val == null ? { ok: false } : { ok: true, value: val, isPercent: hadPercent };
     }
-
-    // Percent and numeric-aware comparison with tolerance
     function compareNumericAnswers(studentRaw, correctRaw, options = {}) {
-      const {
-        toleranceAbs = 1e-4,
-        toleranceRel = 1e-3,
-        percentEquivalence = 'both'
-      } = options;
-      
-      const s = normalizeNumericLike(studentRaw);
-      const c = normalizeNumericLike(correctRaw);
+      const { toleranceAbs = 1e-4, toleranceRel = 1e-3, percentEquivalence = 'both' } = options;
+      const s = normalizeNumericLike(studentRaw), c = normalizeNumericLike(correctRaw);
       if (!s.ok || !c.ok) return { equal: false, reason: 'non-numeric' };
-      
       const candidates = [];
-      if (s.isPercent === c.isPercent) {
-        candidates.push([s.value, c.value]);
-      }
-      const allowStudentToPercent = percentEquivalence === 'both' || percentEquivalence === 'studentToPercent';
-      const allowCorrectToPercent = percentEquivalence === 'both' || percentEquivalence === 'correctToPercent';
-      
-      if (allowStudentToPercent && c.isPercent && !s.isPercent) {
-        candidates.push([s.value * 100, c.value]);
-      }
-      if (allowCorrectToPercent && s.isPercent && !c.isPercent) {
-        candidates.push([s.value, c.value * 100]);
-      }
-      
+      if (s.isPercent === c.isPercent) candidates.push([s.value, c.value]);
+      if ((percentEquivalence === 'both' || percentEquivalence === 'studentToPercent') && c.isPercent && !s.isPercent) candidates.push([s.value * 100, c.value]);
+      if ((percentEquivalence === 'both' || percentEquivalence === 'correctToPercent') && s.isPercent && !c.isPercent) candidates.push([s.value, c.value * 100]);
       for (const [sv, cv] of candidates) {
         const diff = Math.abs(sv - cv);
         const rel = Math.abs(diff / (Math.abs(cv) > 0 ? Math.abs(cv) : 1));
-        if (diff <= toleranceAbs || rel <= toleranceRel) {
-          return { equal: true };
-        }
+        if (diff <= toleranceAbs || rel <= toleranceRel) return { equal: true };
       }
       return { equal: false };
     }
-
-    function stripOuterQuotesAndEndPunct(s) {
-      return s
-        .replace(/^[“”"']+|[“”"']+$/g, '') // outer quotes
-        .replace(/[.?!]+$/g, '')           // trailing sentence punctuation
-        .trim();
-    }
-    function stripLeadingArticles(s) {
-      return s.replace(/^(?:an?|the)\s+/i, '').trim();
-    }
-
+    function stripOuterQuotesAndEndPunct(s) { return s.replace(/^[“”"']+|[“”"']+$/g, '').replace(/[.?!]+$/g, '').trim(); }
+    function stripLeadingArticles(s) { return s.replace(/^(?:an?|the)\s+/i, '').trim(); }
     const normalizeAnswer = (answer, tags = []) => {
       if (answer == null) return '';
-      if (typeof answer !== 'string') answer = String(answer);
-      let s = answer.toLowerCase().trim();
-      s = s.replace(/\s+/g, ' ');
-      // Strip common articles for more lenient free-text checking
-      s = s.replace(/\b(a|an|the)\b/g, '').trim();
+      let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
-    
     const isAnswerCorrect = (question, userAnswer) => {
       if (!question) return false;
-      const correctAnswer = question.answer;
-      const tags = question.tags || [];
-      const qText = question.question || '';
-      
-      // 1) Handle letter-labeled options embedded in free-text prompts
+      const correctAnswer = question.answer, tags = question.tags || [], qText = question.question || '';
       const labeled = extractLabeledOptionsFromPrompt(qText);
       if (labeled && labeled.options?.length >= 2) {
-        const s = String(userAnswer ?? '').trim().toLowerCase();
-        const c = String(correctAnswer ?? '').trim().toLowerCase();
-      
-        // If the stored correct answer is a letter like 'b'
+        const s = String(userAnswer ?? '').trim().toLowerCase(), c = String(correctAnswer ?? '').trim().toLowerCase();
         if (/^[a-z]$/.test(c)) return s === c;
-      
-        // If student selected a letter but author stored full option text
         if (/^[a-z]$/.test(s)) {
-          const idx = s.charCodeAt(0) - 97; // a=0
+          const idx = s.charCodeAt(0) - 97;
           const chosen = labeled.options[idx]?.trim().toLowerCase();
           return chosen && chosen === c;
         }
-      
-        // Otherwise fall back to text equality
         return s === c;
       }
-      
-      // 2) Numeric-ish content by tags
       const numericish = tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions');
       if (numericish) {
-        const sVal = unitStripForNumeric(userAnswer);
-        const cVal = unitStripForNumeric(correctAnswer);
-        const res = compareNumericAnswers(sVal, cVal, {
-          toleranceAbs: 1e-4,
-          toleranceRel: 1e-3,
-          percentEquivalence: 'both'
-        });
-        if (res.equal) return true;
+        if (compareNumericAnswers(unitStripForNumeric(userAnswer), unitStripForNumeric(correctAnswer), { toleranceAbs: 1e-4, toleranceRel: 1e-3, percentEquivalence: 'both' }).equal) return true;
       }
-      
-      // 2b) Fallback: if both look numeric, compare numerically even without tags
-      {
-        const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
-        const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
-        if (sNorm.ok && cNorm.ok) {
-          const res2 = compareNumericAnswers(sNorm.value, cNorm.value, {
-            toleranceAbs: 1e-4,
-            toleranceRel: 1e-3,
-            percentEquivalence: 'both'
-          });
-          if (res2.equal) return true;
-        }
-      }
-      
-      // 3) Fallback: normalized string comparison
-      const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
-      const normalizedUser = normalizeAnswer(userAnswer, tags);
+      const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer)), cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
+      if (sNorm.ok && cNorm.ok && compareNumericAnswers(sNorm.value, cNorm.value, { toleranceAbs: 1e-4, toleranceRel: 1e-3, percentEquivalence: 'both' }).equal) return true;
+      const normalizedCorrect = normalizeAnswer(correctAnswer, tags), normalizedUser = normalizeAnswer(userAnswer, tags);
       if (normalizedCorrect === normalizedUser) return true;
-
-      // Tolerate leading articles + outer quotes + trailing punctuation
-      const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
-      const looseUser = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedUser));
-      if (looseCorrect === looseUser) return true;
-
+      if (stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect)) === stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedUser))) return true;
       return false;
     };
 
-    const AIExplanation = ({ question, userAnswer, correctAnswer, onClose, currentQuestionIndex }) => {
+    const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
 
-      const parseAIResponse = (data) => {
-        if (typeof data?.explanation === 'string' && data.explanation.trim()) return data.explanation.trim();
-        if (typeof data?.response === 'string' && data.response.trim()) return data.response.trim();
-        if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim();
-        if (typeof data?.text === 'string' && data.text.trim()) return data.text.trim();
-        try {
-          const parts = data?.candidates?.[0]?.content?.parts;
-          if (Array.isArray(parts)) {
-            const combined = parts
-              .map(p => (typeof p?.text === 'string' ? p.text : ''))
-              .join(' ')
-              .trim();
-            if (combined) return combined;
-          }
-        } catch (_) {}
-        return '';
-      };
-
-      const getGenericExplanation = (question, userAnswer, correctAnswer) => {
-        const tag = question.tags?.[0] || 'general';
+      const getGenericExplanation = (q, ua, ca) => {
+        const tag = q.tags?.[0] || 'general';
         const fallbacks = {
-          'fractions': `When working with fractions, remember to find common denominators first. The correct answer is ${correctAnswer}. Try breaking it down step by step!`,
-          'geometry': `For geometry problems, always check your units and formulas. The answer ${correctAnswer} comes from applying the right formula. Draw it out if it helps!`,
-          'grammar': `Grammar rules can be tricky! The correct answer is "${correctAnswer}". Try reading the sentence out loud to hear what sounds right.`,
-          'general': `Don't worry about getting it wrong - that's how we learn! The correct answer is ${correctAnswer}. Think about what makes this answer right.`
+          'fractions': `When working with fractions, remember to find common denominators first. The correct answer is ${ca}. Try breaking it down step by step!`,
+          'geometry': `For geometry problems, always check your units and formulas. The answer ${ca} comes from applying the right formula. Draw it out if it helps!`,
+          'grammar': `Grammar rules can be tricky! The correct answer is "${ca}". Try reading the sentence out loud to hear what sounds right.`,
+          'general': `Don't worry about getting it wrong - that's how we learn! The correct answer is ${ca}. Think about what makes this answer right.`
         };
         return fallbacks[tag] || fallbacks.general;
       };
 
       const generateExplanation = async () => {
-        if (!question?.question || userAnswer == null || correctAnswer == null) {
-          return;
-        }
-
         setLoading(true);
-        setError(null);
-        setExplanation('');
-
         try {
           const hasOptions = Array.isArray(question.options) && question.options.length > 0;
-          const optionsText = hasOptions
-            ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}`
-            : '';
-
-          const prompt = `
-      You are a kind, concise tutor for a 10-year-old student. Explain clearly why the user's answer is not correct and why the correct answer is right. Keep it short and encouraging.
-
-      Question: ${question.question}
-      ${optionsText ? optionsText + '\n' : ''}User's answer: ${String(userAnswer)}
-      Correct answer: ${String(correctAnswer)}
-      `;
-
-          const payload = {
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: prompt }]
-              }
-            ]
-          };
-
+          const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}` : '';
+          const prompt = `You are a kind, concise tutor for a 10-year-old student. Explain clearly why the user's answer is not correct and why the correct answer is right. Keep it short and encouraging.\nQuestion: ${question.question}\n${optionsText ? optionsText + '\n' : ''}User's answer: ${String(userAnswer)}\nCorrect answer: ${String(correctAnswer)}`;
+          
           const response = await fetch('/.netlify/functions/gemini-proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
           });
-
-          if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({}));
-            throw new Error(errorBody.error?.message || `HTTP ${response.status}`);
-          }
-
           const data = await response.json();
-
-          const aiText =
-            parseAIResponse(data) ||
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            data?.explanation ||
-            data?.response ||
-            data?.message ||
-            data?.text ||
-            '';
-
-          if (typeof aiText === 'string' && aiText.trim()) {
-            setExplanation(aiText.trim());
-          } else {
-            setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
-          }
+          const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (typeof aiText === 'string' && aiText.trim()) setExplanation(aiText.trim());
+          else setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
         } catch (err) {
-          console.error('Error generating AI explanation:', err);
-          setError('Failed to generate explanation');
           setExplanation(getGenericExplanation(question, userAnswer, correctAnswer));
         } finally {
           setLoading(false);
@@ -1005,48 +733,22 @@
       };
       
       useEffect(() => {
-        setExplanation('');
-        const hasQuestion = typeof question?.question === 'string' && question.question.trim().length > 0;
-        const hasCorrectAnswer = correctAnswer !== null && correctAnswer !== undefined;
-        const hasUserAnswer = userAnswer !== undefined && userAnswer !== null;
-        if (hasQuestion && hasCorrectAnswer && hasUserAnswer) {
-          generateExplanation();
-        }
+        if (question && correctAnswer && userAnswer) generateExplanation();
       }, [question, userAnswer, correctAnswer]);
 
-
-      if (loading) {
-        return (
-          <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-              <span className="text-blue-800">Getting explanation...</span>
-            </div>
-          </div>
-        );
-      }
-
+      if (loading) return <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg"><div className="flex items-center gap-2"><div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div><span className="text-blue-800">Getting explanation...</span></div></div>;
       return (
         <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🤖</span>
-                <span className="font-medium text-blue-800">Why was this wrong?</span>
-              </div>
+              <div className="flex items-center gap-2 mb-2"><span className="text-lg">🤖</span><span className="font-medium text-blue-800">Why was this wrong?</span></div>
               <p className="text-blue-700 text-sm leading-relaxed">{explanation}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              ✕
-            </button>
+            <button onClick={onClose} className="text-blue-600 hover:text-blue-800 text-sm">✕</button>
           </div>
         </div>
       );
     };
-
 
     const LoadingSpinner = ({ message }) => (
       <div className="flex flex-col justify-center items-center h-screen bg-slate-900">
@@ -1067,66 +769,23 @@
 
     const Notification = ({ message, type, onDismiss }) => {
       useEffect(() => {
-        const timer = setTimeout(() => {
-          if (typeof onDismiss === 'function') onDismiss();
-        }, 3000);
+        const timer = setTimeout(() => { if (typeof onDismiss === 'function') onDismiss(); }, 3000);
         return () => clearTimeout(timer);
       }, [onDismiss]);
-
-      const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-      return (
-        <div className={`notification-bar p-4 rounded-lg text-white font-bold shadow-lg ${bgColor}`}>
-          {message}
-        </div>
-      );
+      return <div className={`notification-bar p-4 rounded-lg text-white font-bold shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>{message}</div>;
     };
 
     const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
-      const isDestructive = ['Delete', 'Reset', 'Remove', 'Overwrite'].includes(confirmText);
-      const dialogRef = useRef(null);
-
-      useEffect(() => {
-        const dialog = dialogRef.current;
-        const focusable = dialog?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (!focusable?.length) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        first.focus();
-
-        function onKeyDown(e) {
-          if (e.key === 'Escape') {
-            e.stopPropagation();
-            if (onCancel) onCancel();
-          }
-          if (e.key !== 'Tab') return;
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-      }, [onCancel]);
-
       return (
         <div className="modal-backdrop">
-          <div ref={dialogRef} className="bg-slate-800 border border-cyan-500 rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
+          <div className="bg-slate-800 border border-cyan-500 rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
             <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-4">{title}</h2>
             {message && <p className="text-slate-300 mb-8">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
               {onCancel && <button onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-500">Cancel</button>}
               {onConfirm && !!confirmText && (
-                <button
-                  onClick={onConfirm}
-                  className={`font-bold py-2 px-6 rounded-lg ${isDestructive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}
-                >
+                <button onClick={onConfirm} className={`font-bold py-2 px-6 rounded-lg ${['Delete', 'Reset', 'Remove', 'Overwrite'].includes(confirmText) ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
                   {confirmText}
                 </button>
               )}
@@ -1135,12 +794,11 @@
         </div>
       );
     };
-    
+
     const CustomModeSelector = ({ onStart }) => {
         const [useTimer, setUseTimer] = useState(true);
         const [useHints, setUseHints] = useState(false);
         const [shuffle, setShuffle] = useState(false);
-        
         return (
             <div className="text-left p-4 bg-slate-700 rounded-lg mt-4 border border-slate-600">
                 <h4 className="font-bold text-lg text-center mb-4">Custom Settings</h4>
@@ -1158,223 +816,15 @@
                         <input id="shuffle-toggle" type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
                     </div>
                 </div>
-                <button 
-                    onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle: shuffle })} 
-                    className="w-full text-center p-3 mt-6 bg-purple-700 hover:bg-purple-600 rounded-lg font-bold"
-                >
-                    Start Custom Test
-                </button>
+                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle: shuffle })} className="w-full text-center p-3 mt-6 bg-purple-700 hover:bg-purple-600 rounded-lg font-bold">Start Custom Test</button>
             </div>
         );
     }
-
-    // --- Main App Components ---
-    const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal, hideModal, updateUserData, appData, updateAllData, showNotification }) => {
-      const xpForNextLevel = userData.level * 100;
-      const xpPercent = (userData.xp / xpForNextLevel) * 100;
-
-      const handleSelectTest = (testId) => {
-        const test = allTests.find(t => t.id === testId);
-        const progress = userData.progress?.[testId];
-        const totalQ = test?.questions?.length || 0;
-        const answered = progress ? Object.keys(progress.answers || {}).length : 0;
-
-        if (progress && answered > 0 && answered < totalQ) {
-          setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice', shuffle: false } });
-          setView('quiz');
-          return;
-        }
-
-        showModal({
-          title: "Choose Your Mode",
-          children: (
-            <div className="space-y-4">
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-cyan-700 hover:bg-cyan-600 rounded-lg">
-                <h3 className="font-bold text-cyan-200">Practice Mode</h3>
-                <p className="text-sm text-slate-300">No timer, hints enabled, and live feedback on your answers.</p>
-              </button>
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-yellow-700 hover:bg-yellow-600 rounded-lg">
-                <h3 className="font-bold text-yellow-200">Test Mode</h3>
-                <p className="text-sm text-slate-300">A timer will run, hints are disabled, and results are shown only at the end.</p>
-              </button>
-              <CustomModeSelector onStart={(settings) => {
-                  setSelectedTest({ id: testId, settings });
-                  setView('quiz');
-                  hideModal();
-              }} />
-            </div>
-          ),
-          onCancel: () => {},
-          confirmText: null
-        });
-      };
-
-      if (!userData) return <LoadingSpinner message="Loading user data..." />;
-
-      const handleDailyChallenge = () => {
-        let allQuestions = allTests.flatMap(test => test.questions);
-        const dailyQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
-        const challengeTest = {
-          id: 'daily-challenge',
-          title: 'Daily Challenge',
-          subject: 'Mixed',
-          questions: dailyQuestions
-        };
-        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'daily-challenge'), challengeTest] });
-        setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice', shuffle: true } });
-        setView('quiz');
-      };
-
-      const handlePracticeMistakes = () => {
-        const incorrectQuestions = [];
-        const seenQuestions = new Set();
-
-        Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
-          if (testId === 'mistakes-test') return;
-
-          const test = allTests.find(t => t.id === testId);
-          if (!test) return;
-
-          Object.entries(progressData.answers || {}).forEach(([qIndexStr, userAnswer]) => {
-            const qIndex = Number(qIndexStr);
-            if (Number.isNaN(qIndex) || qIndex < 0 || qIndex >= test.questions.length) return;
-
-            const question = test.questions[qIndex];
-            if (!question) return;
-
-            if (!isAnswerCorrect(question, userAnswer) && !seenQuestions.has(question.question)) {
-              incorrectQuestions.push({ 
-                ...question, 
-                originalTestId: testId, 
-                originalQIndex: qIndex 
-              });
-              seenQuestions.add(question.question);
-            }
-          });
-        });
-
-        if (incorrectQuestions.length === 0) {
-          showNotification({message: "No mistakes to practice. Great job!", type: "success"});
-          return;
-        }
-
-        const mistakesTest = {
-          id: 'mistakes-test',
-          title: 'Practice Your Mistakes',
-          subject: 'Mixed',
-          questions: incorrectQuestions
-        };
-
-        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
-        setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
-        setView('quiz');
-      };
-
-      const hasMistakes = Object.values(userData.progress || {}).some(p => (p.score || 0) < Object.keys(p.answers || {}).length);
-
-      const getGameMasterMessage = () => {
-        const entries = Object.entries(userData.progress || {});
-        const completed = entries.map(([id, p]) => {
-          const test = allTests.find(t => t.id === id);
-          if (!test) return null;
-          const total = test.questions.length;
-          const answered = Object.keys(p.answers || {}).length;
-          if (p.settings?.mode === 'Test' && answered === total) {
-            return { id, p, test, completedAt: p.completedAt || 0 };
-          }
-          return null;
-        }).filter(Boolean);
-        if (completed.length) {
-          completed.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
-          const { test, p } = completed[0];
-          const scorePercentage = test.questions.length ? ((p.score || 0) / test.questions.length) * 100 : 0;
-          if (scorePercentage >= 90) {
-            return `Incredible work on ${test.title}! You're a real pro!`;
-          } else if (scorePercentage < 50) {
-            return `That was a tough one! The 'Practice Mistakes' button is a great way to master those tricky questions.`;
-          }
-        }
-        return "Ready to ace these tests? Let's get started!";
-      };
-
-      return (
-        <div className="p-4 sm:p-8 min-h-screen">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
-              <h1 className="text-3xl sm:text-4xl font-bold font-orbitron glowing-text text-cyan-300 flex items-center">
-                <span className="text-5xl mr-4">{userData.avatar || '👨‍🚀'}</span>
-                Welcome, {userData.name}! {userData.title && <span className="text-lg ml-4 bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full border border-yellow-500">{userData.title}</span>}
-              </h1>
-              <div className="flex gap-2">
-                <button onClick={() => setView('settings')} className="bg-slate-700 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">Profile</button>
-                <button onClick={() => setView('achievements')} className="bg-slate-700 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">Achievements</button>
-                <button onClick={() => setView('admin')} className="bg-slate-700 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">Admin Panel</button>
-              </div>
-            </div>
-
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-8">
-              <div className="flex justify-between items-center mb-2 font-orbitron">
-                <span className="font-bold text-cyan-300">Level {userData.level}</span>
-                <span className="text-sm text-slate-400">{userData.xp} / {xpForNextLevel} XP</span>
-              </div>
-              <div className="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
-                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-slate-800/50 border-2 border-purple-500 rounded-xl p-6 shadow-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-orbitron text-purple-300">Daily Challenge</h2>
-                    <p className="text-slate-400">A quick warm-up to get you started!</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-4xl">🔥</div>
-                    <div className="font-bold text-xl">{userData.dailyChallengeStreak || 0} Day Streak</div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  {userData.dailyChallenge?.completedToday ? (
-                    <p className="text-center text-green-400 font-bold p-3 bg-slate-800 rounded-lg">Challenge Complete! Come back tomorrow.</p>
-                  ) : (
-                    <button onClick={handleDailyChallenge} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-500">Start Daily Challenge</button>
-                  )}
-                </div>
-              </div>
-              <div className="bg-slate-800/50 border-2 border-orange-500 rounded-xl p-6 shadow-lg">
-                <h2 className="text-2xl font-orbitron text-orange-300">Review Mistakes</h2>
-                <p className="text-slate-400 mb-4">Tackle the questions you've gotten wrong before.</p>
-                <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-orange-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
-                  Practice Your Mistakes
-                </button>
-              </div>
-            </div>
-
-            <CharacterMessage message={getGameMasterMessage()} character="GameMaster" />
-            
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-6">Available Tests</h2>
-              {allTests.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {allTests.filter(t => !t.isBoss).map(test => (
-                    <TestCard key={test.id} testId={test.id} test={test} onStart={() => handleSelectTest(test.id)} progress={userData.progress?.[test.id]} />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-400">No tests found. Create one in the Admin Panel.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    };
 
     const TestCard = ({ testId, test, onStart, progress }) => {
       const questionsCount = test.questions.length;
       const answeredCount = progress ? Object.keys(progress.answers || {}).length : 0;
       const progressPercent = questionsCount > 0 ? (answeredCount / questionsCount) * 100 : 0;
-
       return (
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-5 flex flex-col justify-between hover:border-cyan-400 hover:shadow-cyan-500/10 hover:shadow-lg transition-all">
           <div>
@@ -1399,15 +849,10 @@
                     const isAnswered = answeredIndices.has(i);
                     const isCurrent = i === current;
                     let buttonClass = 'bg-slate-700 hover:bg-slate-600';
-                    if (isCurrent) {
-                        buttonClass = 'bg-cyan-500 ring-2 ring-cyan-200';
-                    } else if (isAnswered) {
-                        buttonClass = 'bg-slate-600 border border-slate-500';
-                    }
+                    if (isCurrent) buttonClass = 'bg-cyan-500 ring-2 ring-cyan-200';
+                    else if (isAnswered) buttonClass = 'bg-slate-600 border border-slate-500';
                     return (
-                        <button key={i} onClick={() => onNavigate(i)}
-                          aria-label={`Go to question ${i + 1}${isAnswered ? ' (answered)' : ''}`}
-                          className={`w-10 h-10 rounded-md font-mono font-bold transition-all ${buttonClass}`}>
+                        <button key={i} onClick={() => onNavigate(i)} aria-label={`Go to question ${i + 1}`} className={`w-10 h-10 rounded-md font-mono font-bold transition-all ${buttonClass}`}>
                           {i + 1}
                         </button>
                     );
@@ -1415,11 +860,298 @@
             </div>
         );
     }
-    
+
+    // --- PARENT DASHBOARD VIEW (NEW TIER 1 FEATURE) ---
+    const ParentDashboardView = ({ userData, setView, allTests }) => {
+      const stats = userData.perTopicStats || {};
+      const topics = Object.entries(stats).map(([topic, data]) => ({
+        topic,
+        accuracy: data.total > 0 ? (data.correct / data.total) * 100 : 0,
+        total: data.total
+      })).filter(t => t.total >= 3); 
+      
+      topics.sort((a, b) => b.accuracy - a.accuracy);
+      const strongest = topics.length > 0 ? topics[0] : null;
+      const weakest = topics.length > 1 ? topics[topics.length - 1] : null;
+      const overallAccuracy = topics.length > 0 ? topics.reduce((acc, curr) => acc + curr.accuracy, 0) / topics.length : 0;
+
+      return (
+        <div className="p-4 sm:p-8 min-h-screen bg-slate-900">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-4xl font-bold font-orbitron text-cyan-300">Parent Portal</h1>
+              <button onClick={() => setView('dashboard')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Child View</button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-6 shadow-lg text-center">
+                <h3 className="text-slate-400 font-semibold mb-2">Overall Accuracy</h3>
+                <div className={`text-4xl font-bold ${overallAccuracy >= 80 ? 'text-green-400' : overallAccuracy >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {topics.length > 0 ? `${overallAccuracy.toFixed(1)}%` : 'N/A'}
+                </div>
+              </div>
+              <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-6 shadow-lg text-center">
+                <h3 className="text-slate-400 font-semibold mb-2">Strongest Topic</h3>
+                <div className="text-2xl font-bold text-cyan-300 capitalize">{strongest ? strongest.topic : 'Need More Data'}</div>
+                {strongest && <div className="text-sm text-green-400">{strongest.accuracy.toFixed(0)}%</div>}
+              </div>
+              <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-6 shadow-lg text-center">
+                <h3 className="text-slate-400 font-semibold mb-2">Focus Topic (Weakest)</h3>
+                <div className="text-2xl font-bold text-orange-400 capitalize">{weakest ? weakest.topic : 'Need More Data'}</div>
+                {weakest && <div className="text-sm text-red-400">{weakest.accuracy.toFixed(0)}%</div>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                <h2 className="text-2xl font-bold font-orbitron text-cyan-300 mb-4">Curriculum Readiness</h2>
+                {topics.length > 0 ? (
+                  <div className="space-y-4">
+                    {topics.map(t => (
+                      <div key={t.topic}>
+                        <div className="flex justify-between mb-1">
+                          <span className="capitalize text-slate-300 font-medium">{t.topic}</span>
+                          <span className="text-sm text-slate-400">{t.accuracy.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div className={`h-2 rounded-full ${t.accuracy >= 80 ? 'bg-green-500' : t.accuracy >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${t.accuracy}%` }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400">Not enough data to map curriculum yet. Encourage more practice!</p>
+                )}
+              </div>
+
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                <h2 className="text-2xl font-bold font-orbitron text-purple-300 mb-4">Content & Management</h2>
+                <p className="text-slate-300 mb-6">Create new tests, review advanced analytics, and manage the student's learning pathway from the Admin Panel.</p>
+                <button onClick={() => setView('admin')} className="w-full bg-purple-600 text-white font-bold py-4 rounded-lg hover:bg-purple-500 transition-colors shadow-lg shadow-purple-500/20">
+                  Open Admin Panel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SIMPLIFIED CHILD DASHBOARD ---
+    const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal, hideModal, updateUserData, appData, updateAllData, showNotification }) => {
+      const xpForNextLevel = userData.level * 100;
+      const xpPercent = (userData.xp / xpForNextLevel) * 100;
+
+      const handleSelectTest = (testId) => {
+        const test = allTests.find(t => t.id === testId);
+        const progress = userData.progress?.[testId];
+        const answered = progress ? Object.keys(progress.answers || {}).length : 0;
+
+        if (progress && answered > 0 && answered < (test?.questions?.length || 0)) {
+          setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice', shuffle: false } });
+          setView('quiz');
+          return;
+        }
+
+        showModal({
+          title: "Choose Your Mode",
+          children: (
+            <div className="space-y-4">
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-cyan-700 hover:bg-cyan-600 rounded-lg">
+                <h3 className="font-bold text-cyan-200">Practice Mode</h3>
+                <p className="text-sm text-slate-300">No timer, hints enabled, and live feedback on your answers.</p>
+              </button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-4 bg-yellow-700 hover:bg-yellow-600 rounded-lg">
+                <h3 className="font-bold text-yellow-200">Test Mode</h3>
+                <p className="text-sm text-slate-300">A timer will run, hints are disabled, and results are shown only at the end.</p>
+              </button>
+              <CustomModeSelector onStart={(settings) => {
+                  setSelectedTest({ id: testId, settings });
+                  setView('quiz');
+                  hideModal();
+              }} />
+            </div>
+          ),
+          onCancel: hideModal,
+          confirmText: null
+        });
+      };
+
+      if (!userData) return <LoadingSpinner message="Loading user data..." />;
+
+      const handleDailyChallenge = () => {
+        let allQuestions = allTests.flatMap(test => test.questions);
+        const dailyQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
+        const challengeTest = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQuestions };
+        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'daily-challenge'), challengeTest] });
+        setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice', shuffle: true } });
+        setView('quiz');
+      };
+
+      const handlePracticeMistakes = () => {
+        const incorrectQuestions = [];
+        const seenQuestions = new Set();
+        Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
+          if (testId === 'mistakes-test') return;
+          const test = allTests.find(t => t.id === testId);
+          if (!test) return;
+          Object.entries(progressData.answers || {}).forEach(([qIndexStr, userAnswer]) => {
+            const qIndex = Number(qIndexStr);
+            if (Number.isNaN(qIndex) || qIndex < 0 || qIndex >= test.questions.length) return;
+            const question = test.questions[qIndex];
+            if (!question) return;
+            if (!isAnswerCorrect(question, userAnswer) && !seenQuestions.has(question.question)) {
+              incorrectQuestions.push({ ...question, originalTestId: testId, originalQIndex: qIndex });
+              seenQuestions.add(question.question);
+            }
+          });
+        });
+
+        if (incorrectQuestions.length === 0) {
+          showNotification({message: "No mistakes to practice. Great job!", type: "success"});
+          return;
+        }
+        const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: incorrectQuestions };
+        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
+        setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
+        setView('quiz');
+      };
+
+      const handleParentPortalClick = () => {
+        showModal({
+          title: "Parent Verification",
+          message: "Please solve this to enter: What is 8 x 7?",
+          children: (
+            <input id="parent-pin-input" type="number" className="w-full p-3 bg-slate-700 rounded mt-4 text-center text-xl font-bold border border-slate-500" placeholder="?" />
+          ),
+          onConfirm: () => {
+             const val = document.getElementById('parent-pin-input').value;
+             if (val === '56') {
+               setView('parentDashboard');
+             } else {
+               showNotification({message: "Incorrect answer.", type: "error"});
+             }
+          },
+          onCancel: hideModal,
+          confirmText: "Enter"
+        });
+      };
+
+      const nextTest = allTests.find(t => {
+        const progress = userData.progress?.[t.id];
+        if (!progress) return true; 
+        const answered = Object.keys(progress.answers || {}).length;
+        return answered < t.questions.length; 
+      });
+
+      const hasMistakes = Object.values(userData.progress || {}).some(p => (p.score || 0) < Object.keys(p.answers || {}).length);
+
+      return (
+        <div className="p-4 sm:p-8 min-h-screen">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h1 className="text-3xl sm:text-4xl font-bold font-orbitron glowing-text text-cyan-300 flex items-center">
+                <span className="text-5xl mr-4">{userData.avatar || '👨‍🚀'}</span>
+                {userData.name}'s Dashboard
+              </h1>
+              <div className="flex gap-2">
+                <button onClick={() => setView('settings')} className="bg-slate-800 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 border border-slate-600">Profile</button>
+                <button onClick={() => setView('achievements')} className="bg-slate-800 text-cyan-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 border border-slate-600">Badges</button>
+                <button onClick={handleParentPortalClick} className="bg-slate-800 text-purple-400 font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 border border-purple-500/50">Parent Portal</button>
+              </div>
+            </div>
+
+            {/* XP Bar */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-8">
+              <div className="flex justify-between items-center mb-2 font-orbitron">
+                <span className="font-bold text-cyan-300">Level {userData.level} {userData.title && `- ${userData.title}`}</span>
+                <span className="text-sm text-slate-400">{userData.xp} / {xpForNextLevel} XP</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
+                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Daily Challenge Highlight */}
+              <div className="bg-gradient-to-br from-purple-900 to-slate-800 border-2 border-purple-500 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between">
+                    <h2 className="text-2xl font-orbitron text-purple-300 mb-2">🔥 Daily Challenge</h2>
+                    <div className="text-center bg-slate-800 px-3 py-1 rounded-md border border-purple-500/50">
+                      <div className="font-bold text-sm text-purple-300">{userData.dailyChallengeStreak || 0} Day Streak</div>
+                    </div>
+                  </div>
+                  <p className="text-slate-300 mt-2">Complete 5 random questions to keep your streak alive!</p>
+                </div>
+                <div className="mt-6">
+                  {userData.dailyChallenge?.completedToday ? (
+                    <div className="text-center text-green-400 font-bold p-3 bg-slate-800/80 rounded-lg">Challenge Complete! See you tomorrow.</div>
+                  ) : (
+                    <button onClick={handleDailyChallenge} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]">Start Daily Challenge</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Up Next / Learning Path */}
+              {nextTest ? (
+                <div className="bg-gradient-to-br from-cyan-900 to-slate-800 border-2 border-cyan-500 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-2xl font-orbitron text-cyan-300 mb-2">🚀 Up Next For You</h2>
+                    <p className="text-slate-300 font-bold">{nextTest.title}</p>
+                    <p className="text-sm text-slate-400 mb-2">{nextTest.subject} • {nextTest.questions.length} questions</p>
+                  </div>
+                  <button onClick={() => handleSelectTest(nextTest.id)} className="w-full bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-500 mt-4 shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                    Continue Mission
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                  <p className="text-slate-400 mb-4">You've completed all current tests! Review your mistakes.</p>
+                  <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-orange-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                    Practice Your Mistakes
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Test Library */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold font-orbitron text-slate-300">Test Library</h2>
+                <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="bg-orange-600 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                  Review Mistakes
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {allTests.filter(t => t.id !== 'daily-challenge').map(test => {
+                  const progress = userData.progress?.[test.id];
+                  const questionsCount = test.questions.length;
+                  const answeredCount = progress ? Object.keys(progress.answers || {}).length : 0;
+                  const progressPercent = questionsCount > 0 ? (answeredCount / questionsCount) * 100 : 0;
+                  return (
+                    <div key={test.id} className="bg-slate-800 border border-slate-600 rounded-lg p-4 hover:border-cyan-400 transition-colors cursor-pointer" onClick={() => handleSelectTest(test.id)}>
+                      <h3 className="font-bold text-cyan-300 mb-1">{test.title}</h3>
+                      <p className="text-xs text-slate-400 mb-3">{test.subject}</p>
+                      <div className="w-full bg-slate-700 rounded-full h-1.5 mb-1">
+                        <div className="bg-cyan-400 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
+                      </div>
+                      <p className="text-xs text-slate-400">{progressPercent === 100 ? 'Completed' : `${answeredCount}/${questionsCount} done`}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
     const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, updateAllData, showNotification, showModal }) => {
       const { id: testId, settings } = testDetails;
       const test = allTests.find(t => t.id === testId);
-
       const existingProgress = userData?.progress?.[testId] || {};
       const [currentQuestionIndex, setCurrentQuestionIndex] = useState(existingProgress?.lastQuestionIndex || 0);
       const [userAnswers, setUserAnswers] = useState(existingProgress?.answers || {});
@@ -1437,9 +1169,7 @@
       const [elapsedDisplay, setElapsedDisplay] = useState(0);
 
       useEffect(() => {
-        if (!existingProgress?.questionStartTime) {
-          setQuestionStartTime(Date.now());
-        }
+        if (!existingProgress?.questionStartTime) setQuestionStartTime(Date.now());
       }, []);
 
       useEffect(() => {
@@ -1498,9 +1228,7 @@
       const calculateScore = useCallback(() => {
         return Object.entries(userAnswers).reduce((acc, [index, userAnswer]) => {
           const question = test.questions[index];
-          if (isAnswerCorrect(question, userAnswer)) {
-            return acc + 1;
-          }
+          if (isAnswerCorrect(question, userAnswer)) return acc + 1;
           return acc;
         }, 0);
       }, [userAnswers, test.questions]);
@@ -1526,7 +1254,7 @@
           questionStartTime,
           streak: streak, 
           settings: settings,
-          submittedAnswers, // persist
+          submittedAnswers,
           ...(shuffledOrder && { shuffledOrder }),
           ...(isFinished ? { completedAt: now } : {})
         };
@@ -1541,7 +1269,7 @@
             totalQuestions: test.questions.length,
             score,
             mode: settings.mode,
-            timeLeft: 0, // Deprecated, but kept for old logic if needed
+            timeLeft: 0,
             initialTotalTime: 0,
             testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')),
             lastQuestionCorrect: isAnswerCorrect(test.questions[lastOriginalIndex], lastAnswer),
@@ -1563,18 +1291,10 @@
         if (testId === 'mistakes-test') {
           const newProgress = { ...userData.progress };
           const correctlyAnsweredMistakes = [];
-
           test.questions.forEach((q, index) => {
             const userAnswer = userAnswers[index];
-            if (isAnswerCorrect(q, userAnswer)) {
-              correctlyAnsweredMistakes.push({
-                testId: q.originalTestId,
-                qIndex: q.originalQIndex,
-                answer: q.answer
-              });
-            }
+            if (isAnswerCorrect(q, userAnswer)) correctlyAnsweredMistakes.push({ testId: q.originalTestId, qIndex: q.originalQIndex, answer: q.answer });
           });
-
           const affectedTests = new Set();
           correctlyAnsweredMistakes.forEach(correction => {
             const target = newProgress[correction.testId];
@@ -1586,26 +1306,16 @@
               affectedTests.add(correction.testId);
             }
           });
-
           affectedTests.forEach(tid => {
             const t = allTests.find(tt => tt.id === tid);
             if (t) {
               const p = newProgress[tid];
-              const newScore = Object.entries(p.answers || {}).reduce((acc, [idx, ua]) => {
-                return acc + (isAnswerCorrect(t.questions[idx], ua) ? 1 : 0);
-              }, 0);
+              const newScore = Object.entries(p.answers || {}).reduce((acc, [idx, ua]) => acc + (isAnswerCorrect(t.questions[idx], ua) ? 1 : 0), 0);
               newProgress[tid] = { ...p, score: newScore };
             }
           });
-          
           const updatedUser = { ...userData, progress: newProgress };
-          updateUserData(updatedUser, { 
-            event: { 
-                type: 'MISTAKES_REVIEWED', 
-                payload: { corrections: correctlyAnsweredMistakes.length } 
-            }
-          });
-          
+          updateUserData(updatedUser, { event: { type: 'MISTAKES_REVIEWED', payload: { corrections: correctlyAnsweredMistakes.length } } });
           showModal({
             title: "Practice Complete!",
             message: "Well done! Your corrected answers have been updated.",
@@ -1615,27 +1325,17 @@
         } else {
           saveProgress(true);
           setView('results');
-          if (!auto) {
-            showNotification({message: 'Test finished!', type: 'success'});
-          }
+          if (!auto) showNotification({message: 'Test finished!', type: 'success'});
         }
       }, [testId, test, userAnswers, userData, allTests, setView, showModal, showNotification, updateUserData, saveProgress]);
 
       useEffect(() => {
-        // Always save on tab close or when the page becomes hidden
         const handleImmediateSave = () => { try { saveProgress(false, { auto: true }); } catch {} };
-        const handleVisibility = () => {
-          if (document.visibilityState === 'hidden') handleImmediateSave();
-        };
+        const handleVisibility = () => { if (document.visibilityState === 'hidden') handleImmediateSave(); };
         window.addEventListener('beforeunload', handleImmediateSave);
         document.addEventListener('visibilitychange', handleVisibility);
-        
-        // For timed modes, also autosave every 10s
         let interval;
-        if (timerEnabled) {
-          interval = setInterval(() => saveProgress(false, { auto: true }), 20000); // Increased to 20s
-        }
-        
+        if (timerEnabled) interval = setInterval(() => saveProgress(false, { auto: true }), 20000);
         return () => {
           if (interval) clearInterval(interval);
           window.removeEventListener('beforeunload', handleImmediateSave);
@@ -1649,7 +1349,6 @@
         const newAnswers = { ...userAnswers, [originalIndex]: answer };
         setUserAnswers(newAnswers);
         if (showInstantFeedback && source === 'mcq' && !submittedAnswers[currentQuestionIndex]) {
-          // Defer to let state update before reading it in handleSubmitAnswer
           setTimeout(() => handleSubmitAnswer(), 0);
         }
       };
@@ -1662,7 +1361,6 @@
 
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
-        
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
         const timeToAnswer = deltaMs / 1000;
@@ -1671,34 +1369,19 @@
 
         const event = {
             type: 'ANSWER_SUBMITTED',
-            payload: {
-                correct: isCorrect,
-                timeToAnswer,
-                usedHint: !!hint,
-                tags: question.tags || [],
-                wasReviewed: testId === 'mistakes-test',
-                mode: settings.mode,
-                testId
-            }
+            payload: { correct: isCorrect, timeToAnswer, usedHint: !!hint, tags: question.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId }
         };
-        
         updateUserData({ ...userData }, { event });
 
         const newStreak = isCorrect ? streak + 1 : 0;
         setStreak(newStreak);
-
         setFlash(isCorrect ? 'correct' : 'incorrect');
         setTimeout(() => setFlash(null), 500);
 
-        if (showInstantFeedback) {
-          setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
-        }
-
+        if (showInstantFeedback) setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
         saveProgress(false);
 
-        if (!showInstantFeedback && currentQuestionIndex < test.questions.length - 1) {
-            setTimeout(goToNext, 200);
-        }
+        if (!showInstantFeedback && currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 200);
       };
 
       const navigateToQuestion = (index) => {
@@ -1713,18 +1396,8 @@
         }
       };
 
-      const goToNext = () => {
-        if (currentQuestionIndex < test.questions.length - 1) {
-          navigateToQuestion(currentQuestionIndex + 1);
-        }
-      };
-
-      const handlePause = () => { 
-        commitElapsed();
-        saveProgress(false, { auto: true }); 
-        showNotification({message: 'Progress saved!', type: 'success'});
-        setView('dashboard'); 
-      };
+      const goToNext = () => { if (currentQuestionIndex < test.questions.length - 1) navigateToQuestion(currentQuestionIndex + 1); };
+      const handlePause = () => { commitElapsed(); saveProgress(false, { auto: true }); showNotification({message: 'Progress saved!', type: 'success'}); setView('dashboard'); };
 
       const fetchHint = async () => {
         setIsHintLoading(true);
@@ -1732,36 +1405,13 @@
         try {
           const question = test.questions[originalIndex];
           const prompt = `You are a helpful teaching assistant for a 10-year-old student. Provide a short, simple hint for the following question. Do NOT give the answer. Just provide a small clue to help the student think about the problem correctly. Question: "${question.question}"`;
-          
-          let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-          const payload = { contents: chatHistory };
-          const apiUrl = `/.netlify/functions/gemini-proxy`;
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(`API Error: ${errorBody.error?.message || response.statusText}`);
-          }
-
+          const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+          const response = await fetch(`/.netlify/functions/gemini-proxy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!response.ok) throw new Error("API Error");
           const result = await response.json();
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            setHint(text);
-          } else {
-            throw new Error("Invalid API response structure.");
-          }
+          if (text) setHint(text); else throw new Error("Invalid API response.");
         } catch (error) {
-          console.error("AI API Error:", error);
-          showModal({
-            title: "AI Feature Error",
-            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
-            onConfirm: () => {},
-            confirmText: "OK"
-          });
           setHint("Sorry, could not get a hint at this time.");
         } finally {
           setIsHintLoading(false);
@@ -1770,10 +1420,7 @@
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       
-      let currentQ;
-      if (Array.isArray(test.questions) && test.questions.length > 0) {
-        currentQ = test.questions[originalIndex] ?? test.questions[currentQuestionIndex] ?? test.questions[0];
-      }
+      let currentQ = test.questions[originalIndex] ?? test.questions[currentQuestionIndex] ?? test.questions[0];
 
       if (!currentQ) {
         return (
@@ -1781,9 +1428,7 @@
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-xl w-full text-center">
               <h2 className="text-2xl font-bold text-cyan-300 mb-2 font-orbitron">No questions available</h2>
               <p className="text-slate-300 mb-4">We couldn't load the questions for this session. This can happen if question indexes are out of sync.</p>
-              <button onClick={() => setView('dashboard')} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500">
-                Back to Dashboard
-              </button>
+              <button onClick={() => setView('dashboard')} className="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-500">Back to Dashboard</button>
             </div>
           </div>
         );
@@ -1810,69 +1455,29 @@
               {timerEnabled && <div className="text-lg sm:text-xl font-mono bg-slate-900 text-cyan-300 px-4 py-2 rounded-lg glowing-border">{formatMs(elapsedDisplay)}</div>}
             </div>
             
-            <QuestionNavigator
-              total={test.questions.length}
-              current={currentQuestionIndex}
-              answeredIndices={answeredSet}
-              onNavigate={navigateToQuestion}
-            />
-
+            <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
             <hr className="border-slate-600 my-4" />
-
             <p className="text-center font-mono text-slate-400 mb-4">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-            <div className="mb-6 min-h-[6rem]">
-              <p className="text-lg text-gray-300">{displayStem}</p>
-            </div>
+            <div className="mb-6 min-h-[6rem]"><p className="text-lg text-gray-300">{displayStem}</p></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {renderAsButtonsOptions ? (
                 renderAsButtonsOptions.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(option, 'mcq')}
-                    disabled={isCurrentQSubmitted}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
-                    } ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
-                  >
-                    {option}
-                  </button>
+                  <button key={index} onClick={() => handleAnswerSelect(option, 'mcq')} disabled={isCurrentQSubmitted} className={`p-4 rounded-lg border-2 text-left transition-all ${userAnswers[originalIndex] === option ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}>{option}</button>
                 ))
               ) : renderAsLabeled ? (
-                labeled.options
-                  .map((o, idx) => ({ opt: String(o ?? '').trim(), idx }))
-                  .map(({ opt, idx }) => {
-                    if (!opt) return null; // skip rendering blank, but keep original idx -> letter mapping
+                labeled.options.map((o, idx) => ({ opt: String(o ?? '').trim(), idx })).map(({ opt, idx }) => {
+                    if (!opt) return null; 
                     const letter = String.fromCharCode(97 + idx);
                     const checked = userAnswers[originalIndex] === letter;
                     return (
-                      <label
-                        key={letter}
-                        className={`p-4 rounded-lg border-2 flex items-center gap-3 transition-all cursor-pointer ${
-                          checked ? 'bg-cyan-900 border-cyan-400'
-                                  : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
-                        } ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${originalIndex}`}
-                          disabled={isCurrentQSubmitted}
-                          checked={checked}
-                          onChange={() => handleAnswerSelect(letter, 'mcq')}
-                        />
-                        <span className="font-bold uppercase">{letter})</span>
-                        <span>{opt}</span>
+                      <label key={letter} className={`p-4 rounded-lg border-2 flex items-center gap-3 transition-all cursor-pointer ${checked ? 'bg-cyan-900 border-cyan-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'} ${isCurrentQSubmitted ? 'cursor-not-allowed opacity-70' : ''}`}>
+                        <input type="radio" name={`q-${originalIndex}`} disabled={isCurrentQSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter, 'mcq')} />
+                        <span className="font-bold uppercase">{letter})</span><span>{opt}</span>
                       </label>
                     );
                   })
               ) : (
-                <textarea
-                  value={userAnswers[originalIndex] || ''}
-                  onChange={(e) => handleAnswerSelect(e.target.value, 'text')}
-                  disabled={isCurrentQSubmitted}
-                  className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70"
-                  placeholder="Type your answer here..."
-                  rows="4"
-                ></textarea>
+                <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, 'text')} disabled={isCurrentQSubmitted} className="w-full col-span-2 p-4 bg-slate-700 border-2 border-slate-600 rounded-lg disabled:opacity-70" placeholder="Type your answer here..." rows="4"></textarea>
               )}
             </div>
 
@@ -1894,20 +1499,10 @@
             {feedback && <div className={`p-4 rounded-lg my-4 text-white ${feedback.startsWith('Correct') ? 'bg-green-500' : 'bg-red-500'}`}>{feedback}</div>}
             
             {lastAnswerResult && !lastAnswerResult.isCorrect && showInstantFeedback && !showExplanation && (
-              <button onClick={() => setShowExplanation(true)} className="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-                🤖 Explain my mistake
-              </button>
+              <button onClick={() => setShowExplanation(true)} className="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">🤖 Explain my mistake</button>
             )}
 
-            {showExplanation && (
-              <AIExplanation
-                key={currentQuestionIndex}
-                question={lastAnswerResult.question}
-                userAnswer={lastAnswerResult.userAnswer}
-                correctAnswer={lastAnswerResult.question.answer}
-                onClose={() => setShowExplanation(false)}
-              />
-            )}
+            {showExplanation && <AIExplanation key={currentQuestionIndex} question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between mt-8">
               <button onClick={handlePause} className="bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-500">Pause & Save</button>
@@ -1925,7 +1520,6 @@
     const ResultsView = ({ userData, setView, testDetails, allTests, showModal }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
-      
       const progress = userData.progress?.[testId] || null;
       
       const [aiFeedback, setAiFeedback] = useState('');
@@ -1935,7 +1529,6 @@
       
       const userAnswers = progress?.answers || {};
       const score = progress?.score ?? 0;
-      
       const shuffledOrder = progress?.shuffledOrder || null;
       const shuffledPosByOrig = useMemo(() => {
         if (!shuffledOrder) return null;
@@ -1944,16 +1537,10 @@
         return m;
       }, [shuffledOrder]);
 
-      useEffect(() => {
-        if (!progress) {
-          setView('dashboard');
-        }
-      }, [progress, setView]);
+      useEffect(() => { if (!progress) setView('dashboard'); }, [progress, setView]);
       
       if (!test) return <LoadingSpinner message="Loading Results..." />;
-      if (!progress) {
-        return <LoadingSpinner message="No results found, redirecting..." />;
-      }
+      if (!progress) return <LoadingSpinner message="No results found, redirecting..." />;
       
       const topicStats = useMemo(() => {
         const stats = {};
@@ -1961,13 +1548,9 @@
         test.questions.forEach((q, index) => {
           const tags = q.tags || ['General'];
           tags.forEach(tag => {
-            if (!stats[tag]) {
-              stats[tag] = { correct: 0, total: 0 };
-            }
+            if (!stats[tag]) stats[tag] = { correct: 0, total: 0 };
             stats[tag].total += 1;
-            if (isAnswerCorrect(q, userAnswers[index])) {
-              stats[tag].correct += 1;
-            }
+            if (isAnswerCorrect(q, userAnswers[index])) stats[tag].correct += 1;
           });
         });
         return Object.entries(stats);
@@ -1978,26 +1561,12 @@
         try {
           const incorrectQuestions = test.questions.filter((q, i) => !isAnswerCorrect(q, userAnswers[i]));
           const prompt = `My son, Nicolas, just completed a test. He scored ${score} out of ${test.questions.length}. Here are the questions he got wrong: ${JSON.stringify(incorrectQuestions)}. Please provide a short, encouraging summary of his performance. Highlight his strengths based on the questions he likely got right, and gently point out one or two common themes or topics from the incorrect answers that he could focus on next time. Keep the tone positive and motivating for a 10-year-old.`;
-
-          let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-          const payload = { contents: chatHistory };
-          const apiUrl = `/.netlify/functions/gemini-proxy`;
-          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(errorBody.error?.message || 'API error');
-          }
+          const response = await fetch(`/.netlify/functions/gemini-proxy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }) });
+          if (!response.ok) throw new Error("API error");
           const result = await response.json();
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
           if(text) setAiFeedback(text); else throw new Error("Invalid AI response");
         } catch (error) {
-          console.error("AI API Error:", error);
-          showModal({
-            title: "AI Feature Error",
-            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
-            onConfirm: () => {},
-            confirmText: "OK"
-          });
           setAiFeedback("Sorry, couldn't generate feedback at this time.");
         } finally {
           setIsFeedbackLoading(false);
@@ -2008,25 +1577,12 @@
         setIsLoadingExplanation(index);
         try {
           const prompt = `Please explain the concept behind this question for a 10-year-old. Question: "${question.question}". Correct Answer: "${question.answer}". Keep it simple and clear.`;
-          let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-          const payload = { contents: chatHistory };
-          const apiUrl = `/.netlify/functions/gemini-proxy`;
-          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(errorBody.error?.message || 'API error');
-          }
+          const response = await fetch(`/.netlify/functions/gemini-proxy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }) });
+          if (!response.ok) throw new Error("API error");
           const result = await response.json();
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
           if(text) setConceptExplanations(prev => ({...prev, [index]: text})); else throw new Error("Invalid AI response");
         } catch (error) {
-          console.error("AI API Error:", error);
-          showModal({
-            title: "AI Feature Error",
-            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
-            onConfirm: () => {},
-            confirmText: "OK"
-          });
           setConceptExplanations(prev => ({...prev, [index]: "Sorry, couldn't get an explanation."}));
         } finally {
           setIsLoadingExplanation(null);
@@ -2083,9 +1639,7 @@
                     <div key={index} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-900/40 border-green-500' : 'bg-red-900/40 border-red-500'}`}>
                       <p className="font-semibold text-slate-300 mb-2">
                         {index + 1}. {q.question}
-                        {displayPos != null && (
-                          <span className="ml-2 text-xs text-slate-400">(shown as #{displayPos + 1})</span>
-                        )}
+                        {displayPos != null && <span className="ml-2 text-xs text-slate-400">(shown as #{displayPos + 1})</span>}
                       </p>
                       <p className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>Your answer: <span className="font-bold">{shownUserAnswer || "Not answered"}</span></p>
                       {!isCorrect && <p className="text-sm text-yellow-400">Correct answer: <span className="font-bold">{q.answer}</span></p>}
@@ -2148,10 +1702,7 @@
       const handleExportData = () => {
         try {
             const data = localStorage.getItem('seagPortalData');
-            if (!data) {
-                showNotification({ message: "No data found to export.", type: 'error' });
-                return;
-            }
+            if (!data) throw new Error("No data found to export.");
             const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2170,17 +1721,12 @@
       const handleImportData = (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const text = e.target.result;
                 const importedData = JSON.parse(text);
-
-                if (!importedData.userData || !importedData.allTests) {
-                    throw new Error("Invalid backup file format.");
-                }
-
+                if (!importedData.userData || !importedData.allTests) throw new Error("Invalid backup file format.");
                 showModal({
                     title: "Confirm Import",
                     message: "Are you sure you want to overwrite all current data with the backup file? This cannot be undone.",
@@ -2208,26 +1754,21 @@
       const handleResetAllData = () => {
         showModal({
           title: "Reset All Player Data?",
-          message: "Are you sure you want to completely reset all player data, including progress, XP, and achievements? This action will keep all created tests but cannot be undone.",
+          message: "Are you sure you want to completely reset all player data? This action will keep all created tests but cannot be undone.",
           confirmText: "Reset Everything",
           onConfirm: handleFullReset
         });
       };
       
-      if (adminView === 'create') {
-        return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} showModal={showModal} />;
-      }
-      
-      if (adminView === 'analysis') {
-        return <PerformanceDashboardView setAdminView={setAdminView} userData={userData} allTests={allTests} showModal={showModal} />;
-      }
+      if (adminView === 'create') return <CreateTestView setAdminView={setAdminView} allTests={allTests} updateAllData={updateAllData} userData={userData} showNotification={showNotification} editingTest={editingTest} setEditingTest={setEditingTest} showModal={showModal} />;
+      if (adminView === 'analysis') return <PerformanceDashboardView setAdminView={setAdminView} userData={userData} allTests={allTests} showModal={showModal} />;
 
       return (
         <div className="p-8 min-h-screen">
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-4xl font-bold font-orbitron text-cyan-300">Admin Panel</h1>
-              <button onClick={() => setView('dashboard')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Dashboard</button>
+              <button onClick={() => setView('parentDashboard')} className="bg-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">&larr; Back to Parent Portal</button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -2241,13 +1782,9 @@
                     <button onClick={handleExportData} className="bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-500">Export All Data</button>
                     <div>
                         <input type="file" accept=".json" ref={importFileRef} onChange={handleImportData} className="hidden" id="import-file" />
-                        <label htmlFor="import-file" className="cursor-pointer w-full text-center block bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-500">
-                            Import from Backup
-                        </label>
+                        <label htmlFor="import-file" className="cursor-pointer w-full text-center block bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-500">Import from Backup</label>
                     </div>
-                    <button onClick={handleResetAllData} className="bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 col-span-1 md:col-span-2">
-                      Reset All Player Data
-                    </button>
+                    <button onClick={handleResetAllData} className="bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 col-span-1 md:col-span-2">Reset All Player Data</button>
                 </div>
                  <p className="text-slate-400 mt-4 text-sm">All progress and created tests are saved in this browser's local storage. Use Export to create a backup file. Clearing browser data will erase everything.</p>
             </div>
@@ -2295,36 +1832,23 @@
         setQuestions(newQuestions);
       };
 
-      const addQuestion = () => {
-        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: '' }]);
-      };
+      const addQuestion = () => setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: '' }]);
       
       const handleSaveTest = () => {
         if (!title || questions.some(q => !q.question || !q.answer)) {
           showNotification({message: "Title and all question fields are required.", type: 'error'});
           return;
         }
+        if (title.length > 100) return showNotification({message: "Title must be less than 100 characters.", type: 'error'});
+        if (questions.find(q => q.question.length > 1000)) return showNotification({message: "Questions must be less than 1000 characters.", type: 'error'});
 
-        if (title.length > 100) {
-          showNotification({message: "Title must be less than 100 characters.", type: 'error'});
-          return;
-        }
-        const invalidQuestion = questions.find(q => q.question.length > 1000);
-        if (invalidQuestion) {
-          showNotification({message: "Questions must be less than 1000 characters.", type: 'error'});
-          return;
-        }
-
-        const invalid = questions.find((q, idx) => {
+        const invalid = questions.find((q) => {
           const hasOptions = Array.isArray(q.options) && q.options.some(o => (o || '').trim() !== '');
           if (!hasOptions) return false;
           const answerTrim = (q.answer || '').trim();
           return !q.options.some(o => (o || '').trim() === answerTrim);
         });
-        if (invalid) {
-          showNotification({message: "Each MCQ's 'Correct Answer' must exactly match one of its options.", type: 'error'});
-          return;
-        }
+        if (invalid) return showNotification({message: "Each MCQ's 'Correct Answer' must exactly match one of its options.", type: 'error'});
 
         if (editingTest) {
           const updatedTest = { ...editingTest, title, subject, questions, notes };
@@ -2346,82 +1870,48 @@
           const parsedQuestions = [];
           const lines = bulkText.split('\n');
           let currentQuestion = null;
-
           for (const raw of lines) {
             const line = raw.trim();
             if (line.startsWith('Q:')) {
               if (currentQuestion) parsedQuestions.push(currentQuestion);
               currentQuestion = { question: line.substring(2).trim(), options: [], answer: '' };
-            } else if (line.startsWith('O:') && currentQuestion) {
-              currentQuestion.options.push(line.substring(2).trim());
-            } else if (line.startsWith('A:') && currentQuestion) {
-              currentQuestion.answer = line.substring(2).trim();
-            }
+            } else if (line.startsWith('O:') && currentQuestion) currentQuestion.options.push(line.substring(2).trim());
+            else if (line.startsWith('A:') && currentQuestion) currentQuestion.answer = line.substring(2).trim();
           }
           if (currentQuestion) parsedQuestions.push(currentQuestion);
-
           if (parsedQuestions.length > 0) {
             setQuestions(parsedQuestions);
             showNotification({message: 'Bulk import successful!', type: 'success'});
-          } else {
-            showNotification({message: 'Could not find any questions in the provided format.', type: 'error'});
-          }
+          } else showNotification({message: 'Could not find any questions in the provided format.', type: 'error'});
         } catch (e) {
           showNotification({message: 'Error parsing bulk text. Please check the format.', type: 'error'});
         }
       };
       
       const handleAIGenerate = async () => {
-        if (!aiTopic) {
-          showNotification({ message: "Please enter a topic to generate questions.", type: "error" });
-          return;
-        }
+        if (!aiTopic) return showNotification({ message: "Please enter a topic to generate questions.", type: "error" });
         setIsParsing(true);
         try {
           const prompt = `Generate ${aiNumQuestions} multiple-choice ${subject} questions suitable for a 10-year-old based on the topic: "${aiTopic}". Provide the response as a JSON array of objects. Each object should have keys "question", "options" (an array of strings), and "answer". Example: [{"question": "What is 2+2?", "options": ["3", "4", "5"], "answer": "4"}]`;
-          
-          let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-          const payload = { contents: chatHistory };
-          const apiUrl = `/.netlify/functions/gemini-proxy`;
-          
-          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-
-          if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(`API Error: ${errorBody.error?.message || response.statusText}`);
-          }
-
+          const response = await fetch(`/.netlify/functions/gemini-proxy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }) });
+          if (!response.ok) throw new Error("API Error");
           const result = await response.json();
           let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          
           if (rawText) {
             let cleaned = rawText.replace(/^(\w+)?\s*/m, '').replace(/$/m, '').trim();
             if (!cleaned.trim().startsWith('[')) {
-              const first = cleaned.indexOf('[');
-              const last = cleaned.lastIndexOf(']');
-              if (first !== -1 && last !== -1 && last > first) {
-                cleaned = cleaned.substring(first, last + 1);
-              }
+              const first = cleaned.indexOf('['), last = cleaned.lastIndexOf(']');
+              if (first !== -1 && last !== -1 && last > first) cleaned = cleaned.substring(first, last + 1);
             }
             const parsedJson = JSON.parse(cleaned);
             if (Array.isArray(parsedJson)) {
               setQuestions(parsedJson.map(q => ({ question: q.question, options: q.options || ['', '', '', ''], answer: q.answer })));
               setTitle(`AI Generated: ${aiTopic}`);
               showNotification({ message: "AI generated questions successfully!", type: 'success' });
-            } else {
-              throw new Error("AI response was not in the expected format (array of questions).");
-            }
-          } else {
-            throw new Error("Failed to get a valid response from the AI.");
-          }
+            } else throw new Error("AI response was not in the expected format (array of questions).");
+          } else throw new Error("Failed to get a valid response from the AI.");
         } catch (error) {
-          console.error("AI API Error:", error);
-          showModal({
-            title: "AI Feature Error",
-            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
-            onConfirm: () => {},
-            confirmText: "OK"
-          });
+          showModal({ title: "AI Feature Error", message: `Could not complete AI request. Error: ${error.message}`, onConfirm: () => {}, confirmText: "OK" });
         } finally {
           setIsParsing(false);
         }
@@ -2448,13 +1938,7 @@
 
               <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                 <h3 className="text-lg font-bold mb-2">Bulk Import from Text</h3>
-                <textarea 
-                  className="w-full p-2 bg-slate-700 rounded-md border border-slate-600"
-                  rows="6"
-                  placeholder={`Paste your test here. Use this format:\nQ: What is 2+2?\nO: 3\nO: 4\nO: 5\nA: 4`}
-                  value={bulkText}
-                  onChange={e => setBulkText(e.target.value)}
-                ></textarea>
+                <textarea className="w-full p-2 bg-slate-700 rounded-md border border-slate-600" rows="6" placeholder={`Paste your test here. Use this format:\nQ: What is 2+2?\nO: 3\nO: 4\nO: 5\nA: 4`} value={bulkText} onChange={e => setBulkText(e.target.value)}></textarea>
                 <button onClick={handleBulkImport} className="mt-2 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-500">Parse Bulk Text</button>
               </div>
 
@@ -2507,29 +1991,18 @@
       const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
       useEffect(() => {
-        if (!chartRef.current) return;
-        
-        if (!window.Chart) {
-          console.warn('Chart.js failed to load from CDN');
-          return;
-        }
-
+        if (!chartRef.current || !window.Chart) return;
         const completedTests = Object.entries(userData.progress || {})
           .map(([testId, progressData]) => {
             const test = allTests.find(t => t.id === testId);
             if (!test || Object.keys(progressData.answers || {}).length !== test.questions.length) return null;
-            return {
-              ...test,
-              ...progressData,
-              completedAt: progressData.completedAt || Date.now()
-            };
+            return { ...test, ...progressData, completedAt: progressData.completedAt || Date.now() };
           })
           .filter(Boolean)
           .sort((a, b) => a.completedAt - b.completedAt);
 
         const mathsScores = completedTests.filter(t => t.subject === 'Maths').map(t => (t.score / t.questions.length) * 100);
         const englishScores = completedTests.filter(t => t.subject === 'English').map(t => (t.score / t.questions.length) * 100);
-        
         const labels = Array.from({length: Math.max(mathsScores.length, englishScores.length)}, (_, i) => `Test ${i + 1}`);
 
         const ctx = chartRef.current.getContext('2d');
@@ -2542,32 +2015,11 @@
           data: {
             labels: labels,
             datasets: [
-              {
-                label: 'Maths Average Score (%)',
-                data: mathsScores,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                fill: false,
-                tension: 0.1
-              },
-              {
-                label: 'English Average Score (%)',
-                data: englishScores,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                fill: false,
-                tension: 0.1
-              }
+              { label: 'Maths Average Score (%)', data: mathsScores, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: false, tension: 0.1 },
+              { label: 'English Average Score (%)', data: englishScores, borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', fill: false, tension: 0.1 }
             ]
           },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100
-              }
-            }
-          }
+          options: { scales: { y: { beginAtZero: true, max: 100 } } }
         });
 
         return () => {
@@ -2582,43 +2034,23 @@
         setIsSummaryLoading(true);
         try {
           const incorrectAnswers = [];
-          
           Object.entries(userData.progress || {}).forEach(([testId, progressData]) => {
             const test = allTests.find(t => t.id === testId);
             if (test) {
               Object.entries(progressData.answers || {}).forEach(([qIndex, userAnswer]) => {
                 const question = test.questions[qIndex];
-                if (question && !isAnswerCorrect(question, userAnswer)) {
-                  incorrectAnswers.push(question.question);
-                }
+                if (question && !isAnswerCorrect(question, userAnswer)) incorrectAnswers.push(question.question);
               });
             }
           });
-
           const prompt = `Based on this list of incorrectly answered questions for a 10-year-old student, please identify 2-3 conceptual patterns or common themes of weakness. Keep the summary concise and framed in a positive, actionable way for a parent. Incorrect questions: ${JSON.stringify(incorrectAnswers.slice(0, 50))}`;
-
-          const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-          const apiUrl = `/.netlify/functions/gemini-proxy`;
-          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(`API Error: ${errorBody.error?.message || response.statusText}`);
-          }
+          const response = await fetch(`/.netlify/functions/gemini-proxy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }) });
+          if (!response.ok) throw new Error("API Error");
           const result = await response.json();
           const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            setAiSummary(text);
-          } else {
-            throw new Error("Invalid API response structure.");
-          }
+          if (text) setAiSummary(text); else throw new Error("Invalid API response structure.");
         } catch (error) {
-          console.error("AI API Error:", error);
-          showModal({
-            title: "AI Feature Error",
-            message: `Could not complete AI request. Please check your connection. Error: ${error.message}`,
-            onConfirm: () => {},
-            confirmText: "OK"
-          });
+          showModal({ title: "AI Feature Error", message: `Could not complete AI request. Error: ${error.message}`, onConfirm: () => {}, confirmText: "OK" });
         } finally {
           setIsSummaryLoading(false);
         }
@@ -2687,13 +2119,7 @@
                         <label htmlFor="dyslexia-toggle" className="font-bold text-slate-200">Dyslexia Friendly Font</label>
                         <p className="text-sm text-slate-400">Increases readability with a special font.</p>
                     </div>
-                    <input 
-                        id="dyslexia-toggle" 
-                        type="checkbox" 
-                        checked={dyslexiaFriendly} 
-                        onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} 
-                        className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" 
-                    />
+                    <input id="dyslexia-toggle" type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-6 h-6 rounded text-cyan-500 bg-slate-800 border-slate-500 focus:ring-cyan-600" />
                 </div>
             </div>
             <div className="flex gap-4">
@@ -2707,7 +2133,6 @@
     
     const AchievementsView = ({ userData, setView, updateUserData, showNotification }) => {
       const [activeTab, setActiveTab] = useState('Badges');
-
       const unlockedTitles = achievementsList.filter(ach => userData.achievements[ach.id] && ach.unlocksTitle);
       const hasTitles = achievementsList.some(a => !!a.unlocksTitle);
 
@@ -2778,7 +2203,7 @@
       );
     };
 
-    // --- Main App Component ---
+    // --- MAIN APP WIRING ---
     function App() {
       const [appData, setAppData] = useState(null);
       const [view, setView] = useState('loading');
@@ -2787,199 +2212,79 @@
       const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, onCancel: null, confirmText: "Confirm", children: null });
       const debounceTimerRef = useRef(null);
 
-      const showNotification = ({message, type = 'success'}) => {
-        setNotification({ show: true, message, type });
-      };
-
-      const hideModal = () => {
-        setModal({ show: false });
-      };
-
+      const showNotification = ({message, type = 'success'}) => setNotification({ show: true, message, type });
+      const hideModal = () => setModal({ show: false });
       const showModal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
-        setModal({ 
-          show: true, 
-          title, 
-          message, 
-          onConfirm: onConfirm ? () => {
-            onConfirm();
-            hideModal();
-          } : null,
-          onCancel: onCancel ? () => {
-            onCancel();
-            hideModal();
-          } : hideModal,
-          confirmText: confirmText,
-          children
-        });
+        setModal({ show: true, title, message, onConfirm: onConfirm ? () => { onConfirm(); hideModal(); } : null, onCancel: onCancel ? () => { onCancel(); hideModal(); } : hideModal, confirmText, children });
       };
 
       useEffect(() => {
         const savedData = localStorage.getItem('seagPortalData');
-        let loadedData;
-        if (savedData) {
-          try {
-            loadedData = JSON.parse(savedData);
-          } catch(e) {
-            console.error("Failed to parse saved data, initializing fresh.", e);
-            loadedData = null;
-          }
-        }
+        let loadedData = savedData ? JSON.parse(savedData) : null;
+        if (!loadedData) loadedData = { userData: {}, allTests: defaultTests };
         
-        if (!loadedData) {
-          loadedData = {
-            userData: {},
-            allTests: defaultTests
-          };
-        }
-
         const defaultUserData = {
-            name: "Nicolas",
-            avatar: '👨‍🚀',
-            title: null,
-            dyslexiaFriendly: false,
-            level: 1,
-            xp: 0,
-            achievements: {},
-            progress: {},
-            // Counters/stats used by achievements
-            totalCorrectAnswers: 0,
-            correctAnswersByTag: {}, // e.g. { fractions: 12, punctuation: 5 }
-            lastAnswerWasIncorrect: false,
-            correctRunAfterWrong: 0,
-            // Daily challenge tracking
-            dailyChallengeStreak: 0,
-            dailyChallenge: { completedToday: false, lastCompletedDate: null },
-            // Longitudinal tracking
-            badgeProgress: { geometryGuruTests: [] },
-            weeklyCompletionWeeks: [],
-            fullTestsCompleted: [],
-            // NEW: track achievements unlocked during an in-progress test
-            pendingAchievementIdsByTest: {} // { [testId]: string[] }
+            name: "Nicolas", avatar: '👨‍🚀', level: 1, xp: 0, achievements: {}, progress: {}, totalCorrectAnswers: 0, correctAnswersByTag: {}, badgeProgress: { geometryGuruTests: [] }, weeklyCompletionWeeks: [], fullTestsCompleted: [], pendingAchievementIdsByTest: {}
         };
-
         loadedData.userData = { ...defaultUserData, ...loadedData.userData };
-        
         setAppData(loadedData);
         setView('dashboard');
       }, []);
       
-      useEffect(() => {
-        if (appData && appData.userData) {
-            updateUserData(appData.userData, { event: { type: 'DAY_STARTED' } });
-        }
-      }, [!!appData]);
-
-      useEffect(() => {
-        if (appData?.userData?.dyslexiaFriendly) {
-            document.body.classList.add('dyslexia-friendly');
-        } else {
-            document.body.classList.remove('dyslexia-friendly');
-        }
-      }, [appData?.userData?.dyslexiaFriendly]);
-
       const updateAllData = useCallback((newData) => {
         setAppData(newData);
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(() => {
-          safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
-        }, 300);
+        debounceTimerRef.current = setTimeout(() => safeSetLocalStorage('seagPortalData', JSON.stringify(newData)), 300);
       }, []);
-      
+
       const handleFullReset = useCallback(() => {
         if (!appData) return;
-
-        const testsToKeep = appData.allTests;
-
-        // Re-create the default user data object
         const newCleanUserData = {
-            name: "Nicolas",
-            avatar: '👨‍🚀',
-            title: null,
-            dyslexiaFriendly: false,
-            level: 1,
-            xp: 0,
-            achievements: {},
-            progress: {},
-            totalCorrectAnswers: 0,
-            correctAnswersByTag: {},
-            lastAnswerWasIncorrect: false,
-            correctRunAfterWrong: 0,
-            dailyChallengeStreak: 0,
-            dailyChallenge: { completedToday: false, lastCompletedDate: null },
-            badgeProgress: { geometryGuruTests: [] },
-            weeklyCompletionWeeks: [],
-            fullTestsCompleted: [],
-            pendingAchievementIdsByTest: {}
+            name: "Nicolas", avatar: '👨‍🚀', title: null, dyslexiaFriendly: false, level: 1, xp: 0, achievements: {}, progress: {}, totalCorrectAnswers: 0, correctAnswersByTag: {}, lastAnswerWasIncorrect: false, correctRunAfterWrong: 0, dailyChallengeStreak: 0, dailyChallenge: { completedToday: false, lastCompletedDate: null }, badgeProgress: { geometryGuruTests: [] }, weeklyCompletionWeeks: [], fullTestsCompleted: [], pendingAchievementIdsByTest: {}
         };
-
-        const newData = {
-            allTests: testsToKeep,
-            userData: newCleanUserData
-        };
-
-        // This will save to localStorage and update state
-        updateAllData(newData);
-
+        updateAllData({ allTests: appData.allTests, userData: newCleanUserData });
         showNotification({ message: "All player data has been reset. The app will now reload.", type: 'success' });
         setTimeout(() => window.location.reload(), 1500);
-
       }, [appData, updateAllData]);
 
       const updateUserData = useCallback((newUserData, options = {}) => {
         if (!appData) return;
-        
         const { event, silentAchievements } = options || {};
-        // Rebase on the latest store to prevent stale overwrites from rapid successive calls
         let mutableUserData = { ...(appData.userData || {}), ...(newUserData || {}) };
         const { type, payload = {} } = event || {};
         
-        // Ensure new structure exists
         mutableUserData.pendingAchievementIdsByTest = mutableUserData.pendingAchievementIdsByTest || {};
         
-        // 1) Update stats based on the event (these count regardless of mode; unlocks will be gated)
         if (type === 'ANSWER_SUBMITTED') {
             mutableUserData.totalAttempts = (mutableUserData.totalAttempts || 0) + 1;
             const today = new Date().toISOString().split('T')[0];
             const currentTags = Array.isArray(payload.tags) ? payload.tags : [];
             const uniqueTagsToday = mutableUserData.uniqueTagsToday || { date: null, tags: [] };
-            if (uniqueTagsToday.date !== today) {
-                mutableUserData.uniqueTagsToday = { date: today, tags: [...new Set(currentTags)] };
-            } else {
-                const merged = new Set([...uniqueTagsToday.tags, ...currentTags]);
-                mutableUserData.uniqueTagsToday = { date: today, tags: [...merged] };
-            }
+            if (uniqueTagsToday.date !== today) mutableUserData.uniqueTagsToday = { date: today, tags: [...new Set(currentTags)] };
+            else mutableUserData.uniqueTagsToday = { date: today, tags: [...new Set([...uniqueTagsToday.tags, ...currentTags])] };
+            
             const primaryTag = currentTags[0] || 'general';
             mutableUserData.perTopicStats = mutableUserData.perTopicStats || {};
             const prevTopic = mutableUserData.perTopicStats[primaryTag] || { correct: 0, total: 0 };
             const isCorrect = !!payload.correct;
-            mutableUserData.perTopicStats[primaryTag] = {
-                correct: prevTopic.correct + (isCorrect ? 1 : 0),
-                total: prevTopic.total + 1
-            };
+            mutableUserData.perTopicStats[primaryTag] = { correct: prevTopic.correct + (isCorrect ? 1 : 0), total: prevTopic.total + 1 };
             
             const prevWasIncorrect = !!mutableUserData.lastAnswerWasIncorrect;
             mutableUserData.lastAnswerWasIncorrect = !isCorrect;
             if (isCorrect) {
                 mutableUserData.totalCorrectAnswers = (mutableUserData.totalCorrectAnswers || 0) + 1;
                 mutableUserData.currentStreak = (mutableUserData.currentStreak || 0) + 1;
-
-                // NEW: per-tag correct counters for achievements
                 const tags = Array.isArray(payload.tags) ? payload.tags : [];
                 mutableUserData.correctAnswersByTag = mutableUserData.correctAnswersByTag || {};
-                tags.forEach(tag => {
-                    mutableUserData.correctAnswersByTag[tag] = (mutableUserData.correctAnswersByTag[tag] || 0) + 1;
-                });
+                tags.forEach(tag => mutableUserData.correctAnswersByTag[tag] = (mutableUserData.correctAnswersByTag[tag] || 0) + 1);
 
                 if (!payload.usedHint) {
                     mutableUserData.noHintStreak = (mutableUserData.noHintStreak || 0) + 1;
                     mutableUserData.noHintCorrectCount = (mutableUserData.noHintCorrectCount || 0) + 1;
                 }
                 const timeToAnswer = Number(payload.timeToAnswer) || 0;
-                const newTimes = [...(mutableUserData.lastCorrectAnswerTimes || []), timeToAnswer];
-                mutableUserData.lastCorrectAnswerTimes = newTimes.slice(-3);
-                if (payload.wasReviewed) {
-                    mutableUserData.reviewCorrections = (mutableUserData.reviewCorrections || 0) + 1;
-                }
+                mutableUserData.lastCorrectAnswerTimes = [...(mutableUserData.lastCorrectAnswerTimes || []), timeToAnswer].slice(-3);
+                if (payload.wasReviewed) mutableUserData.reviewCorrections = (mutableUserData.reviewCorrections || 0) + 1;
                 mutableUserData.correctRunAfterWrong = prevWasIncorrect ? (mutableUserData.correctRunAfterWrong || 0) + 1 : (mutableUserData.correctRunAfterWrong || 0);
             } else {
                 mutableUserData.currentStreak = 0;
@@ -2992,11 +2297,8 @@
             const today = new Date().toISOString().split('T')[0];
             if (mutableUserData.lastActiveDate !== today) {
                 const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-                if (mutableUserData.lastActiveDate === yesterday) {
-                    mutableUserData.loginStreak = (mutableUserData.loginStreak || 1) + 1;
-                } else {
-                    mutableUserData.loginStreak = 1;
-                }
+                if (mutableUserData.lastActiveDate === yesterday) mutableUserData.loginStreak = (mutableUserData.loginStreak || 1) + 1;
+                else mutableUserData.loginStreak = 1;
                 mutableUserData.lastActiveDate = today;
                 const activity = new Set(mutableUserData.dailyActivityDates || []);
                 activity.add(today);
@@ -3013,23 +2315,17 @@
             mutableUserData.dailyChallenge.completedToday = true;
             const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
             const lastDay = mutableUserData.dailyChallenge.lastCompletedDate;
-            if (lastDay === yesterday) {
-              mutableUserData.dailyChallengeStreak = (mutableUserData.dailyChallengeStreak || 0) + 1;
-            } else if (lastDay !== today) {
-              mutableUserData.dailyChallengeStreak = 1;
-            }
+            if (lastDay === yesterday) mutableUserData.dailyChallengeStreak = (mutableUserData.dailyChallengeStreak || 0) + 1;
+            else if (lastDay !== today) mutableUserData.dailyChallengeStreak = 1;
             mutableUserData.dailyChallenge.lastCompletedDate = today;
           }
         }
         
-        // 2) Run unlocker
         const { updated: withAchievements, unlockedIds } = unlockAchievements(mutableUserData, event);
         let finalUserData = withAchievements;
         
-        // 3) Buffer newly unlocked achievements (Test mode only was enforced inside unlocker)
         if (unlockedIds?.length) {
           const bufferTestId = payload?.testId || payload?.finishedTestId || null;
-        
           if (bufferTestId) {
             const existing = new Set(finalUserData.pendingAchievementIdsByTest[bufferTestId] || []);
             unlockedIds.forEach(id => existing.add(id));
@@ -3037,18 +2333,12 @@
           }
         }
         
-        // 4) On PACK_COMPLETED in Test mode, award XP
         if (type === 'PACK_COMPLETED' && payload?.mode === 'Test') {
           const finishedId = payload.finishedTestId;
           const pendingIds = finalUserData.pendingAchievementIdsByTest[finishedId] || [];
-        
-          let xpToAdd = payload.score; // 1 XP per correct answer
-          if (pendingIds.length > 0) {
-            xpToAdd += pendingIds.reduce((sum, id) => sum + xpForAchievementId(id), 0);
-          }
+          let xpToAdd = payload.score; 
+          if (pendingIds.length > 0) xpToAdd += pendingIds.reduce((sum, id) => sum + xpForAchievementId(id), 0);
           finalUserData.xp = (finalUserData.xp || 0) + xpToAdd;
-        
-          // Level-up consumption
           finalUserData.level = finalUserData.level || 1;
           let threshold = finalUserData.level * 100;
           while (finalUserData.xp >= threshold) {
@@ -3056,37 +2346,25 @@
             finalUserData.level += 1;
             threshold = finalUserData.level * 100;
           }
-        
-          // Clear pending for this completed test
           delete finalUserData.pendingAchievementIdsByTest[finishedId];
         }
         
-        // 5) Persist
         updateAllData({ ...appData, userData: finalUserData });
         
-        // 6) Celebrate unlocks (modal)
         if (unlockedIds?.length && !silentAchievements) {
-          const unlockedAchievementsDetails = unlockedIds
-            .map(id => achievementsList.find(a => a.id === id))
-            .filter(Boolean);
+          const unlockedAchievementsDetails = unlockedIds.map(id => achievementsList.find(a => a.id === id)).filter(Boolean);
           const message = unlockedAchievementsDetails.map(u => `"${u.title}"`).join(', ');
-          showModal({
-            title: "🏆 Achievement Unlocked! 🏆",
-            message: `Congratulations! You've earned: ${message}`,
-            onConfirm: () => {},
-            confirmText: "Awesome!"
-          });
+          showModal({ title: "🏆 Achievement Unlocked! 🏆", message: `Congratulations! You've earned: ${message}`, onConfirm: () => {}, confirmText: "Awesome!" });
         }
       }, [appData, updateAllData, showModal, showNotification]);
 
-      if (!appData) {
-        return <LoadingSpinner message="Initializing System..." />;
-      }
+      if (!appData) return <LoadingSpinner message="Initializing System..." />;
 
       const renderView = () => {
         switch (view) {
           case 'loading': return <LoadingSpinner message="Loading Portal..." />;
           case 'dashboard': return <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModal} hideModal={hideModal} updateUserData={updateUserData} appData={appData} updateAllData={updateAllData} showNotification={showNotification} />;
+          case 'parentDashboard': return <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />;
           case 'quiz': return <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} updateAllData={updateAllData} showNotification={showNotification} showModal={showModal} />;
           case 'results': return <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} showModal={showModal} />;
           case 'admin': return <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModal} showNotification={showNotification} handleFullReset={handleFullReset} />;
