@@ -2395,7 +2395,7 @@
           let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
           
           if (rawText) {
-            let cleaned = rawText.replace(/^```(\w+)?\s*/m, '').replace(/```$/m, '').trim();
+            let cleaned = rawText.replace(/^(\w+)?\s*/m, '').replace(/$/m, '').trim();
             if (!cleaned.trim().startsWith('[')) {
               const first = cleaned.indexOf('[');
               const last = cleaned.lastIndexOf(']');
@@ -3111,4 +3111,3 @@
   </script>
 </body>
 </html>
-
