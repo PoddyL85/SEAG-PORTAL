@@ -13,7 +13,6 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -26,7 +25,10 @@
     @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
     .flash-correct { animation: flash-green 0.6s ease-out; }
     .flash-incorrect { animation: flash-red 0.6s ease-out; }
+    
+    /* Specificity fix for Dyslexia Mode */
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
+    .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
   </style>
 </head>
 <body>
@@ -78,7 +80,7 @@
         } catch(e) { console.log("Audio not supported"); }
     };
 
-    // --- CURRICULUM DATA BANK ---
+    // --- DATA BANK ---
     const defaultTests = [
       {
         id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
@@ -143,7 +145,6 @@
       {
         id: "seag-full-mock-1", title: "Level 3: Full SEAG Mock Paper 1", subject: "Mixed", level: 3, childStage: "P7 Exam Prep", purpose: "Exam standard",
         questions: [
-            // Embedded SEAG standard array
             { question: "PASSAGE: 'The lighthouse keeper, Old Finn, had watched over the rocky coast for forty years. Every evening, without fail, he climbed the spiral staircase and lit the great lamp.'\nHow long had Finn been the lighthouse keeper?", options: ["Ten years", "Twenty years", "Thirty years", "Forty years", "Fifty years"], answer: "Forty years", tags: ["comprehension", "retrieval"] },
             { question: "Choose the correctly spelled word.", options: ["recieve", "receive", "receve", "receeve", "recieve"], answer: "receive", tags: ["spelling"] },
             { question: "Which sentence uses a relative clause correctly?", options: ["The boy, which won the race, was happy.", "The boy, who won the race, was happy.", "The boy, whom won the race, was happy.", "The boy, whose won the race, was happy.", "The boy, that won the race, was happy."], answer: "The boy, who won the race, was happy.", tags: ["grammar", "relative clauses"] },
@@ -157,27 +158,47 @@
             { question: "A rectangle has an area of 84 cm² and a length of 12 cm. What is its width?", answer: "7 cm", tags: ["geometry", "area"] },
             { question: "What is 3.75 × 4?", answer: "15", tags: ["decimals", "multiplication"] }
         ]
+      },
+      {
+        id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3, isBoss: true, childStage: "Advanced P7", purpose: "Elite Challenge",
+        questions: [
+            { question: "A train leaves Belfast at 14:35 and arrives in Dublin 2 hours and 18 minutes later. It is delayed by 14 minutes. What time does it arrive?", options: ["16:53", "17:07", "16:49", "17:15", "17:00"], answer: "17:07", tags: ["time", "addition"] },
+            { question: "A rectangular garden has a perimeter of 48m. The length is 3 times the width. What is the area of the garden?", options: ["108 m²", "144 m²", "72 m²", "96 m²", "120 m²"], answer: "108 m²", tags: ["geometry", "algebra"] },
+            { question: "If 3x + 12 = 45, what is the value of 2x - 5?", options: ["17", "11", "22", "19", "25"], answer: "17", tags: ["algebra"] },
+            { question: "A jacket is reduced by 30% in a sale. The sale price is £42. What was the original price?", options: ["£54.60", "£60.00", "£72.00", "£65.00", "£50.00"], answer: "£60.00", tags: ["percentages", "reverse"] },
+            { question: "Identify the word class of the capitalized word: The boy ran FAST down the street.", options: ["Noun", "Adjective", "Verb", "Adverb", "Preposition"], answer: "Adverb", tags: ["grammar", "word class"] }
+        ]
       }
     ];
 
-    // --- Achievements Data (Updated with unique emojis) ---
+    // --- FULL Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣' },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
         { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins', unlocksTitle: 'Streak Starter', icon: '🔥' },
         { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins', icon: '🗺️' },
         { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧' },
+        { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins', icon: '🛡️' },
         { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯' },
         { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊' },
+        { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term', icon: '🚀' },
         { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term', icon: '⭐' },
-        { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster', icon: '🏎️' },
-        { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 20-question session.', category: 'Medium-Term', icon: 'bullseye' },
+        { id: 'varietyChamp', title: 'Variety Champ', description: 'Answer correctly in 3 different topics in one session.', category: 'Medium-Term', icon: '🎨' },
+        { id: 'noHintHeroPro', title: 'No-Hint Hero (Pro)', description: '10 correct in a row without hints.', category: 'Medium-Term', icon: '🦸' },
+        { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 10-question session.', category: 'Medium-Term', icon: '🎯' },
         { id: 'packFinisher', title: 'Pack Finisher', description: 'Complete any test pack.', category: 'Longer-Term', icon: '📦' },
         { id: 'perfectPack', title: 'Perfect Pack', description: 'Get 100% on any test pack.', category: 'Longer-Term', unlocksTitle: 'Perfectionist', icon: '👑' },
+        { id: 'masteryBadge', title: 'Mastery Badge', description: 'Reach 90% accuracy over 30 questions in one topic.', category: 'Longer-Term', icon: '🎓' },
+        { id: 'reviewPro', title: 'Review Pro', description: 'Correctly fix 10 mistakes in the "Practice Mistakes" mode.', category: 'Longer-Term', icon: '🔬' },
+        { id: 'weeklyWarrior', title: 'Weekly Warrior', description: 'Complete a test on 5 separate days in one calendar week.', category: 'Longer-Term', icon: '📅' },
         { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Correctly answer 50 fraction questions.', category: 'Longer-Term', icon: '🍕' },
+        { id: 'punctuationPro', title: 'Punctuation Pro', description: 'Correctly answer 25 punctuation questions.', category: 'Medium-Term', icon: '✒️' },
         { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term', icon: '🧠' },
         { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term', icon: '💯' },
+        { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster', icon: '🏎️' },
+        { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full practice test.', category: 'Longer-Term', icon: '🎭' },
         { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer', icon: '📐' },
+        { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆' },
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃' },
     ];
 
@@ -214,6 +235,7 @@
       if (type === 'ANSWER_SUBMITTED') {
         const tagCounts = userData.correctAnswersByTag || {};
         if (!has('fractionFanatic') && (tagCounts.fractions || 0) >= 50) unlock('fractionFanatic');
+        if (!has('punctuationPro') && (tagCounts.punctuation || 0) >= 25) unlock('punctuationPro');
         if (!has('vocabularyVirtuoso') && (tagCounts.vocabulary || 0) >= 100) unlock('vocabularyVirtuoso');
         if (!has('centuryClub') && (userData.totalCorrectAnswers || 0) >= 100) unlock('centuryClub');
         if (!has('comebackKid') && p.correct && (userData.correctRunAfterWrong || 0) >= 3) unlock('comebackKid');
@@ -222,13 +244,17 @@
         if (!has('firstStreak') && (userData.currentStreak || 0) >= 3) unlock('firstStreak');
         if (!has('topicExplorer') && (userData.uniqueTagsToday?.tags?.length || 0) >= 2) unlock('topicExplorer');
         if (!has('mistakeFixer') && p.correct && p.wasReviewed) unlock('mistakeFixer');
+        if (!has('noHintHeroMini') && (userData.noHintCorrectCount || 0) >= 5) unlock('noHintHeroMini');
         if (!has('accurateStart') && (userData.totalAttempts || 0) >= 10 && ((userData.totalCorrectAnswers || 0) / userData.totalAttempts) >= 0.7) unlock('accurateStart');
         if (!has('speedStreak') && (userData.currentStreak || 0) >= 3 && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) unlock('speedStreak');
         if (!has('consistencyStar') && (userData.loginStreak || 0) >= 2) unlock('consistencyStar');
+        if (!has('varietyChamp') && p.correct && (userData.uniqueTagsToday?.tags?.length || 0) >= 3) unlock('varietyChamp');
+        if (!has('noHintHeroPro') && (userData.noHintStreak || 0) >= 10) unlock('noHintHeroPro');
         if (!has('masteryBadge')) {
             const stats = userData.perTopicStats || {};
             if (Object.values(stats).some(s => s.total >= 30 && (s.correct / s.total) >= 0.9)) unlock('masteryBadge');
         }
+        if (!has('reviewPro') && (userData.reviewCorrections || 0) >= 10) unlock('reviewPro');
       }
       
       if (type === 'PACK_COMPLETED') {
@@ -249,19 +275,25 @@
           userData.weeklyDayMap[weekKey] = days;
           if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
-        if (p.totalQuestions > 30) {
+        
+        // BUG FIX: Adjusted thresholds for built in papers
+        if (!has('clutchPerformer') && p.isFullPractice && p.totalQuestions >= 10 && p.lastQuestionCorrect) unlock('clutchPerformer');
+        
+        if (p.finishedTestId && (p.finishedTestId.includes('full') || p.finishedTestId.includes('seag') || p.finishedTestId.includes('boss'))) {
           const ft = new Set(userData.fullTestsCompleted);
           ft.add(p.finishedTestId);
           userData.fullTestsCompleted = Array.from(ft);
           if (!has('marathonRunner') && userData.fullTestsCompleted.length >= 3) unlock('marathonRunner');
         }
-        if (!has('solidAccuracy') && (p.totalQuestions || 0) >= 20 && ((p.score || 0) / (p.totalQuestions || 1)) >= 0.8) unlock('solidAccuracy');
+        if (!has('solidAccuracy') && (p.totalQuestions || 0) >= 10 && ((p.score || 0) / (p.totalQuestions || 1)) >= 0.8) unlock('solidAccuracy');
         if (!has('packFinisher')) unlock('packFinisher');
         if (!has('perfectPack') && p.score === p.totalQuestions) unlock('perfectPack');
+        if (!has('dedicatedDabbler') && p.isDailyChallenge && (userData.dailyChallengeStreak || 0) >= 7) unlock('dedicatedDabbler');
       }
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
+    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -449,8 +481,8 @@
             {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
-              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300">Cancel</button>}
-              {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
+              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300 transition">Cancel</button>}
+              {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white transition ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
             </div>
           </div>
         </div>
@@ -469,7 +501,7 @@
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Enable Hints & Feedback</label><input type="checkbox" checked={useHints} onChange={() => setUseHints(!useHints)} className="w-6 h-6 rounded text-sky-500" /></div>
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Shuffle Questions</label><input type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-sky-500" /></div>
                 </div>
-                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold">Start Custom Test</button>
+                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold transition">Start Custom Test</button>
             </div>
         );
     }
@@ -505,8 +537,8 @@
           title: "Choose Your Mode",
           children: (
             <div className="space-y-4">
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-2 border-sky-300"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-2 border-amber-300"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-2 border-sky-300 transition"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-2 border-amber-300 transition"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
               <CustomModeSelector onStart={(settings) => { setSelectedTest({ id: testId, settings }); setView('quiz'); hideModal(); }} />
             </div>
           ), onCancel: hideModal
@@ -524,7 +556,7 @@
         if(allQuestions.length < 5) return showNotification({message: "Not enough questions for a challenge yet!", type: "error"});
         const dailyQs = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
         const challenge = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQs };
-        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'daily-challenge'), challenge] });
+        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'daily-challenge'), challenge] }));
         setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice', shuffle: true } });
         setView('quiz');
       };
@@ -542,7 +574,7 @@
         });
         if (mistakes.length === 0) { showNotification({message: "No mistakes to practice. Great job!", type: "success"}); return; }
         const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes };
-        updateAllData({ ...appData, allTests: [...allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] });
+        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] }));
         setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
         setView('quiz');
       };
@@ -551,8 +583,11 @@
 
       const level1Tests = allTests.filter(t => t.level === 1 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
       const level2Tests = allTests.filter(t => t.level === 2 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
-      const level3Tests = allTests.filter(t => (t.level === 3 || t.id.includes('full')) && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
-      const uncategorizedTests = allTests.filter(t => !t.level && !t.id.includes('full') && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
+      const level3Tests = allTests.filter(t => (t.level === 3 || t.id.includes('full') || t.id.includes('seag')) && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
+      const uncategorizedTests = allTests.filter(t => !t.level && !t.id.includes('full') && !t.id.includes('seag') && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
+      const bossTests = allTests.filter(t => t.isBoss);
+
+      const userLevel = userData.level || 1;
 
       const renderTestCard = (test) => {
           const progress = userData.progress?.[test.id];
@@ -567,7 +602,7 @@
                 <div className="w-full bg-slate-100 rounded-full h-3 mb-2"><div className="bg-emerald-400 h-3 rounded-full" style={{ width: `${pct}%` }}></div></div>
                 <p className="text-sm font-bold text-slate-400 mb-6">{answered} / {total} answered</p>
               </div>
-              <button onClick={() => handleSelectTest(test.id)} className="w-full bg-sky-600 text-white font-bold py-3 rounded-xl hover:bg-sky-500 shadow-md text-lg">{answered > 0 && answered < total ? 'Continue Test' : 'Start Test'}</button>
+              <button onClick={() => handleSelectTest(test.id)} className="w-full bg-sky-600 text-white font-bold py-3 rounded-xl hover:bg-sky-500 shadow-md text-lg transition">{answered > 0 && answered < total ? 'Continue Test' : 'Start Test'}</button>
             </div>
           );
       };
@@ -590,8 +625,8 @@
               <span className="font-bold text-sky-700 text-2xl">Level {userData.level || 1} {userData.title && <span className="ml-3 text-lg bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-sans">{userData.title}</span>}</span>
               <span className="text-lg text-slate-500 font-bold">{userData.xp || 0} / {xpForNextLevel} XP</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200">
-              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
+            <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
             </div>
           </div>
           
@@ -611,50 +646,77 @@
                 <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition">Start Challenge</button>
               )}
             </div>
-            
-            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-10 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
-              <h2 className="text-4xl font-bold font-orbitron mb-4">Review Mistakes</h2>
-              <p className="text-xl opacity-90 mb-8 font-semibold">Turn past errors into strengths.</p>
-              <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-xl transition">
-                {hasMistakes ? 'Practice Your Mistakes' : 'No Mistakes Found! 🎉'}
-              </button>
+            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+              <h2 className="text-3xl font-bold mb-2 font-orbitron">Review Mistakes</h2>
+              <p className="opacity-90 text-lg mb-6">Turn past errors into strengths.</p>
+              <div className="relative group">
+                  <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 shadow-lg text-xl transition">Practice Mistakes</button>
+                  {!hasMistakes && <p className="absolute text-center w-full mt-2 text-sm font-bold opacity-80">You don't have any mistakes yet!</p>}
+              </div>
             </div>
           </div>
           
           {/* THE LEARNING JOURNEY MAP */}
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
+              
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">1</div>
                   <div className="ml-8 md:ml-12">
                       <h2 className="text-3xl font-bold text-emerald-700 mb-2 font-orbitron">Level 1: Confidence Builder</h2>
-                      <p className="text-lg text-slate-500 font-semibold mb-6">Early P6 • Shorter, topic-focused questions to build foundational skills.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {level1Tests.length > 0 ? level1Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
-                      </div>
+                      <p className="text-lg text-slate-500 font-semibold mb-6">Early P6 • Shorter, topic-focused questions.</p>
+                      {level1Tests.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level1Tests.map(renderTestCard)}</div>
+                      ) : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>}
                   </div>
               </div>
 
               <div className="relative">
-                  <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-amber-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">2</div>
+                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${userLevel >= 2 ? 'bg-amber-500' : 'bg-slate-300'}`}>{userLevel >= 2 ? '2' : '🔒'}</div>
                   <div className="ml-8 md:ml-12">
-                      <h2 className="text-3xl font-bold text-amber-700 mb-2 font-orbitron">Level 2: Skill Development</h2>
-                      <p className="text-lg text-slate-500 font-semibold mb-6">Mid P6 • Mixed curriculum, introducing trickier SEAG formats.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {level2Tests.length > 0 ? level2Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
-                      </div>
+                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${userLevel >= 2 ? 'text-amber-700' : 'text-slate-400'}`}>Level 2: Skill Development</h2>
+                      <p className="text-lg text-slate-500 font-semibold mb-6">Mid P6 • Mixed curriculum & 5-option MCQs.</p>
+                      {userLevel >= 2 ? (
+                          level2Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level2Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
+                      ) : (
+                          <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 2 to unlock these challenges!</p></div>
+                      )}
                   </div>
               </div>
 
               <div className="relative">
-                  <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-red-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">3</div>
+                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${userLevel >= 3 ? 'bg-red-500' : 'bg-slate-300'}`}>{userLevel >= 3 ? '3' : '🔒'}</div>
                   <div className="ml-8 md:ml-12">
-                      <h2 className="text-3xl font-bold text-red-700 mb-2 font-orbitron">Level 3: Exam Standard</h2>
-                      <p className="text-lg text-slate-500 font-semibold mb-6">End P6 / P7 • Full SEAG-style timing, 5-option MCQs, and complete mock papers.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {level3Tests.length > 0 ? level3Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
-                      </div>
+                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${userLevel >= 3 ? 'text-red-700' : 'text-slate-400'}`}>Level 3: Exam Standard</h2>
+                      <p className="text-lg text-slate-500 font-semibold mb-6">End P6 / P7 • Full SEAG timing & mock papers.</p>
+                      {userLevel >= 3 ? (
+                          level3Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level3Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
+                      ) : (
+                          <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 3 to unlock mock exams!</p></div>
+                      )}
                   </div>
               </div>
+
+              {/* BOSS TEST UI */}
+              {userLevel >= 3 && bossTests.length > 0 && (
+                  <div className="relative mt-16 p-8 border-4 border-red-500 bg-red-50 rounded-3xl shadow-2xl">
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white font-bold px-6 py-2 rounded-full font-orbitron text-xl shadow-md animate-pulse">ELITE STAGE</div>
+                      <h2 className="text-4xl font-black text-red-700 text-center mb-6 font-orbitron">Boss Challenges</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {bossTests.map(test => {
+                              const p = userData.progress?.[test.id];
+                              const ans = p ? Object.keys(p.answers||{}).length : 0;
+                              const tot = test.questions.length;
+                              return (
+                                  <div key={test.id} className="bg-white border-4 border-red-200 rounded-2xl p-6 shadow-md text-center">
+                                      <h3 className="text-2xl font-bold text-red-900 mb-2 font-orbitron">{test.title}</h3>
+                                      <p className="text-slate-600 font-bold mb-4">{tot} Extra Hard Questions</p>
+                                      <button onClick={() => handleSelectTest(test.id)} className="bg-red-600 text-white font-black py-3 px-8 rounded-xl hover:bg-red-500 shadow-md w-full">{ans>0&&ans<tot?'Continue':'Fight Boss'}</button>
+                                  </div>
+                              );
+                          })}
+                      </div>
+                  </div>
+              )}
 
               {uncategorizedTests.length > 0 && (
                   <div className="relative">
@@ -702,7 +764,7 @@
             const indices = Array.from(test.questions.keys());
             for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
             setShuffledOrder(indices);
-            updateUserData({}, { event: { type: 'NO_OP' } }); 
+            updateUserData(prev => ({ progress: { ...prev.progress, [testId]: { ...existingProgress, shuffledOrder: indices, settings } } }), { event: { type: 'NO_OP' } }); 
         } else if (existingProgress.shuffledOrder) { 
             setShuffledOrder(existingProgress.shuffledOrder); 
         }
@@ -728,8 +790,8 @@
         const pEntry = { answers: userAnswers, lastQuestionIndex: typeof overrideIndex === 'number' ? overrideIndex : currentQuestionIndex, score, accumulatedElapsedMs: currentElapsed, streak, settings, submittedAnswers, ...(shuffledOrder && { shuffledOrder }), ...(isFinished ? { completedAt: Date.now() } : {}) };
         const lastOrigIdx = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
         
-        updateUserData({ progress: { ...userData.progress, [testId]: pEntry } }, {
-            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.includes('full') || testId.includes('seag'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
+        updateUserData(prev => ({ progress: { ...prev.progress, [testId]: pEntry } }), {
+            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.includes('full') || testId.includes('seag') || testId.includes('boss'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
         });
       };
 
@@ -840,7 +902,7 @@
 
             {!isSubmitted && !showInstantFeedback && (
               <div className="text-center my-6">
-                <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg">Submit Answer</button>
+                <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
               </div>
             )}
 
@@ -854,17 +916,17 @@
             
             {lastAnswerResult && !lastAnswerResult.isCorrect && showInstantFeedback && !showExplanation && (
               <div className="text-center">
-                <button onClick={() => setShowExplanation(true)} className="mt-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 border border-slate-300">🤖 Explain my mistake</button>
+                <button onClick={() => setShowExplanation(true)} className="mt-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 border border-slate-300 transition">🤖 Explain my mistake</button>
               </div>
             )}
             {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-10 pt-6 border-t-2 border-slate-100">
-              <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Exit & Save</button>
+              <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Exit & Save</button>
               {currentQuestionIndex < test.questions.length - 1 ? (
-                <button onClick={goToNext} disabled={!isSubmitted && showInstantFeedback} className="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-sky-500 disabled:opacity-50 text-xl shadow-md">Next Question &rarr;</button>
+                <button onClick={goToNext} disabled={!isSubmitted && showInstantFeedback} className="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-sky-500 disabled:opacity-50 text-xl shadow-md transition">Next Question &rarr;</button>
               ) : (
-                <button onClick={handleFinish} disabled={!isSubmitted && showInstantFeedback} className="bg-purple-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-purple-500 disabled:opacity-50 text-xl shadow-md">Finish Test 🏆</button>
+                <button onClick={handleFinish} disabled={!isSubmitted && showInstantFeedback} className="bg-purple-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-purple-500 disabled:opacity-50 text-xl shadow-md transition transform hover:-translate-y-1">Finish Test 🏆</button>
               )}
             </div>
           </div>
@@ -879,11 +941,11 @@
       if (!test || !progress) { setView('dashboard'); return null; }
       
       const score = progress.score || 0;
-      const pct = Math.round((score/test.questions.length)*100);
+      const total = test.questions.length;
+      const pct = total > 0 ? Math.round((score/total)*100) : 0;
       
-      // SEAG BAND ESTIMATOR
       let band = null;
-      if (test.questions.length >= 40) {
+      if (total >= 10) {
           if (pct >= 85) band = "Band 1";
           else if (pct >= 75) band = "Band 2";
           else if (pct >= 65) band = "Band 3";
@@ -894,42 +956,42 @@
 
       return (
         <div className="p-8 min-h-screen">
-          <div className="max-w-4xl mx-auto bg-white border-2 border-slate-100 rounded-3xl shadow-xl p-10 text-center">
-            <h2 className="text-5xl font-bold text-sky-900 font-orbitron mb-6">Test Complete!</h2>
-            <div className="inline-block bg-sky-50 border-2 border-sky-200 rounded-3xl p-8 mb-6">
+          <div className="max-w-4xl mx-auto bg-white border-2 border-slate-100 rounded-3xl shadow-xl p-10 text-center relative overflow-hidden">
+            <h2 className="text-5xl font-bold text-sky-900 font-orbitron mb-6 relative z-10">Test Complete!</h2>
+            <div className="inline-block bg-sky-50 border-2 border-sky-200 rounded-3xl p-8 mb-6 relative z-10 shadow-inner">
                 <p className="text-3xl text-sky-800 font-bold">You scored</p>
-                <p className="text-6xl font-black text-amber-500 my-4">{score} <span className="text-4xl text-sky-800">/ {test.questions.length}</span></p>
-                <p className="text-xl text-sky-700 font-bold">{pct}% Accuracy</p>
+                <p className="text-6xl font-black text-amber-500 my-4">{score} <span className="text-4xl text-sky-800 opacity-50">/ {total}</span></p>
+                <p className="text-xl text-sky-700 font-bold bg-white px-4 py-1 rounded-full inline-block">{pct}% Accuracy</p>
             </div>
             
             {band && (
-                <div className="mb-10 bg-purple-100 border-2 border-purple-300 rounded-2xl p-6 text-purple-900 shadow-sm inline-block max-w-lg mx-auto">
+                <div className="mb-10 bg-purple-100 border-2 border-purple-300 rounded-2xl p-6 text-purple-900 shadow-sm inline-block max-w-lg mx-auto relative z-10">
                     <h3 className="text-2xl font-bold font-orbitron mb-2">Estimated SEAG Band</h3>
                     <p className="text-4xl font-black">{band}</p>
-                    <p className="text-sm font-semibold mt-2 opacity-80">This is a rough estimate based on standard past paper curves.</p>
+                    <p className="text-sm font-semibold mt-2 opacity-80">{total < 40 ? "*(Based on a partial paper)*" : "This is a rough estimate based on standard past paper curves."}</p>
                 </div>
             )}
 
-            <div className="space-y-4 text-left mt-8">
+            <div className="space-y-4 text-left mt-8 relative z-10">
                 {(progress.shuffledOrder || Array.from(test.questions.keys())).map((originalIndex, displayIndex) => {
                     const actualQuestion = test.questions[originalIndex];
-                    const isCorr = isAnswerCorrect(actualQuestion, progress.answers[originalIndex]);
+                    const userAnswer = progress.answers[originalIndex];
+                    const isCorr = isAnswerCorrect(actualQuestion, userAnswer);
                     return (
-                        <div key={displayIndex} className={`p-5 rounded-2xl border-l-8 ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
+                        <div key={displayIndex} className={`p-5 rounded-2xl border-l-8 shadow-sm ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
                             <p className="font-bold text-slate-800 mb-2">{displayIndex+1}. {actualQuestion.question}</p>
-                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {progress.answers[originalIndex] || 'Blank'}</p>
+                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswer || 'Blank'}</p>
                             {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {actualQuestion.answer}</p>}
                         </div>
                     );
                 })}
             </div>
-            <button onClick={() => setView('dashboard')} className="mt-10 bg-sky-600 text-white font-bold py-4 px-12 rounded-2xl hover:bg-sky-500 text-2xl shadow-lg">Back to Dashboard</button>
+            <button onClick={() => setView('dashboard')} className="mt-10 bg-sky-600 text-white font-bold py-4 px-12 rounded-2xl hover:bg-sky-500 text-2xl shadow-lg transition transform hover:-translate-y-1 relative z-10">Return to Dashboard</button>
           </div>
         </div>
       );
     };
 
-    // --- PARENT DASHBOARD (NEW) ---
     const ParentDashboardView = ({ userData, setView, allTests }) => {
         const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
         
@@ -938,27 +1000,33 @@
         const overallAcc = totalQs > 0 ? Math.round((totalCorr / totalQs) * 100) : 0;
 
         return (
-            <div className="p-8 max-w-5xl mx-auto min-h-screen">
-                <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Parent Dashboard</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Test Admin Data</button><button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm">Exit to Student View</button></div>
+            <div className="p-4 sm:p-8 max-w-5xl mx-auto min-h-screen">
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+                    <h1 className="text-4xl sm:text-5xl font-bold text-sky-900 font-orbitron">Parent Dashboard</h1>
+                    <div className="flex gap-4">
+                        <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
+                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
+                    </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Total Attempts</p><p className="text-4xl font-black text-sky-600">{userData.totalAttempts || 0}</p></div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Overall Accuracy</p><p className="text-4xl font-black text-emerald-500">{overallAcc}%</p></div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Current Level</p><p className="text-4xl font-black text-amber-500">{userData.level || 1}</p></div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Total Attempts</p><p className="text-5xl font-black text-sky-600">{userData.totalAttempts || 0}</p></div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Overall Accuracy</p><p className="text-5xl font-black text-emerald-500">{overallAcc}%</p></div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Current Level</p><p className="text-5xl font-black text-amber-500">{userData.level || 1}</p></div>
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
-                    <h2 className="text-2xl font-bold text-sky-900 mb-6">Recent Test History</h2>
+                    <h2 className="text-2xl font-bold text-sky-900 mb-6 font-orbitron">Recent Test History</h2>
                     {completedTests.length > 0 ? (
                         <div className="space-y-4">
                             {completedTests.slice(0, 10).map(t => (
-                                <div key={t.id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <div><p className="font-bold text-lg">{t.title}</p><p className="text-sm text-slate-500">{new Date(t.date).toLocaleDateString()}</p></div>
-                                    <div className="font-black text-xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
+                                <div key={t.id + t.date} className="flex justify-between items-center bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                    <div><p className="font-bold text-lg text-slate-800">{t.title}</p><p className="text-sm text-slate-500 font-semibold">{new Date(t.date).toLocaleDateString()} • {t.mode || 'Unknown Mode'}</p></div>
+                                    <div className="font-black text-2xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
                                 </div>
                             ))}
                         </div>
-                    ) : <p className="text-slate-500 font-bold">No tests completed yet.</p>}
+                    ) : <p className="text-slate-500 font-bold text-lg">No tests completed yet.</p>}
                 </div>
             </div>
         )
@@ -968,11 +1036,11 @@
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
-            message: "Are you sure? This deletes progress but keeps tests.", 
-            confirmText: "Reset", 
+            message: "Are you sure? This deletes progress, XP, and achievements but keeps tests.", 
+            confirmText: "Reset Everything", 
             onConfirm: () => {
                 const clean = { name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [] };
-                updateAllData({ allTests, userData: clean });
+                updateAllData(prev => ({ ...prev, userData: clean }));
                 showNotification({message: "Reset complete.", type: 'success'}); 
                 setTimeout(() => window.location.reload(), 1000);
             }
@@ -988,7 +1056,7 @@
                 const tests = allTests.filter(x => x.id !== testId);
                 const newProgress = { ...userData.progress };
                 delete newProgress[testId];
-                updateAllData({ userData: { ...userData, progress: newProgress }, allTests: tests });
+                updateAllData(prev => ({ ...prev, userData: { ...prev.userData, progress: newProgress }, allTests: tests }));
                 showNotification({message:'Test Deleted', type:'success'});
             }
         });
@@ -1010,7 +1078,7 @@
                     if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
                     else { newAllTests.push(newTest); added++; }
                 });
-                updateAllData({ userData, allTests: newAllTests });
+                updateAllData(prev => ({ ...prev, allTests: newAllTests }));
                 showNotification({ message: `Success! Added ${added} new tests, updated ${updated}.`, type: 'success' });
             } catch (error) { showNotification({ message: `Import failed: ${error.message}`, type: 'error' }); } 
             finally { event.target.value = ""; }
@@ -1019,36 +1087,36 @@
       };
 
       return (
-        <div className="p-8 min-h-screen max-w-5xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-              <h1 className="text-4xl font-bold text-sky-900 font-orbitron">Data Admin</h1>
-              <button onClick={() => setView('parentDashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-4 rounded-xl shadow-sm hover:bg-slate-50">Back to Parents</button>
+        <div className="p-4 sm:p-8 min-h-screen max-w-5xl mx-auto">
+          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+              <h1 className="text-4xl font-bold text-sky-900 font-orbitron">Manage Data</h1>
+              <button onClick={() => setView('parentDashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-6 rounded-xl shadow-sm hover:bg-slate-50 transition text-lg">Back to Parents Area</button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <button onClick={() => setView('createTest')} className="bg-emerald-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-emerald-400 shadow-lg">Create New Test</button>
-              <button onClick={() => setView('performance')} className="bg-purple-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-purple-400 shadow-lg">Performance Charts</button>
+              <button onClick={() => setView('createTest')} className="bg-emerald-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-emerald-400 shadow-lg transition transform hover:-translate-y-1">Create New Test 📝</button>
+              <button onClick={() => setView('performance')} className="bg-purple-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-purple-400 shadow-lg transition transform hover:-translate-y-1">Performance Charts 📈</button>
           </div>
           
           <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 mb-8 shadow-md">
-              <h2 className="text-2xl font-bold mb-4 text-sky-900">Data Management</h2>
+              <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Data Import & Reset</h2>
               <div className="flex flex-wrap gap-4">
                   <input type="file" accept=".json" id="import-test-pack" className="hidden" onChange={handleImportTestPacks} />
-                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg inline-block">📥 Import JSON Tests</label>
-                  <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-400 text-lg">Reset All Player Data</button>
+                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg">📥 Import JSON Tests</label>
+                  <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-400 text-lg shadow-md transition">⚠️ Reset All Player Data</button>
               </div>
           </div>
           
           <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-sky-900">Manage Tests</h2>
+            <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Manage Existing Tests</h2>
             <div className="space-y-4">
               {allTests.map(t => (
-                <div key={t.id} className="bg-slate-50 p-4 rounded-xl flex justify-between items-center border border-slate-200">
+                <div key={t.id} className="bg-slate-50 p-5 rounded-2xl flex flex-wrap justify-between items-center border border-slate-200 gap-4">
                   <div>
                       <h3 className="font-bold text-lg text-slate-800">{t.title}</h3>
-                      <p className="text-slate-500">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
+                      <p className="text-slate-500 font-semibold">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
                   </div>
-                  <button onClick={() => handleDeleteTest(t.id)} className="text-red-500 font-bold hover:text-red-700">Delete</button>
+                  <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-50 transition">Delete</button>
                 </div>
               ))}
             </div>
@@ -1059,31 +1127,41 @@
 
     const CreateTestView = ({ setView, allTests, updateAllData, userData, showNotification }) => {
         const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); const [questions, setQuestions] = useState([{ question: '', options: ['','','',''], answer: '' }]);
+        
         const handleSave = () => {
             if(!title) return showNotification({message: "Title required", type:"error"});
+            if(questions.some(q => !q.question || !q.answer)) return showNotification({message: "All questions must have text and an answer.", type: "error"});
+            
             const nt = { id: `custom-${Date.now()}`, title, subject, level: Number(level), questions, notes: '' };
-            updateAllData({ userData, allTests: [...allTests, nt] });
+            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, nt] }));
             showNotification({message: "Test Created!", type:"success"});
             setView('admin');
         };
+        
         return (
-            <div className="p-8 max-w-4xl mx-auto min-h-screen">
-                <div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold text-sky-900">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800">Cancel</button></div>
-                <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-4 mb-4 border-2 border-slate-200 rounded-xl font-bold text-xl" />
-                    <div className="flex gap-4 mb-8">
-                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl"><option>Maths</option><option>English</option><option>Mixed</option></select>
-                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
+            <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-3xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
+                <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
+                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-4 mb-6 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500" />
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
+                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-6 p-6 bg-sky-50 rounded-2xl border border-sky-100">
-                            <textarea placeholder={`Question ${i+1}`} value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-4 mb-4 rounded-xl border border-slate-200" rows="2" />
-                            <input type="text" placeholder="Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border border-emerald-200 bg-emerald-50" />
+                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-2xl border-2 border-sky-100 relative">
+                            <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-4 mt-2 mb-4 rounded-xl border border-slate-200 font-semibold text-lg outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                {q.options.map((opt, oIndex) => (
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className="p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500" />
+                                ))}
+                            </div>
+                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
-                    <div className="flex gap-4">
-                        <button onClick={() => setQuestions([...questions, {question:'', options:[], answer:''}])} className="flex-1 bg-slate-200 font-bold py-4 rounded-xl">Add Question</button>
-                        <button onClick={handleSave} className="flex-1 bg-emerald-500 text-white font-bold py-4 rounded-xl">Save Test</button>
+                    <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                        <button onClick={() => setQuestions([...questions, {question:'', options:['','','',''], answer:''}])} className="flex-1 bg-slate-100 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-200 transition text-lg">Add Question</button>
+                        <button onClick={handleSave} className="flex-1 bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 shadow-md transition text-lg">Save Test</button>
                     </div>
                 </div>
             </div>
@@ -1104,39 +1182,51 @@
         const maxLength = Math.max(maths.length, english.length, mixed.length);
         
         chartInstanceRef.current = new Chart(ctx, {
-          type: 'line', data: { labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6'}, {label: 'English (%)', data: english, borderColor: '#ec4899'}, {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6'} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } } }
+          type: 'line', data: { labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6', tension: 0.2}, {label: 'English (%)', data: english, borderColor: '#ec4899', tension: 0.2}, {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6', tension: 0.2} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } }, responsive: true }
         });
       }, [userData, allTests]);
       return (
-          <div className="p-8 max-w-4xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold text-sky-900">Performance Chart</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800">Back</button></div>
-              <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100"><canvas ref={chartRef}></canvas></div>
+          <div className="p-8 max-w-5xl mx-auto min-h-screen">
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Back</button></div>
+              <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100"><canvas ref={chartRef}></canvas></div>
           </div>
       );
     };
 
     const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
-      const [name, setName] = useState(userData.name); const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false); const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false);
+      const [name, setName] = useState(userData.name); const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false); const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false); const [parentPin, setParentPin] = useState(userData.parentPin || "1234");
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
       return (
-        <div className="p-8 min-h-screen flex items-center justify-center">
-          <div className="max-w-md mx-auto w-full bg-white border-2 border-slate-100 rounded-3xl p-10 shadow-xl">
-            <h1 className="text-3xl font-bold font-orbitron text-sky-900 mb-8 text-center">Profile Settings</h1>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl border-2 border-slate-200 mb-6 font-bold text-lg" placeholder="Player Name" />
-            <div className="grid grid-cols-4 gap-4 mb-8">
-              {avatars.map(av => <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-2xl transition-all ${avatar === av ? 'bg-sky-100 ring-4 ring-sky-400 transform scale-110' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'}`}>{av}</button>)}
+        <div className="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+          <div className="max-w-lg mx-auto w-full bg-white border-4 border-slate-100 rounded-[2rem] p-8 sm:p-10 shadow-2xl">
+            <h1 className="text-3xl sm:text-4xl font-bold font-orbitron text-sky-900 mb-8 text-center">Profile Settings</h1>
+            
+            <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Player Name</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 mb-6 font-bold text-xl outline-none focus:border-sky-500" placeholder="Player Name" />
+            
+            <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Choose Your Avatar</label>
+            <div className="grid grid-cols-4 gap-3 mb-8">
+              {avatars.map(av => <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-3 rounded-2xl transition-all ${avatar === av ? 'bg-sky-100 ring-4 ring-sky-400 transform scale-110 shadow-md' : 'bg-slate-50 hover:bg-slate-100 border-2 border-slate-200'}`}>{av}</button>)}
             </div>
-            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50">
-                <span className="font-bold text-slate-700">Dyslexia Friendly Font</span>
-                <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-6 h-6 text-sky-600" />
+            
+            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50 transition">
+                <div><span className="block font-bold text-slate-800 text-lg">Dyslexia Friendly Font</span><span className="text-slate-500 font-semibold text-sm">Uses Arial for all text.</span></div>
+                <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-7 h-7 text-sky-600" />
             </label>
-            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50">
-                <span className="font-bold text-slate-700">Sound Effects</span>
-                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-6 h-6 text-sky-600" />
+            
+            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
+                <div><span className="block font-bold text-slate-800 text-lg">Sound Effects</span><span className="text-slate-500 font-semibold text-sm">Chimes and celebrations.</span></div>
+                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600" />
             </label>
+
+            <div className="pt-6 border-t-2 border-slate-100 mb-8">
+                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN</label>
+                <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
+            </div>
+
             <div className="flex gap-4">
-              <button onClick={() => setView('dashboard')} className="w-full bg-slate-200 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-300 text-lg">Cancel</button>
-              <button onClick={() => { updateUserData({...userData, name, avatar, dyslexiaFriendly, soundEnabled}); showNotification({message:"Saved!", type:"success"}); setView('dashboard'); }} className="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 text-lg shadow-lg">Save</button>
+              <button onClick={() => setView('dashboard')} className="w-full bg-slate-200 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-300 text-lg transition">Cancel</button>
+              <button onClick={() => { updateUserData(prev => ({...prev, name, avatar, dyslexiaFriendly, soundEnabled, parentPin})); showNotification({message:"Settings Saved!", type:"success"}); setView('dashboard'); }} className="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 text-lg shadow-lg transition transform hover:-translate-y-1">Save Profile</button>
             </div>
           </div>
         </div>
@@ -1147,25 +1237,28 @@
       const [activeTab, setActiveTab] = useState('Badges');
       const unlockedTitles = achievementsList.filter(a => userData.achievements[a.id] && a.unlocksTitle);
       return (
-        <div className="p-8 min-h-screen max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold font-orbitron text-sky-900">Achievements</h1><button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-6 rounded-xl hover:bg-slate-50">Back</button></div>
-          <div className="flex gap-4 mb-8">
-              <button onClick={()=>setActiveTab('Badges')} className={`px-6 py-3 font-bold rounded-xl ${activeTab==='Badges' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>Badges</button>
-              <button onClick={()=>setActiveTab('Titles')} className={`px-6 py-3 font-bold rounded-xl ${activeTab==='Titles' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>Titles</button>
+        <div className="p-4 sm:p-10 min-h-screen max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+              <h1 className="text-4xl sm:text-5xl font-bold font-orbitron text-sky-900">Achievements 🏆</h1>
+              <button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl hover:bg-slate-50 shadow-sm text-lg transition">Back to Dashboard</button>
+          </div>
+          <div className="flex gap-4 mb-10 bg-slate-100 p-2 rounded-2xl inline-flex">
+              <button onClick={()=>setActiveTab('Badges')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Badges' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Badges</button>
+              <button onClick={()=>setActiveTab('Titles')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Titles' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Titles</button>
           </div>
           {activeTab === 'Badges' && (
-              <div className="space-y-10">
+              <div className="space-y-12">
                   {['Quick Wins', 'Medium-Term', 'Longer-Term'].map(cat => (
                       <div key={cat}>
-                          <h2 className="text-2xl font-bold text-slate-700 mb-6 border-b-2 border-slate-200 pb-2">{cat}</h2>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                          <h2 className="text-3xl font-bold text-slate-800 mb-6 border-b-4 border-slate-200 pb-3 font-orbitron">{cat}</h2>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                               {achievementsList.filter(a => a.category === cat).map(a => {
                                   const unl = userData.achievements[a.id];
                                   return (
-                                      <div key={a.id} className={`p-6 rounded-3xl border-4 text-center transition-all ${unl ? 'bg-white border-amber-400 shadow-xl transform hover:scale-105' : 'bg-slate-50 border-slate-200 opacity-60 grayscale'}`}>
-                                          <div className="text-5xl mb-4">{a.icon || '🏆'}</div>
-                                          <h3 className={`font-black text-lg mb-2 ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
-                                          <p className="text-sm font-semibold text-slate-500">{a.description}</p>
+                                      <div key={a.id} className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center min-h-[200px] ${unl ? 'bg-white border-amber-400 shadow-xl transform hover:-translate-y-1' : 'bg-slate-50 border-slate-200 opacity-60 grayscale'}`}>
+                                          <div className={`text-6xl mb-4 ${unl ? '' : 'opacity-50'}`}>{a.icon || '🏆'}</div>
+                                          <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
+                                          <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
                                       </div>
                                   )
                               })}
@@ -1175,14 +1268,23 @@
               </div>
           )}
           {activeTab === 'Titles' && (
-              <div className="bg-white p-8 rounded-3xl shadow-lg border-2 border-slate-100">
-                  <h2 className="text-2xl font-bold text-sky-900 mb-6">Equip a Title</h2>
-                  {unlockedTitles.length > 0 ? unlockedTitles.map(a => (
-                      <div key={a.id} className="flex justify-between items-center p-6 bg-slate-50 border border-slate-200 rounded-2xl mb-4">
-                          <div><p className="font-black text-xl text-amber-600">{a.unlocksTitle}</p><p className="text-slate-500 font-semibold">From: {a.title}</p></div>
-                          <button onClick={() => { updateUserData({...userData, title: a.unlocksTitle}); showNotification({message:"Equipped!", type:"success"}); }} disabled={userData.title===a.unlocksTitle} className="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl disabled:bg-slate-300 shadow-md">Equip</button>
+              <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-slate-100">
+                  <h2 className="text-3xl font-bold text-sky-900 mb-8 font-orbitron">Equip a Title</h2>
+                  {unlockedTitles.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {unlockedTitles.map(a => (
+                              <div key={a.id} className="flex flex-col sm:flex-row justify-between items-center p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl gap-4 hover:border-sky-300 transition">
+                                  <div className="text-center sm:text-left">
+                                      <p className="font-black text-2xl text-amber-600 mb-1">{a.unlocksTitle}</p>
+                                      <p className="text-slate-500 font-bold text-sm">Unlocked from: {a.title}</p>
+                                  </div>
+                                  <button onClick={() => { updateUserData(prev => ({...prev, title: a.unlocksTitle})); showNotification({message:"Title Equipped!", type:"success"}); }} disabled={userData.title===a.unlocksTitle} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-3 px-8 rounded-xl disabled:bg-slate-300 disabled:text-slate-500 shadow-md transition">
+                                      {userData.title===a.unlocksTitle ? 'Equipped' : 'Equip'}
+                                  </button>
+                              </div>
+                          ))}
                       </div>
-                  )) : <p className="text-slate-500 font-bold text-lg">No titles unlocked yet. Keep playing!</p>}
+                  ) : <div className="text-center p-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300"><p className="text-slate-500 font-bold text-2xl">No titles unlocked yet.</p><p className="text-slate-400 font-semibold mt-2 text-lg">Keep earning badges to unlock them!</p></div>}
               </div>
           )}
         </div>
@@ -1204,14 +1306,14 @@
 
       const hideModal = () => setModal({ show: false });
       
-      const showModalWrapper = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
+      const showModalWrapper = useCallback(({ title, message, onConfirm, onCancel, confirmText, children }) => {
         setModal({ 
           show: true, title, message, 
           onConfirm: onConfirm ? () => { onConfirm(); hideModal(); } : null,
           onCancel: onCancel ? () => { onCancel(); hideModal(); } : hideModal,
           confirmText, children
         });
-      };
+      }, []);
 
       useEffect(() => {
         if (isInitialized.current) return;
@@ -1220,9 +1322,10 @@
         const savedData = localStorage.getItem('seagPortalData');
         let loadedData = savedData ? JSON.parse(savedData) : null;
         
-        if (!loadedData) {
+        if (!loadedData || !loadedData.userData) {
           loadedData = { 
-            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, achievements: {} }, 
+            schemaVersion: 1,
+            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234" }, 
             allTests: defaultTests 
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
@@ -1247,13 +1350,17 @@
         else document.body.classList.remove('dyslexia-friendly');
       }, [appData?.userData?.dyslexiaFriendly]);
 
-      const updateUserData = useCallback((newUserDataPartial, options = {}) => {
+      const updateUserData = useCallback((updater, options = {}) => {
         setAppData(prev => {
             if (!prev) return prev;
             const { event } = options || {};
-            let mutable = { ...prev.userData, ...newUserDataPartial };
+            
+            const partialData = typeof updater === 'function' ? updater(prev.userData) : updater;
+            let mutable = { ...prev.userData, ...partialData };
+            
             let leveledUp = false;
             let newLevel = mutable.level || 1;
+            let pendingNotifications = [];
             
             if (event?.type === 'ANSWER_SUBMITTED') {
                 mutable.totalAttempts = (mutable.totalAttempts || 0) + 1;
@@ -1277,10 +1384,9 @@
                     mutable.correctAnswersByTag = mutable.correctAnswersByTag || {};
                     tags.forEach(t => mutable.correctAnswersByTag[t] = (mutable.correctAnswersByTag[t] || 0) + 1);
 
-                    // Streak Bonuses
                     if (mutable.currentStreak > 0 && mutable.currentStreak % 5 === 0) {
                         mutable.xp = (mutable.xp || 0) + 10;
-                        setTimeout(() => showNotification({ message: `🔥 ${mutable.currentStreak} Streak Bonus! +10 XP`, type: 'success' }), 1000);
+                        pendingNotifications.push(`🔥 ${mutable.currentStreak} Streak Bonus! +10 XP`);
                     }
                 } else {
                     mutable.currentStreak = 0; 
@@ -1298,8 +1404,10 @@
             
             if (event?.type === 'PACK_COMPLETED') {
                 if (event.payload.isDailyChallenge) {
+                    if (!mutable.dailyChallenge?.completedToday) {
+                        mutable.dailyChallengeStreak = (mutable.dailyChallengeStreak || 0) + 1;
+                    }
                     mutable.dailyChallenge = { completedToday: true, date: new Date().toDateString() };
-                    mutable.dailyChallengeStreak = (mutable.dailyChallengeStreak || 0) + 1;
                 }
 
                 let xpMultiplier = 1;
@@ -1320,34 +1428,33 @@
             }
             
             const { updated, unlockedIds } = unlockAchievements(mutable, event);
-            const newData = { ...prev, userData: updated };
+            const newData = { ...prev, userData: updated, schemaVersion: 1 };
             safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
 
-            if (leveledUp) {
-                setTimeout(() => {
+            setTimeout(() => {
+                pendingNotifications.forEach(msg => showNotification({ message: msg, type: 'success' }));
+                if (leveledUp) {
                     playSound('levelup', updated.soundEnabled !== false);
                     confetti({ particleCount: 300, spread: 100, origin: { y: 0.3 } });
-                    showModalWrapper({
-                        title: "🎉 LEVEL UP! 🎉",
-                        message: `Amazing job! You are now Level ${newLevel}! Keep up the great work.`,
-                        confirmText: "Awesome!"
-                    });
-                }, 500);
-            }
-
-            if (unlockedIds.length > 0) {
-                setTimeout(() => {
+                    showModalWrapper({ title: "🎉 LEVEL UP! 🎉", message: `Amazing job! You are now Level ${newLevel}! Keep up the great work.`, confirmText: "Awesome!" });
+                }
+                if (unlockedIds.length > 0) {
                     const newBadges = unlockedIds.map(id => achievementsList.find(a => a.id === id)?.title).join(', ');
                     showNotification({ message: `🏆 Achievement Unlocked: ${newBadges}`, type: 'success' });
-                }, 1500);
-            }
+                }
+            }, 0);
 
             return newData;
         });
       }, [showModalWrapper, showNotification]);
 
-      const updateAllData = useCallback((newData) => {
-          setAppData(newData); safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+      const updateAllData = useCallback((updater) => {
+          setAppData(prev => {
+              if(!prev) return prev;
+              const newData = typeof updater === 'function' ? updater(prev) : updater;
+              safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+              return newData;
+          });
       }, []);
 
       if (!appData) return <LoadingSpinner message="Loading Portal System..." />;
