@@ -39,41 +39,146 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
-    // ==========================================
-    // THE ENGINE IS NOW EMPTY OF QUESTIONS.
-    // ALL CONTENT MUST BE IMPORTED VIA JSON.
-    // ==========================================
-    const defaultTests = [];
+    // --- Audio Engine ---
+    const playSound = (type, enabled = true) => {
+        if (!enabled) return;
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'incorrect') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.2);
+            } else if (type === 'levelup') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            }
+        } catch(e) { console.log("Audio not supported"); }
+    };
 
-    // --- Achievements Data ---
+    // --- CURRICULUM DATA BANK ---
+    const defaultTests = [
+      {
+        id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
+        questions: [
+          { question: "What is the value of the 7 in the number 4,702?", options: ["7", "70", "700", "7000"], answer: "700", tags: ["number", "place value"] },
+          { question: "What is 45 + 37?", options: ["72", "82", "92", "73"], answer: "82", tags: ["number", "addition"] },
+          { question: "Subtract 18 from 50.", options: ["22", "32", "42", "28"], answer: "32", tags: ["number", "subtraction"] },
+          { question: "What is 6 multiplied by 8?", options: ["42", "46", "48", "54"], answer: "48", tags: ["number", "multiplication"] },
+          { question: "Divide 42 by 7.", options: ["5", "6", "7", "8"], answer: "6", tags: ["number", "division"] },
+          { question: "Which of these numbers is even?", options: ["13", "27", "44", "81"], answer: "44", tags: ["number", "properties"] },
+          { question: "What is the next number in this sequence: 5, 10, 15, 20, ___?", options: ["21", "25", "30", "35"], answer: "25", tags: ["number", "sequences"] },
+          { question: "Round 64 to the nearest 10.", options: ["60", "65", "70", "100"], answer: "60", tags: ["number", "rounding"] },
+          { question: "Write the number 'two thousand, four hundred and ten' in figures.", options: ["2041", "2401", "2410", "2014"], answer: "2410", tags: ["number", "place value"] },
+          { question: "What is half of 84?", options: ["40", "42", "44", "48"], answer: "42", tags: ["number", "halving"] },
+          { question: "What is double 36?", options: ["62", "66", "72", "76"], answer: "72", tags: ["number", "doubling"] },
+          { question: "Find the sum of 120 and 85.", options: ["195", "205", "215", "105"], answer: "205", tags: ["number", "addition"] },
+          { question: "What is 100 minus 43?", options: ["57", "67", "53", "63"], answer: "57", tags: ["number", "subtraction"] },
+          { question: "Which number is a multiple of 5?", options: ["12", "19", "25", "31"], answer: "25", tags: ["number", "multiples"] },
+          { question: "What is 9 × 4?", options: ["32", "36", "40", "45"], answer: "36", tags: ["number", "multiplication"] },
+          { question: "Share 24 sweets equally among 4 children. How many does each get?", options: ["4", "5", "6", "8"], answer: "6", tags: ["number", "division"] },
+          { question: "Identify the odd number.", options: ["16", "22", "38", "50"], answer: "16", tags: ["number", "properties"] },
+          { question: "Complete the sequence: 12, 10, 8, 6, ___", options: ["2", "3", "4", "5"], answer: "4", tags: ["number", "sequences"] },
+          { question: "Round 187 to the nearest 100.", options: ["100", "150", "180", "200"], answer: "200", tags: ["number", "rounding"] },
+          { question: "Which number is larger: 3,099 or 3,101?", options: ["3,099", "3,101", "They are equal", "Cannot tell"], answer: "3,101", tags: ["number", "place value"] },
+          { question: "What is 15 + 15 + 15?", options: ["30", "45", "50", "60"], answer: "45", tags: ["number", "addition"] },
+          { question: "If I have 50p and spend 22p, how much is left?", options: ["28p", "38p", "18p", "32p"], answer: "28p", tags: ["number", "subtraction"] },
+          { question: "What is 7 multiplied by 0?", options: ["0", "1", "7", "70"], answer: "0", tags: ["number", "multiplication"] },
+          { question: "How many tens are in 450?", options: ["4", "5", "45", "50"], answer: "45", tags: ["number", "place value"] },
+          { question: "What is the difference between 30 and 14?", options: ["14", "16", "24", "44"], answer: "16", tags: ["number", "subtraction"] }
+        ]
+      },
+      {
+        id: "l2-english-punctuation-1", title: "Level 2: Punctuation Precision", subject: "English", level: 2, childStage: "Mid P6", purpose: "Development",
+        questions: [
+          { question: "Which sentence uses an apostrophe correctly?", options: ["The cats' bowl was empty.", "The cat's bowl was empty.", "The cats bowl' was empty.", "The cats bowl was' empty."], answer: "The cat's bowl was empty.", tags: ["punctuation", "apostrophes"] },
+          { question: "Choose the correctly punctuated sentence.", options: ["I need apples milk and bread.", "I need apples, milk, and bread.", "I need, apples, milk and bread.", "I need apples, milk and bread."], answer: "I need apples, milk and bread.", tags: ["punctuation", "commas"] },
+          { question: "Where should the speech marks go? Hello, said the teacher.", options: ["\"Hello, said\" the teacher.", "\"Hello,\" said the teacher.", "Hello, \"said the teacher.\"", "\"Hello, said the teacher.\""], answer: "\"Hello,\" said the teacher.", tags: ["punctuation", "speech marks"] },
+          { question: "Which word needs a capital letter? we went to belfast on tuesday.", options: ["we", "went", "belfast", "tuesday", "We, Belfast, Tuesday"], answer: "We, Belfast, Tuesday", tags: ["punctuation", "capitalisation"] },
+          { question: "Identify the correct contraction for 'do not'.", options: ["don't", "do'nt", "dont'", "d'not"], answer: "don't", tags: ["punctuation", "contractions"] },
+          { question: "Which sentence uses a question mark correctly?", options: ["I wonder where he went?", "Where are you going?", "She asked what time it was?", "He shouted, look out?"], answer: "Where are you going?", tags: ["punctuation", "question marks"] },
+          { question: "What punctuation is missing? The boys coat was blue.", options: ["Comma", "Full stop", "Apostrophe", "Question mark"], answer: "Apostrophe", tags: ["punctuation", "apostrophes"] },
+          { question: "Choose the sentence that uses commas correctly to separate clauses.", options: ["When it rains I use an umbrella.", "When it rains, I use an umbrella.", "When, it rains I use an umbrella.", "When it rains I use, an umbrella."], answer: "When it rains, I use an umbrella.", tags: ["punctuation", "commas"] },
+          { question: "Which of these ends with an exclamation mark?", options: ["How old are you", "What a beautiful day", "I like to read", "She went home"], answer: "What a beautiful day", tags: ["punctuation", "exclamation marks"] },
+          { question: "Find the correctly punctuated sentence.", options: ["Its raining today.", "It's raining today.", "Its' raining today.", "I'ts raining today."], answer: "It's raining today.", tags: ["punctuation", "apostrophes"] },
+          { question: "Which sentence correctly shows plural possession?", options: ["The boys' bikes were red.", "The boy's bikes were red.", "The boys bike's were red.", "The boys bikes' were red."], answer: "The boys' bikes were red.", tags: ["punctuation", "apostrophes"] },
+          { question: "Where is the colon needed? To make the cake you need flour, sugar and eggs.", options: ["After 'cake'", "After 'need'", "After 'flour'", "No colon needed"], answer: "After 'need'", tags: ["punctuation", "colons"] },
+          { question: "Choose the correct sentence.", options: ["\"Stop!\" she shouted.", "\"Stop\"! she shouted.", "Stop! \"she shouted.\"", "\"Stop! she shouted.\""], answer: "\"Stop!\" she shouted.", tags: ["punctuation", "speech marks"] },
+          { question: "Which sentence uses its/it's correctly?", options: ["The dog chased it's tail.", "Its time to go home.", "The bird flapped its wings.", "Look at its' feathers."], answer: "The bird flapped its wings.", tags: ["punctuation", "apostrophes"] },
+          { question: "Identify the sentence with correct list punctuation.", options: ["My hobbies are swimming, reading and, running.", "My hobbies are swimming, reading, and running.", "My hobbies are, swimming, reading and running.", "My hobbies are swimming, reading and running."], answer: "My hobbies are swimming, reading and running.", tags: ["punctuation", "commas"] },
+          { question: "What is missing here: Wow That was amazing", options: ["Two full stops", "An exclamation mark and a full stop", "A question mark and a full stop", "Two commas"], answer: "An exclamation mark and a full stop", tags: ["punctuation", "exclamation marks"] },
+          { question: "Which word is a contraction of 'they are'?", options: ["their", "there", "they're", "theyr'e"], answer: "they're", tags: ["punctuation", "contractions"] },
+          { question: "Choose the correctly punctuated sentence.", options: ["On Monday we will visit Granny.", "On Monday, we will visit Granny.", "On Monday we, will visit Granny.", "On, Monday we will visit Granny."], answer: "On Monday, we will visit Granny.", tags: ["punctuation", "commas"] },
+          { question: "Which of these requires a capital letter?", options: ["summer", "hospital", "january", "river"], answer: "january", tags: ["punctuation", "capitalisation"] },
+          { question: "How should this end? 'Can you pass the salt'", options: [".", "!", "?", ","], answer: "?", tags: ["punctuation", "question marks"] },
+          { question: "Select the correctly punctuated speech.", options: ["He whispered \"be quiet.\"", "He whispered, \"Be quiet.\"", "\"He whispered,\" Be quiet.", "\"Be quiet\", he whispered."], answer: "He whispered, \"Be quiet.\"", tags: ["punctuation", "speech marks"] },
+          { question: "Which of the following is correct?", options: ["Lets go to the park.", "Let's go to the park.", "Lets' go to the park.", "L'ets go to the park."], answer: "Let's go to the park.", tags: ["punctuation", "apostrophes"] },
+          { question: "Identify the sentence needing a comma.", options: ["I like cats and dogs.", "Although it was cold we went out.", "The sky is blue.", "He ran fast."], answer: "Although it was cold we went out.", tags: ["punctuation", "commas"] },
+          { question: "Where should the apostrophe go in 'couldnt'?", options: ["could'nt", "c'ouldnt", "couldn't", "couldnt'"], answer: "couldn't", tags: ["punctuation", "contractions"] },
+          { question: "Which sentence is fully correct?", options: ["The childrens toys were lost.", "The children's toys were lost.", "The childrens' toys were lost.", "The children toy's were lost."], answer: "The children's toys were lost.", tags: ["punctuation", "apostrophes"] }
+        ]
+      },
+      {
+        id: "seag-full-mock-1", title: "Level 3: Full SEAG Mock Paper 1", subject: "Mixed", level: 3, childStage: "P7 Exam Prep", purpose: "Exam standard",
+        questions: [
+            // Embedded SEAG standard array
+            { question: "PASSAGE: 'The lighthouse keeper, Old Finn, had watched over the rocky coast for forty years. Every evening, without fail, he climbed the spiral staircase and lit the great lamp.'\nHow long had Finn been the lighthouse keeper?", options: ["Ten years", "Twenty years", "Thirty years", "Forty years", "Fifty years"], answer: "Forty years", tags: ["comprehension", "retrieval"] },
+            { question: "Choose the correctly spelled word.", options: ["recieve", "receive", "receve", "receeve", "recieve"], answer: "receive", tags: ["spelling"] },
+            { question: "Which sentence uses a relative clause correctly?", options: ["The boy, which won the race, was happy.", "The boy, who won the race, was happy.", "The boy, whom won the race, was happy.", "The boy, whose won the race, was happy.", "The boy, that won the race, was happy."], answer: "The boy, who won the race, was happy.", tags: ["grammar", "relative clauses"] },
+            { question: "Which sentence uses a colon correctly?", options: ["She needed: milk, eggs and bread.", "She needed the following: milk, eggs and bread.", "She: needed milk, eggs and bread.", "She needed milk: eggs and bread.", "She needed milk, eggs: and bread."], answer: "She needed the following: milk, eggs and bread.", tags: ["punctuation", "colons"] },
+            { question: "Write the plural of 'half'.", answer: "halves", tags: ["grammar", "plurals"] },
+            { question: "What is 4,506 ÷ 6?", options: ["650", "701", "750", "751", "760"], answer: "751", tags: ["number", "division"] },
+            { question: "A shop sells apples for 35p each. How much do 12 apples cost?", options: ["£3.50", "£3.80", "£4.00", "£4.20", "£4.50"], answer: "£4.20", tags: ["money", "multiplication"] },
+            { question: "A rectangle has a length of 13 cm and a width of 7 cm. What is its perimeter?", options: ["20 cm", "40 cm", "91 cm", "91 cm²", "40 cm²"], answer: "40 cm", tags: ["geometry", "perimeter"] },
+            { question: "What is 15% of 240?", options: ["24", "30", "36", "40", "48"], answer: "36", tags: ["percentages"] },
+            { question: "A bag has 4 red, 6 blue and 10 green counters. What is the probability of picking a blue counter?", options: ["1/5", "3/10", "2/5", "1/2", "3/5"], answer: "3/10", tags: ["probability", "fractions"] },
+            { question: "A rectangle has an area of 84 cm² and a length of 12 cm. What is its width?", answer: "7 cm", tags: ["geometry", "area"] },
+            { question: "What is 3.75 × 4?", answer: "15", tags: ["decimals", "multiplication"] }
+        ]
+      }
+    ];
+
+    // --- Achievements Data (Updated with unique emojis) ---
     const achievementsList = [
-        { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins' },
-        { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins' },
-        { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins', unlocksTitle: 'Streak Starter' },
-        { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins' },
-        { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins' },
-        { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins' },
-        { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins' },
-        { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins' },
-        { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term' },
-        { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term' },
-        { id: 'varietyChamp', title: 'Variety Champ', description: 'Answer correctly in 3 different topics in one session.', category: 'Medium-Term' },
-        { id: 'noHintHeroPro', title: 'No-Hint Hero (Pro)', description: '10 correct in a row without hints.', category: 'Medium-Term' },
-        { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 20-question session.', category: 'Medium-Term' },
-        { id: 'packFinisher', title: 'Pack Finisher', description: 'Complete any test pack.', category: 'Longer-Term' },
-        { id: 'perfectPack', title: 'Perfect Pack', description: 'Get 100% on any test pack.', category: 'Longer-Term', unlocksTitle: 'Perfectionist' },
-        { id: 'masteryBadge', title: 'Mastery Badge', description: 'Reach 90% accuracy over 30 questions in one topic.', category: 'Longer-Term' },
-        { id: 'reviewPro', title: 'Review Pro', description: 'Correctly fix 10 mistakes in the "Practice Mistakes" mode.', category: 'Longer-Term' },
-        { id: 'weeklyWarrior', title: 'Weekly Warrior', description: 'Complete a test on 5 separate days in one calendar week.', category: 'Longer-Term' },
-        { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Correctly answer 50 fraction questions.', category: 'Longer-Term' },
-        { id: 'punctuationPro', title: 'Punctuation Pro', description: 'Correctly answer 25 punctuation questions.', category: 'Medium-Term' },
-        { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term' },
-        { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term' },
-        { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster' },
-        { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full practice test.', category: 'Longer-Term' },
-        { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer' },
-        { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term' },
-        { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ' },
+        { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣' },
+        { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
+        { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins', unlocksTitle: 'Streak Starter', icon: '🔥' },
+        { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins', icon: '🗺️' },
+        { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧' },
+        { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯' },
+        { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊' },
+        { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term', icon: '⭐' },
+        { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster', icon: '🏎️' },
+        { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 20-question session.', category: 'Medium-Term', icon: 'bullseye' },
+        { id: 'packFinisher', title: 'Pack Finisher', description: 'Complete any test pack.', category: 'Longer-Term', icon: '📦' },
+        { id: 'perfectPack', title: 'Perfect Pack', description: 'Get 100% on any test pack.', category: 'Longer-Term', unlocksTitle: 'Perfectionist', icon: '👑' },
+        { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Correctly answer 50 fraction questions.', category: 'Longer-Term', icon: '🍕' },
+        { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term', icon: '🧠' },
+        { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term', icon: '💯' },
+        { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer', icon: '📐' },
+        { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃' },
     ];
 
     function xpForAchievementId(id) {
@@ -105,16 +210,10 @@
       
       const type = event?.type;
       const p = event?.payload || {};
-      const mode = p.mode;
-      
-      if ((type === 'ANSWER_SUBMITTED' || type === 'PACK_COMPLETED') && mode !== 'Test') {
-        if (!(type === 'ANSWER_SUBMITTED' && p.wasReviewed)) return { updated: userData, unlockedIds: [] };
-      }
       
       if (type === 'ANSWER_SUBMITTED') {
         const tagCounts = userData.correctAnswersByTag || {};
         if (!has('fractionFanatic') && (tagCounts.fractions || 0) >= 50) unlock('fractionFanatic');
-        if (!has('punctuationPro') && (tagCounts.punctuation || 0) >= 25) unlock('punctuationPro');
         if (!has('vocabularyVirtuoso') && (tagCounts.vocabulary || 0) >= 100) unlock('vocabularyVirtuoso');
         if (!has('centuryClub') && (userData.totalCorrectAnswers || 0) >= 100) unlock('centuryClub');
         if (!has('comebackKid') && p.correct && (userData.correctRunAfterWrong || 0) >= 3) unlock('comebackKid');
@@ -123,22 +222,17 @@
         if (!has('firstStreak') && (userData.currentStreak || 0) >= 3) unlock('firstStreak');
         if (!has('topicExplorer') && (userData.uniqueTagsToday?.tags?.length || 0) >= 2) unlock('topicExplorer');
         if (!has('mistakeFixer') && p.correct && p.wasReviewed) unlock('mistakeFixer');
-        if (!has('noHintHeroMini') && (userData.noHintCorrectCount || 0) >= 5) unlock('noHintHeroMini');
         if (!has('accurateStart') && (userData.totalAttempts || 0) >= 10 && ((userData.totalCorrectAnswers || 0) / userData.totalAttempts) >= 0.7) unlock('accurateStart');
         if (!has('speedStreak') && (userData.currentStreak || 0) >= 3 && (userData.lastCorrectAnswerTimes || []).length === 3 && userData.lastCorrectAnswerTimes.every(t => t <= 30)) unlock('speedStreak');
         if (!has('consistencyStar') && (userData.loginStreak || 0) >= 2) unlock('consistencyStar');
-        if (!has('varietyChamp') && p.correct && (userData.uniqueTagsToday?.tags?.length || 0) >= 3) unlock('varietyChamp');
-        if (!has('noHintHeroPro') && (userData.noHintStreak || 0) >= 10) unlock('noHintHeroPro');
         if (!has('masteryBadge')) {
             const stats = userData.perTopicStats || {};
             if (Object.values(stats).some(s => s.total >= 30 && (s.correct / s.total) >= 0.9)) unlock('masteryBadge');
         }
-        if (!has('reviewPro') && (userData.reviewCorrections || 0) >= 10) unlock('reviewPro');
       }
       
       if (type === 'PACK_COMPLETED') {
-        if (!has('speedDemon') && typeof p.timeLeft === 'number' && typeof p.initialTotalTime === 'number' && p.initialTotalTime > 0 && p.timeLeft >= (p.initialTotalTime / 2)) unlock('speedDemon');
-        if (!has('clutchPerformer') && p.totalQuestions > 50 && p.lastQuestionCorrect) unlock('clutchPerformer');
+        if (p.mode === 'Test' && !has('speedDemon') && typeof p.timeLeft === 'number' && typeof p.initialTotalTime === 'number' && p.initialTotalTime > 0 && p.timeLeft >= (p.initialTotalTime / 2)) unlock('speedDemon');
         if (p.testHasGeometry && p.totalQuestions > 0 && (p.score / p.totalQuestions) >= 0.9) {
           const list = new Set(userData.badgeProgress.geometryGuruTests);
           list.add(p.finishedTestId);
@@ -155,7 +249,7 @@
           userData.weeklyDayMap[weekKey] = days;
           if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
-        if (p.totalQuestions > 50) {
+        if (p.totalQuestions > 30) {
           const ft = new Set(userData.fullTestsCompleted);
           ft.add(p.finishedTestId);
           userData.fullTestsCompleted = Array.from(ft);
@@ -164,12 +258,10 @@
         if (!has('solidAccuracy') && (p.totalQuestions || 0) >= 20 && ((p.score || 0) / (p.totalQuestions || 1)) >= 0.8) unlock('solidAccuracy');
         if (!has('packFinisher')) unlock('packFinisher');
         if (!has('perfectPack') && p.score === p.totalQuestions) unlock('perfectPack');
-        if (!has('dedicatedDabbler') && p.isDailyChallenge && (userData.dailyChallengeStreak || 0) >= 7) unlock('dedicatedDabbler');
       }
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -397,7 +489,6 @@
         );
     }
 
-    // --- MAIN DASHBOARD: UPDATED FOR LEARNING JOURNEY UI ---
     const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
@@ -423,8 +514,8 @@
       };
 
       const handleAdminAccess = () => {
-          const pin = prompt("Please enter Parent PIN to access Admin Panel:");
-          if (pin === "1234") setView('admin');
+          const pin = prompt("Please enter Parent PIN to access the Admin Panel:");
+          if (pin === (userData.parentPin || "1234")) setView('parentDashboard');
           else if (pin !== null) alert("Incorrect PIN.");
       };
 
@@ -458,7 +549,6 @@
       
       const hasMistakes = Object.values(userData.progress || {}).some(p => (p.score || 0) < Object.keys(p.answers || {}).length);
 
-      // --- Grouping Logic for "Journey" View ---
       const level1Tests = allTests.filter(t => t.level === 1 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
       const level2Tests = allTests.filter(t => t.level === 2 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
       const level3Tests = allTests.filter(t => (t.level === 3 || t.id.includes('full')) && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
@@ -506,92 +596,71 @@
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-              <h2 className="text-3xl font-bold mb-2 font-orbitron">Daily Challenge</h2>
-              <p className="opacity-90 text-lg mb-6">A quick 5-question warmup!</p>
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-3xl font-bold font-orbitron">Daily Challenge</h2>
+                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
+                  <div className="text-2xl mb-1">🔥</div>
+                  <div className="font-bold">{userData.dailyChallengeStreak || 0} Day Streak</div>
+                </div>
+              </div>
+              <p className="text-xl opacity-90 mb-8 font-semibold">A quick 5-question warmup!</p>
               {userData.dailyChallenge?.completedToday ? (
-                <div className="bg-white/20 p-3 rounded-xl font-bold text-center">Complete! See you tomorrow.</div>
+                <div className="w-full bg-white/20 text-center font-bold py-4 rounded-xl text-xl">Complete! See you tomorrow.</div>
               ) : (
-                <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-3 rounded-xl hover:bg-slate-100 shadow-lg text-lg">Start Challenge</button>
+                <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition">Start Challenge</button>
               )}
             </div>
-            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-              <h2 className="text-3xl font-bold mb-2 font-orbitron">Review Mistakes</h2>
-              <p className="opacity-90 text-lg mb-6">Turn past errors into strengths.</p>
-              <div className="relative group">
-                  <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-3 rounded-xl hover:bg-slate-100 disabled:opacity-50 shadow-lg text-lg">Practice Mistakes</button>
-                  {!hasMistakes && <p className="absolute text-center w-full mt-2 text-sm font-bold opacity-80">You don't have any mistakes yet!</p>}
-              </div>
+            
+            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-10 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+              <h2 className="text-4xl font-bold font-orbitron mb-4">Review Mistakes</h2>
+              <p className="text-xl opacity-90 mb-8 font-semibold">Turn past errors into strengths.</p>
+              <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-xl transition">
+                {hasMistakes ? 'Practice Your Mistakes' : 'No Mistakes Found! 🎉'}
+              </button>
             </div>
           </div>
           
           {/* THE LEARNING JOURNEY MAP */}
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
-              
-              {/* LEVEL 1 */}
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">1</div>
                   <div className="ml-8 md:ml-12">
                       <h2 className="text-3xl font-bold text-emerald-700 mb-2 font-orbitron">Level 1: Confidence Builder</h2>
                       <p className="text-lg text-slate-500 font-semibold mb-6">Early P6 • Shorter, topic-focused questions to build foundational skills.</p>
-                      
-                      {level1Tests.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {level1Tests.map(renderTestCard)}
-                          </div>
-                      ) : (
-                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center">
-                              <p className="text-slate-500 font-bold text-lg">No Level 1 tests loaded yet. Import a test pack in the Parents Area!</p>
-                          </div>
-                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {level1Tests.length > 0 ? level1Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
+                      </div>
                   </div>
               </div>
 
-              {/* LEVEL 2 */}
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-amber-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">2</div>
                   <div className="ml-8 md:ml-12">
                       <h2 className="text-3xl font-bold text-amber-700 mb-2 font-orbitron">Level 2: Skill Development</h2>
                       <p className="text-lg text-slate-500 font-semibold mb-6">Mid P6 • Mixed curriculum, introducing trickier SEAG formats.</p>
-                      
-                      {level2Tests.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {level2Tests.map(renderTestCard)}
-                          </div>
-                      ) : (
-                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center">
-                              <p className="text-slate-500 font-bold text-lg">No Level 2 tests loaded yet.</p>
-                          </div>
-                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {level2Tests.length > 0 ? level2Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
+                      </div>
                   </div>
               </div>
 
-              {/* LEVEL 3 */}
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-red-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">3</div>
                   <div className="ml-8 md:ml-12">
                       <h2 className="text-3xl font-bold text-red-700 mb-2 font-orbitron">Level 3: Exam Standard</h2>
                       <p className="text-lg text-slate-500 font-semibold mb-6">End P6 / P7 • Full SEAG-style timing, 5-option MCQs, and complete mock papers.</p>
-                      
-                      {level3Tests.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {level3Tests.map(renderTestCard)}
-                          </div>
-                      ) : (
-                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center">
-                              <p className="text-slate-500 font-bold text-lg">No Level 3 tests loaded yet.</p>
-                          </div>
-                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {level3Tests.length > 0 ? level3Tests.map(renderTestCard) : <div className="col-span-full bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold text-lg">No tests loaded yet.</p></div>}
+                      </div>
                   </div>
               </div>
 
-              {/* UNCATEGORIZED (Legacy or manually created tests) */}
               {uncategorizedTests.length > 0 && (
                   <div className="relative">
                       <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-slate-400 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">?</div>
                       <div className="ml-8 md:ml-12">
                           <h2 className="text-3xl font-bold text-slate-600 mb-2 font-orbitron">Extra Practice</h2>
-                          <p className="text-lg text-slate-500 font-semibold mb-6">Custom tests and other uncategorized material.</p>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                               {uncategorizedTests.map(renderTestCard)}
                           </div>
@@ -621,9 +690,9 @@
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       const timeLimitMs = settings.mode === 'Test' ? 45 * 60 * 1000 : 0; 
       
-      const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-      const [accumulatedElapsedMs, setAccumulatedElapsedMs] = useState(existingProgress?.accumulatedElapsedMs || 0);
-      const [displayTime, setDisplayTime] = useState(timeLimitMs > 0 ? timeLimitMs : 0);
+      const questionStartTimeRef = useRef(Date.now());
+      const accumulatedElapsedMsRef = useRef(existingProgress?.accumulatedElapsedMs || 0);
+      const [displayTime, setDisplayTime] = useState(timeLimitMs > 0 ? timeLimitMs : (existingProgress?.accumulatedElapsedMs || 0));
 
       const [flash, setFlash] = useState(null);
       const [feedback, setFeedback] = useState(null);
@@ -633,33 +702,36 @@
             const indices = Array.from(test.questions.keys());
             for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
             setShuffledOrder(indices);
-            updateUserData({ ...userData, progress: { ...userData.progress, [testId]: { ...existingProgress, shuffledOrder: indices, settings } } }, { event: { type: 'NO_OP' } });
-        } else if (existingProgress.shuffledOrder) { setShuffledOrder(existingProgress.shuffledOrder); }
+            updateUserData({}, { event: { type: 'NO_OP' } }); 
+        } else if (existingProgress.shuffledOrder) { 
+            setShuffledOrder(existingProgress.shuffledOrder); 
+        }
       }, []);
 
       useEffect(() => {
         if (!timerEnabled) return;
+        setDisplayTime(timeLimitMs > 0 ? Math.max(0, timeLimitMs - accumulatedElapsedMsRef.current) : accumulatedElapsedMsRef.current);
         const interval = setInterval(() => {
             const now = Date.now();
-            const elapsed = accumulatedElapsedMs + (now - questionStartTime);
+            const elapsed = accumulatedElapsedMsRef.current + (now - questionStartTimeRef.current);
             setDisplayTime(timeLimitMs > 0 ? Math.max(0, timeLimitMs - elapsed) : elapsed);
         }, 1000);
         return () => clearInterval(interval);
-      }, [timerEnabled, accumulatedElapsedMs, questionStartTime, timeLimitMs]);
+      }, [timerEnabled, timeLimitMs]);
 
-      const commitElapsed = () => { const now = Date.now(); const delta = now - questionStartTime; setAccumulatedElapsedMs(prev => prev + delta); setQuestionStartTime(now); return delta; };
-      const calculateScore = useCallback(() => { return Object.entries(userAnswers).reduce((acc, [idx, ua]) => acc + (isAnswerCorrect(test.questions[idx], ua) ? 1 : 0), 0); }, [userAnswers, test.questions]);
+      const commitElapsed = () => { const now = Date.now(); const delta = now - questionStartTimeRef.current; accumulatedElapsedMsRef.current += delta; questionStartTimeRef.current = now; return delta; };
+      const calculateScore = () => { return Object.entries(userAnswers).reduce((acc, [idx, ua]) => acc + (isAnswerCorrect(test.questions[idx], ua) ? 1 : 0), 0); };
 
-      const saveProgress = useCallback((isFinished = false, overrideIndex) => {
+      const saveProgress = (isFinished = false, overrideIndex) => {
         const score = calculateScore();
-        const pEntry = { answers: userAnswers, lastQuestionIndex: typeof overrideIndex === 'number' ? overrideIndex : currentQuestionIndex, score, accumulatedElapsedMs, questionStartTime, streak, settings, submittedAnswers, ...(shuffledOrder && { shuffledOrder }), ...(isFinished ? { completedAt: Date.now() } : {}) };
-        const newProg = { ...userData.progress, [testId]: pEntry };
+        const currentElapsed = accumulatedElapsedMsRef.current + (Date.now() - questionStartTimeRef.current);
+        const pEntry = { answers: userAnswers, lastQuestionIndex: typeof overrideIndex === 'number' ? overrideIndex : currentQuestionIndex, score, accumulatedElapsedMs: currentElapsed, streak, settings, submittedAnswers, ...(shuffledOrder && { shuffledOrder }), ...(isFinished ? { completedAt: Date.now() } : {}) };
         const lastOrigIdx = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
         
-        updateUserData({ ...userData, progress: newProg }, {
-            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: displayTime, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.startsWith('full-test') || testId.startsWith('seag'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
+        updateUserData({ progress: { ...userData.progress, [testId]: pEntry } }, {
+            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.includes('full') || testId.includes('seag'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
         });
-      }, [userData, testId, userAnswers, currentQuestionIndex, calculateScore, accumulatedElapsedMs, questionStartTime, streak, settings, submittedAnswers, shuffledOrder, test, updateUserData, timeLimitMs, displayTime]);
+      };
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
@@ -679,9 +751,11 @@
         const isCorrect = isAnswerCorrect(question, answer);
         
         setLastAnswerResult({ isCorrect, userAnswer: answer, question });
-        updateUserData(userData, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: question.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
+        updateUserData({}, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: question.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
         
         setStreak(isCorrect ? streak + 1 : 0);
+        playSound(isCorrect ? 'correct' : 'incorrect', userData.soundEnabled !== false);
+
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
             setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
@@ -707,6 +781,12 @@
           setView('results');
         }
       };
+
+      const handleExit = () => {
+        if (settings.mode === 'Test') {
+            showModal({ title: "Exit Test?", message: "Your timer will keep running in the background if you leave now.", confirmText: "Exit", onConfirm: () => { commitElapsed(); saveProgress(false); setView('dashboard'); } });
+        } else { commitElapsed(); saveProgress(false); setView('dashboard'); }
+      }
 
       const fetchHint = async () => { setHint("Try re-reading the question carefully and break it into steps."); };
 
@@ -770,7 +850,7 @@
               </div>
             )}
 
-            {feedback && <div className={`p-5 rounded-xl text-xl font-bold mb-6 text-center shadow-sm border ${feedback.includes('Correct') ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>{feedback}</div>}
+            {feedback && <div aria-live="polite" className={`p-5 rounded-xl text-xl font-bold mb-6 text-center shadow-sm border ${feedback.includes('Correct') ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>{feedback}</div>}
             
             {lastAnswerResult && !lastAnswerResult.isCorrect && showInstantFeedback && !showExplanation && (
               <div className="text-center">
@@ -780,7 +860,7 @@
             {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-10 pt-6 border-t-2 border-slate-100">
-              <button onClick={() => { commitElapsed(); saveProgress(false); setView('dashboard'); }} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl">Exit & Save</button>
+              <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Exit & Save</button>
               {currentQuestionIndex < test.questions.length - 1 ? (
                 <button onClick={goToNext} disabled={!isSubmitted && showInstantFeedback} className="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-sky-500 disabled:opacity-50 text-xl shadow-md">Next Question &rarr;</button>
               ) : (
@@ -797,24 +877,46 @@
       const test = allTests.find(t => t.id === testId);
       const progress = userData.progress?.[testId];
       if (!test || !progress) { setView('dashboard'); return null; }
+      
       const score = progress.score || 0;
+      const pct = Math.round((score/test.questions.length)*100);
+      
+      // SEAG BAND ESTIMATOR
+      let band = null;
+      if (test.questions.length >= 40) {
+          if (pct >= 85) band = "Band 1";
+          else if (pct >= 75) band = "Band 2";
+          else if (pct >= 65) band = "Band 3";
+          else if (pct >= 55) band = "Band 4";
+          else if (pct >= 45) band = "Band 5";
+          else band = "Band 6";
+      }
+
       return (
         <div className="p-8 min-h-screen">
           <div className="max-w-4xl mx-auto bg-white border-2 border-slate-100 rounded-3xl shadow-xl p-10 text-center">
             <h2 className="text-5xl font-bold text-sky-900 font-orbitron mb-6">Test Complete!</h2>
-            <div className="inline-block bg-sky-50 border-2 border-sky-200 rounded-3xl p-8 mb-10">
+            <div className="inline-block bg-sky-50 border-2 border-sky-200 rounded-3xl p-8 mb-6">
                 <p className="text-3xl text-sky-800 font-bold">You scored</p>
                 <p className="text-6xl font-black text-amber-500 my-4">{score} <span className="text-4xl text-sky-800">/ {test.questions.length}</span></p>
-                <p className="text-xl text-sky-700 font-bold">{Math.round((score/test.questions.length)*100)}% Accuracy</p>
+                <p className="text-xl text-sky-700 font-bold">{pct}% Accuracy</p>
             </div>
+            
+            {band && (
+                <div className="mb-10 bg-purple-100 border-2 border-purple-300 rounded-2xl p-6 text-purple-900 shadow-sm inline-block max-w-lg mx-auto">
+                    <h3 className="text-2xl font-bold font-orbitron mb-2">Estimated SEAG Band</h3>
+                    <p className="text-4xl font-black">{band}</p>
+                    <p className="text-sm font-semibold mt-2 opacity-80">This is a rough estimate based on standard past paper curves.</p>
+                </div>
+            )}
+
             <div className="space-y-4 text-left mt-8">
-                {test.questions.map((q, i) => {
-                    const originalIndex = progress.shuffledOrder ? progress.shuffledOrder[i] : i;
+                {(progress.shuffledOrder || Array.from(test.questions.keys())).map((originalIndex, displayIndex) => {
                     const actualQuestion = test.questions[originalIndex];
                     const isCorr = isAnswerCorrect(actualQuestion, progress.answers[originalIndex]);
                     return (
-                        <div key={i} className={`p-5 rounded-2xl border-l-8 ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
-                            <p className="font-bold text-slate-800 mb-2">{i+1}. {actualQuestion.question}</p>
+                        <div key={displayIndex} className={`p-5 rounded-2xl border-l-8 ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
+                            <p className="font-bold text-slate-800 mb-2">{displayIndex+1}. {actualQuestion.question}</p>
                             <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {progress.answers[originalIndex] || 'Blank'}</p>
                             {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {actualQuestion.answer}</p>}
                         </div>
@@ -827,8 +929,42 @@
       );
     };
 
+    // --- PARENT DASHBOARD (NEW) ---
+    const ParentDashboardView = ({ userData, setView, allTests }) => {
+        const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
+        
+        let totalQs = 0; let totalCorr = 0;
+        completedTests.forEach(t => { totalQs += t.questions.length; totalCorr += t.score; });
+        const overallAcc = totalQs > 0 ? Math.round((totalCorr / totalQs) * 100) : 0;
+
+        return (
+            <div className="p-8 max-w-5xl mx-auto min-h-screen">
+                <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Parent Dashboard</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Test Admin Data</button><button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm">Exit to Student View</button></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Total Attempts</p><p className="text-4xl font-black text-sky-600">{userData.totalAttempts || 0}</p></div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Overall Accuracy</p><p className="text-4xl font-black text-emerald-500">{overallAcc}%</p></div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center"><p className="text-slate-500 font-bold">Current Level</p><p className="text-4xl font-black text-amber-500">{userData.level || 1}</p></div>
+                </div>
+
+                <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
+                    <h2 className="text-2xl font-bold text-sky-900 mb-6">Recent Test History</h2>
+                    {completedTests.length > 0 ? (
+                        <div className="space-y-4">
+                            {completedTests.slice(0, 10).map(t => (
+                                <div key={t.id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <div><p className="font-bold text-lg">{t.title}</p><p className="text-sm text-slate-500">{new Date(t.date).toLocaleDateString()}</p></div>
+                                    <div className="font-black text-xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : <p className="text-slate-500 font-bold">No tests completed yet.</p>}
+                </div>
+            </div>
+        )
+    };
+
     const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
-      
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
@@ -858,7 +994,6 @@
         });
       }
 
-      // --- JSON IMPORT LOGIC ---
       const handleImportTestPacks = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -867,32 +1002,18 @@
             try {
                 const importedData = JSON.parse(e.target.result);
                 const testsToImport = Array.isArray(importedData) ? importedData : [importedData];
-                
-                if (!testsToImport[0].id || !testsToImport[0].questions) {
-                    throw new Error("Invalid test format.");
-                }
-
+                if (!testsToImport[0].id || !testsToImport[0].questions) throw new Error("Invalid format.");
                 const newAllTests = [...allTests];
                 let added = 0; let updated = 0;
-
                 testsToImport.forEach(newTest => {
                     const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
-                    if (existingIndex >= 0) {
-                        newAllTests[existingIndex] = newTest;
-                        updated++;
-                    } else {
-                        newAllTests.push(newTest);
-                        added++;
-                    }
+                    if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
+                    else { newAllTests.push(newTest); added++; }
                 });
-
                 updateAllData({ userData, allTests: newAllTests });
                 showNotification({ message: `Success! Added ${added} new tests, updated ${updated}.`, type: 'success' });
-            } catch (error) {
-                showNotification({ message: `Import failed: ${error.message}`, type: 'error' });
-            } finally {
-                event.target.value = "";
-            }
+            } catch (error) { showNotification({ message: `Import failed: ${error.message}`, type: 'error' }); } 
+            finally { event.target.value = ""; }
         };
         reader.readAsText(file);
       };
@@ -900,23 +1021,20 @@
       return (
         <div className="p-8 min-h-screen max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-              <h1 className="text-4xl font-bold text-sky-900 font-orbitron">Admin Panel</h1>
-              <button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-4 rounded-xl shadow-sm hover:bg-slate-50">Back to Dashboard</button>
+              <h1 className="text-4xl font-bold text-sky-900 font-orbitron">Data Admin</h1>
+              <button onClick={() => setView('parentDashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-4 rounded-xl shadow-sm hover:bg-slate-50">Back to Parents</button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <button onClick={() => setView('createTest')} className="bg-emerald-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-emerald-400 shadow-lg">Create New Test</button>
-              <button onClick={() => setView('performance')} className="bg-purple-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-purple-400 shadow-lg">Performance Dashboard</button>
+              <button onClick={() => setView('performance')} className="bg-purple-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-purple-400 shadow-lg">Performance Charts</button>
           </div>
           
           <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 mb-8 shadow-md">
               <h2 className="text-2xl font-bold mb-4 text-sky-900">Data Management</h2>
               <div className="flex flex-wrap gap-4">
                   <input type="file" accept=".json" id="import-test-pack" className="hidden" onChange={handleImportTestPacks} />
-                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg inline-block">
-                      📥 Import Test Packs (.json)
-                  </label>
-                  
+                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg inline-block">📥 Import JSON Tests</label>
                   <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-400 text-lg">Reset All Player Data</button>
               </div>
           </div>
@@ -982,21 +1100,23 @@
         const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
         const maths = completed.filter(t=>t.subject==='Maths').map(t=>(t.score/t.questions.length)*100);
         const english = completed.filter(t=>t.subject==='English').map(t=>(t.score/t.questions.length)*100);
+        const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
+        const maxLength = Math.max(maths.length, english.length, mixed.length);
         
         chartInstanceRef.current = new Chart(ctx, {
-          type: 'line', data: { labels: Array.from({length: Math.max(maths.length, english.length)}, (_,i)=>`Test ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6'}, {label: 'English (%)', data: english, borderColor: '#ec4899'} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } } }
+          type: 'line', data: { labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6'}, {label: 'English (%)', data: english, borderColor: '#ec4899'}, {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6'} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } } }
         });
       }, [userData, allTests]);
       return (
           <div className="p-8 max-w-4xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold text-sky-900">Performance</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800">Back</button></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold text-sky-900">Performance Chart</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800">Back</button></div>
               <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100"><canvas ref={chartRef}></canvas></div>
           </div>
       );
     };
 
     const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
-      const [name, setName] = useState(userData.name); const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false);
+      const [name, setName] = useState(userData.name); const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false); const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false);
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
       return (
         <div className="p-8 min-h-screen flex items-center justify-center">
@@ -1006,13 +1126,17 @@
             <div className="grid grid-cols-4 gap-4 mb-8">
               {avatars.map(av => <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-2xl transition-all ${avatar === av ? 'bg-sky-100 ring-4 ring-sky-400 transform scale-110' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'}`}>{av}</button>)}
             </div>
-            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50">
+            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50">
                 <span className="font-bold text-slate-700">Dyslexia Friendly Font</span>
                 <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-6 h-6 text-sky-600" />
             </label>
+            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50">
+                <span className="font-bold text-slate-700">Sound Effects</span>
+                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-6 h-6 text-sky-600" />
+            </label>
             <div className="flex gap-4">
               <button onClick={() => setView('dashboard')} className="w-full bg-slate-200 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-300 text-lg">Cancel</button>
-              <button onClick={() => { updateUserData({...userData, name, avatar, dyslexiaFriendly}); showNotification({message:"Saved!", type:"success"}); setView('dashboard'); }} className="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 text-lg shadow-lg">Save</button>
+              <button onClick={() => { updateUserData({...userData, name, avatar, dyslexiaFriendly, soundEnabled}); showNotification({message:"Saved!", type:"success"}); setView('dashboard'); }} className="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 text-lg shadow-lg">Save</button>
             </div>
           </div>
         </div>
@@ -1024,7 +1148,7 @@
       const unlockedTitles = achievementsList.filter(a => userData.achievements[a.id] && a.unlocksTitle);
       return (
         <div className="p-8 min-h-screen max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold font-orbitron text-sky-900">Achievements 🏆</h1><button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-6 rounded-xl hover:bg-slate-50">Back</button></div>
+          <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold font-orbitron text-sky-900">Achievements</h1><button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 font-bold py-2 px-6 rounded-xl hover:bg-slate-50">Back</button></div>
           <div className="flex gap-4 mb-8">
               <button onClick={()=>setActiveTab('Badges')} className={`px-6 py-3 font-bold rounded-xl ${activeTab==='Badges' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>Badges</button>
               <button onClick={()=>setActiveTab('Titles')} className={`px-6 py-3 font-bold rounded-xl ${activeTab==='Titles' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>Titles</button>
@@ -1039,7 +1163,7 @@
                                   const unl = userData.achievements[a.id];
                                   return (
                                       <div key={a.id} className={`p-6 rounded-3xl border-4 text-center transition-all ${unl ? 'bg-white border-amber-400 shadow-xl transform hover:scale-105' : 'bg-slate-50 border-slate-200 opacity-60 grayscale'}`}>
-                                          <div className="text-5xl mb-4">🏆</div>
+                                          <div className="text-5xl mb-4">{a.icon || '🏆'}</div>
                                           <h3 className={`font-black text-lg mb-2 ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-semibold text-slate-500">{a.description}</p>
                                       </div>
@@ -1069,22 +1193,23 @@
       const [appData, setAppData] = useState(null);
       const [view, setView] = useState('loading');
       const [selectedTest, setSelectedTest] = useState(null);
-      const [notification, setNotification] = useState({ show: false, message: '' });
+      const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
       const [modal, setModal] = useState({ show: false });
       
       const isInitialized = useRef(false);
+
+      const showNotification = useCallback(({ message, type = 'success' }) => {
+        setNotification({ show: true, message, type });
+      }, []);
 
       const hideModal = () => setModal({ show: false });
       
       const showModalWrapper = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
         setModal({ 
-          show: true, 
-          title, 
-          message, 
+          show: true, title, message, 
           onConfirm: onConfirm ? () => { onConfirm(); hideModal(); } : null,
           onCancel: onCancel ? () => { onCancel(); hideModal(); } : hideModal,
-          confirmText,
-          children
+          confirmText, children
         });
       };
 
@@ -1106,24 +1231,29 @@
             defaultTests.forEach(dt => { 
                 if (!existingIds.includes(dt.id)) loadedData.allTests.push(dt); 
             });
-            safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
         }
+        
+        const today = new Date().toDateString();
+        if (loadedData.userData.dailyChallenge?.date !== today) {
+            loadedData.userData.dailyChallenge = { ...loadedData.userData.dailyChallenge, completedToday: false };
+        }
+
         setAppData(loadedData);
         setView('dashboard');
       }, []);
 
       useEffect(() => {
-        if (appData?.userData?.dyslexiaFriendly) {
-            document.body.classList.add('dyslexia-friendly');
-        } else {
-            document.body.classList.remove('dyslexia-friendly');
-        }
+        if (appData?.userData?.dyslexiaFriendly) document.body.classList.add('dyslexia-friendly');
+        else document.body.classList.remove('dyslexia-friendly');
       }, [appData?.userData?.dyslexiaFriendly]);
 
-      const updateUserData = useCallback((newUserData, options = {}) => {
+      const updateUserData = useCallback((newUserDataPartial, options = {}) => {
         setAppData(prev => {
+            if (!prev) return prev;
             const { event } = options || {};
-            let mutable = { ...prev.userData, ...newUserData };
+            let mutable = { ...prev.userData, ...newUserDataPartial };
+            let leveledUp = false;
+            let newLevel = mutable.level || 1;
             
             if (event?.type === 'ANSWER_SUBMITTED') {
                 mutable.totalAttempts = (mutable.totalAttempts || 0) + 1;
@@ -1135,38 +1265,89 @@
                     mutable.totalCorrectAnswers = (mutable.totalCorrectAnswers || 0) + 1;
                     mutable.currentStreak = (mutable.currentStreak || 0) + 1;
                     mutable.correctRunAfterWrong = prevWasIncorrect ? 1 : (mutable.correctRunAfterWrong || 0) + 1;
-                    if (!event.payload.usedHint) mutable.noHintCorrectCount = (mutable.noHintCorrectCount || 0) + 1;
+                    
+                    if (!event.payload.usedHint) {
+                        mutable.noHintCorrectCount = (mutable.noHintCorrectCount || 0) + 1;
+                        mutable.noHintStreak = (mutable.noHintStreak || 0) + 1;
+                    }
+                    const timeToAns = event.payload.timeToAnswer || 0;
+                    mutable.lastCorrectAnswerTimes = [...(mutable.lastCorrectAnswerTimes || []), timeToAns].slice(-3);
                     
                     const tags = Array.isArray(event.payload.tags) ? event.payload.tags : [];
                     mutable.correctAnswersByTag = mutable.correctAnswersByTag || {};
                     tags.forEach(t => mutable.correctAnswersByTag[t] = (mutable.correctAnswersByTag[t] || 0) + 1);
+
+                    // Streak Bonuses
+                    if (mutable.currentStreak > 0 && mutable.currentStreak % 5 === 0) {
+                        mutable.xp = (mutable.xp || 0) + 10;
+                        setTimeout(() => showNotification({ message: `🔥 ${mutable.currentStreak} Streak Bonus! +10 XP`, type: 'success' }), 1000);
+                    }
                 } else {
                     mutable.currentStreak = 0; 
                     mutable.correctRunAfterWrong = 0;
+                    mutable.noHintStreak = 0;
+                }
+
+                const todayStr = new Date().toDateString();
+                if (mutable.uniqueTagsToday?.date !== todayStr) mutable.uniqueTagsToday = { date: todayStr, tags: [] };
+                if (event.payload.tags && event.payload.tags.length > 0) {
+                    const mergedTags = new Set([...mutable.uniqueTagsToday.tags, ...event.payload.tags]);
+                    mutable.uniqueTagsToday.tags = Array.from(mergedTags);
                 }
             }
             
-            if (event?.type === 'PACK_COMPLETED' && event.payload?.mode === 'Test') {
-                let xpToAdd = event.payload.score;
+            if (event?.type === 'PACK_COMPLETED') {
+                if (event.payload.isDailyChallenge) {
+                    mutable.dailyChallenge = { completedToday: true, date: new Date().toDateString() };
+                    mutable.dailyChallengeStreak = (mutable.dailyChallengeStreak || 0) + 1;
+                }
+
+                let xpMultiplier = 1;
+                if (event.payload.mode === 'Practice') xpMultiplier = 0.5;
+                if (event.payload.isDailyChallenge) xpMultiplier = 1.5;
+
+                let xpToAdd = Math.floor(event.payload.score * xpMultiplier);
                 mutable.xp = (mutable.xp || 0) + xpToAdd;
+                
                 let thresh = (mutable.level || 1) * 100;
                 while (mutable.xp >= thresh) { 
                     mutable.xp -= thresh; 
                     mutable.level = (mutable.level || 1) + 1; 
+                    newLevel = mutable.level;
                     thresh = mutable.level * 100; 
+                    leveledUp = true;
                 }
             }
             
-            const { updated } = unlockAchievements(mutable, event);
+            const { updated, unlockedIds } = unlockAchievements(mutable, event);
             const newData = { ...prev, userData: updated };
             safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+
+            if (leveledUp) {
+                setTimeout(() => {
+                    playSound('levelup', updated.soundEnabled !== false);
+                    confetti({ particleCount: 300, spread: 100, origin: { y: 0.3 } });
+                    showModalWrapper({
+                        title: "🎉 LEVEL UP! 🎉",
+                        message: `Amazing job! You are now Level ${newLevel}! Keep up the great work.`,
+                        confirmText: "Awesome!"
+                    });
+                }, 500);
+            }
+
+            if (unlockedIds.length > 0) {
+                setTimeout(() => {
+                    const newBadges = unlockedIds.map(id => achievementsList.find(a => a.id === id)?.title).join(', ');
+                    showNotification({ message: `🏆 Achievement Unlocked: ${newBadges}`, type: 'success' });
+                }, 1500);
+            }
+
             return newData;
         });
-      }, []);
+      }, [showModalWrapper, showNotification]);
 
       const updateAllData = useCallback((newData) => {
-          setAppData(newData); 
-          safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
+          setAppData(newData); safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
       }, []);
 
       if (!appData) return <LoadingSpinner message="Loading Portal System..." />;
@@ -1174,14 +1355,15 @@
       return (
         <div>
           {view === 'loading' && <LoadingSpinner message="Loading Portal System..." />}
-          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={setNotification} />}
-          {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={setNotification} showModal={showModalWrapper} />}
+          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={showNotification} />}
+          {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModalWrapper} />}
           {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />}
-          {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={setNotification} />}
-          {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={setNotification} />}
+          {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={showNotification} />}
+          {view === 'parentDashboard' && <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
+          {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={showNotification} />}
           {view === 'performance' && <PerformanceDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
-          {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={setNotification} />}
-          {view === 'achievements' && <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={setNotification} />}
+          {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
+          {view === 'achievements' && <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           
           {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
