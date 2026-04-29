@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
   
-  <!-- PWA / Mobile Web App Meta Tags -->
+  <!-- PWA Meta Tags & Inline Manifest -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#f0f9ff" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -177,35 +178,35 @@
       }
     ];
 
-    // --- Achievements Data ---
+    // --- Achievements Data with Dynamic Progress Functions ---
     const achievementsList = [
-        { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣' },
+        { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
-        { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins', unlocksTitle: 'Streak Starter', icon: '🔥' },
+        { id: 'firstStreak', title: 'First Streak', description: 'Get a streak of 3 correct in a row.', category: 'Quick Wins', unlocksTitle: 'Streak Starter', icon: '🔥', getProgress: (ud) => `${Math.min(ud.currentStreak || 0, 3)} / 3` },
         { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins', icon: '🗺️' },
-        { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧' },
-        { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins', icon: '🛡️' },
+        { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧', getProgress: (ud) => `${Math.min(ud.reviewCorrections || 0, 1)} / 1` },
+        { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins', icon: '🛡️', getProgress: (ud) => `${Math.min(ud.noHintCorrectCount || 0, 5)} / 5` },
         { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯' },
-        { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊' },
+        { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊', getProgress: (ud) => `${Math.min(ud.correctRunAfterWrong || 0, 3)} / 3` },
         { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term', icon: '🚀' },
-        { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term', icon: '⭐' },
+        { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term', icon: '⭐', getProgress: (ud) => `${Math.min(ud.loginStreak || 0, 2)} / 2` },
         { id: 'varietyChamp', title: 'Variety Champ', description: 'Answer correctly in 3 different topics in one session.', category: 'Medium-Term', icon: '🎨' },
-        { id: 'noHintHeroPro', title: 'No-Hint Hero (Pro)', description: '10 correct in a row without hints.', category: 'Medium-Term', icon: '🦸' },
+        { id: 'noHintHeroPro', title: 'No-Hint Hero (Pro)', description: '10 correct in a row without hints.', category: 'Medium-Term', icon: '🦸', getProgress: (ud) => `${Math.min(ud.noHintStreak || 0, 10)} / 10` },
         { id: 'solidAccuracy', title: 'Solid Accuracy', description: 'Reach 80% accuracy over any 10-question session.', category: 'Medium-Term', icon: '🎯' },
         { id: 'packFinisher', title: 'Pack Finisher', description: 'Complete any test pack.', category: 'Longer-Term', icon: '📦' },
         { id: 'perfectPack', title: 'Perfect Pack', description: 'Get 100% on any test pack.', category: 'Longer-Term', unlocksTitle: 'Perfectionist', icon: '👑' },
         { id: 'masteryBadge', title: 'Mastery Badge', description: 'Reach 90% accuracy over 30 questions in one topic.', category: 'Longer-Term', icon: '🎓' },
-        { id: 'reviewPro', title: 'Review Pro', description: 'Correctly fix 10 mistakes in the "Practice Mistakes" mode.', category: 'Longer-Term', icon: '🔬' },
+        { id: 'reviewPro', title: 'Review Pro', description: 'Correctly fix 10 mistakes in the "Practice Mistakes" mode.', category: 'Longer-Term', icon: '🔬', getProgress: (ud) => `${Math.min(ud.reviewCorrections || 0, 10)} / 10` },
         { id: 'weeklyWarrior', title: 'Weekly Warrior', description: 'Complete a test on 5 separate days in one calendar week.', category: 'Longer-Term', icon: '📅' },
-        { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Correctly answer 50 fraction questions.', category: 'Longer-Term', icon: '🍕' },
-        { id: 'punctuationPro', title: 'Punctuation Pro', description: 'Correctly answer 25 punctuation questions.', category: 'Medium-Term', icon: '✒️' },
-        { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term', icon: '🧠' },
-        { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term', icon: '💯' },
+        { id: 'fractionFanatic', title: 'Fraction Fanatic', description: 'Correctly answer 50 fraction questions.', category: 'Longer-Term', icon: '🍕', getProgress: (ud) => `${Math.min((ud.correctAnswersByTag||{}).fractions || 0, 50)} / 50` },
+        { id: 'punctuationPro', title: 'Punctuation Pro', description: 'Correctly answer 25 punctuation questions.', category: 'Medium-Term', icon: '✒️', getProgress: (ud) => `${Math.min((ud.correctAnswersByTag||{}).punctuation || 0, 25)} / 25` },
+        { id: 'vocabularyVirtuoso', title: 'Vocabulary Virtuoso', description: 'Correctly answer 100 vocabulary questions.', category: 'Longer-Term', icon: '🧠', getProgress: (ud) => `${Math.min((ud.correctAnswersByTag||{}).vocabulary || 0, 100)} / 100` },
+        { id: 'centuryClub', title: 'Century Club', description: 'Get 100 total correct answers.', category: 'Medium-Term', icon: '💯', getProgress: (ud) => `${Math.min(ud.totalCorrectAnswers || 0, 100)} / 100` },
         { id: 'speedDemon', title: 'Speed Demon', description: 'Finish a test in Test Mode with over half the time remaining.', category: 'Medium-Term', unlocksTitle: 'Speedster', icon: '🏎️' },
         { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full practice test.', category: 'Longer-Term', icon: '🎭' },
-        { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer', icon: '📐' },
-        { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆' },
-        { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃' },
+        { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer', icon: '📐', getProgress: (ud) => `${Math.min((ud.badgeProgress||{}).geometryGuruTests?.length || 0, 3)} / 3` },
+        { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆', getProgress: (ud) => `${Math.min(ud.dailyChallengeStreak || 0, 7)} / 7` },
+        { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃', getProgress: (ud) => `${Math.min((ud.fullTestsCompleted||[]).length, 3)} / 3` },
     ];
 
     function xpForAchievementId(id) {
@@ -473,9 +474,34 @@
       </div>
     );
 
-    const Notification = ({ message, type, onDismiss }) => {
-      useEffect(() => { const timer = setTimeout(() => onDismiss(), 3000); return () => clearTimeout(timer); }, [onDismiss]);
-      return <div className={`notification-bar p-4 rounded-xl text-white font-bold shadow-lg ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>{message}</div>;
+    // FIX 1: Notification Queue Component
+    const NotificationManager = ({ notifications, onDismiss }) => {
+      const [current, setCurrent] = useState(null);
+      
+      useEffect(() => {
+        if (!current && notifications.length > 0) {
+            setCurrent(notifications[0]);
+        }
+      }, [notifications, current]);
+
+      useEffect(() => {
+        if (current) {
+            const timer = setTimeout(() => {
+                onDismiss(current.id);
+                setCurrent(null);
+            }, 3500);
+            return () => clearTimeout(timer);
+        }
+      }, [current, onDismiss]);
+
+      if (!current) return null;
+      
+      const bgColor = current.type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
+      return (
+        <div className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
+          {current.message}
+        </div>
+      );
     };
 
     const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
@@ -486,7 +512,7 @@
             {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
-              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300 transition">Cancel</button>}
+              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300">Cancel</button>}
               {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white transition ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
             </div>
           </div>
@@ -506,7 +532,7 @@
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Enable Hints & Feedback</label><input type="checkbox" checked={useHints} onChange={() => setUseHints(!useHints)} className="w-6 h-6 rounded text-sky-500" /></div>
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Shuffle Questions</label><input type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-sky-500" /></div>
                 </div>
-                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold transition">Start Custom Test</button>
+                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold">Start Custom Test</button>
             </div>
         );
     }
@@ -594,8 +620,10 @@
 
       const userLevel = userData.level || 1;
 
-      // Calculate "This Week" stats
-      const testsThisWeek = Object.values(userData.progress || {}).filter(p => p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000).length;
+      // FIX 9: Filter synthetic tests from "This Week"
+      const testsThisWeek = Object.entries(userData.progress || {})
+        .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
+        .length;
 
       const renderTestCard = (test) => {
           const progress = userData.progress?.[test.id];
@@ -655,7 +683,7 @@
               )}
             </div>
 
-            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
               <h2 className="text-3xl font-bold mb-2 font-orbitron">Review Mistakes</h2>
               <p className="opacity-90 text-lg mb-6">Turn past errors into strengths.</p>
               <div className="relative group mt-auto">
@@ -664,7 +692,7 @@
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+            <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
               <h2 className="text-3xl font-bold mb-2 font-orbitron">This Week</h2>
               <p className="opacity-90 text-lg mb-6">Your progress over the last 7 days.</p>
               <div className="flex justify-between items-center bg-white/20 p-4 rounded-xl mt-auto">
@@ -674,7 +702,6 @@
             </div>
           </div>
           
-          {/* THE LEARNING JOURNEY MAP */}
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
               
               <div className="relative">
@@ -714,7 +741,6 @@
                   </div>
               </div>
 
-              {/* BOSS TEST UI */}
               {userLevel >= 3 && bossTests.length > 0 && (
                   <div className="relative mt-16 p-8 border-4 border-red-500 bg-red-50 rounded-3xl shadow-2xl">
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white font-bold px-6 py-2 rounded-full font-orbitron text-xl shadow-md animate-pulse">ELITE STAGE</div>
@@ -816,10 +842,23 @@
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
+      // FIX 5: Don't auto-submit free text
       const handleAnswerSelect = (answer) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
-        if (showInstantFeedback && !submittedAnswers[currentQuestionIndex]) setTimeout(() => handleSubmitAnswer(answer), 0);
+        
+        const currentQ = test.questions[originalIndex];
+        const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
+        const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
+        const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
+        const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
+        const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
+        const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
+        const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
+
+        if (showInstantFeedback && !submittedAnswers[currentQuestionIndex] && !isFreeResponse) {
+            setTimeout(() => handleSubmitAnswer(answer), 0);
+        }
       };
 
       const handleSubmitAnswer = (ansOverride) => {
@@ -890,7 +929,7 @@
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-sky-900 font-orbitron">{test.title}</h2>
               {streak >= 1 && <span className={`font-bold text-orange-500 ${streak >= 3 ? 'text-2xl animate-pulse' : 'text-lg'}`}>🔥 {streak} Streak!</span>}
-              {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
+              {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 flex items-center gap-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{test.isBoss && <span className="text-xs uppercase bg-red-200 px-2 rounded font-bold">BOSS</span>}{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
             </div>
             
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
@@ -918,7 +957,7 @@
               )}
             </div>
 
-            {!isSubmitted && !showInstantFeedback && (
+            {!isSubmitted && (
               <div className="text-center my-6">
                 <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
               </div>
@@ -952,7 +991,7 @@
       );
     };
 
-    const ResultsView = ({ userData, setView, testDetails, allTests }) => {
+    const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
       const progress = userData.progress?.[testId];
@@ -971,6 +1010,16 @@
           else if (pct >= 45) band = "Band 5";
           else band = "Band 6";
       }
+
+      // FIX 4: Try Again button clears test progress
+      const handleTryAgain = () => {
+          updateUserData(prev => {
+              const newProgress = { ...prev.progress };
+              delete newProgress[testId];
+              return { progress: newProgress };
+          }, { event: { type: 'NO_OP' } });
+          setView('quiz');
+      };
 
       return (
         <div className="p-8 min-h-screen">
@@ -1004,7 +1053,11 @@
                     );
                 })}
             </div>
-            <button onClick={() => setView('dashboard')} className="mt-10 w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1 relative z-10">Return to Dashboard</button>
+            
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
+                <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-200 text-slate-700 font-bold py-4 px-10 rounded-2xl hover:bg-slate-300 text-xl shadow-md transition">Try Again</button>
+                <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-4 px-12 rounded-2xl hover:bg-sky-500 text-2xl shadow-lg transition transform hover:-translate-y-1">Return to Dashboard</button>
+            </div>
           </div>
         </div>
       );
@@ -1051,13 +1104,14 @@
     };
 
     const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
+      // FIX 3: Complete data wipe
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
-            message: "Are you sure? This deletes progress, XP, and achievements but keeps tests.", 
+            message: "Are you sure? This deletes progress, XP, stats, and achievements but keeps tests.", 
             confirmText: "Reset Everything", 
             onConfirm: () => {
-                const clean = { name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [] };
+                const clean = { name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [], lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } };
                 updateAllData(prev => ({ ...prev, userData: clean }));
                 showNotification({message: "Reset complete.", type: 'success'}); 
                 setTimeout(() => window.location.reload(), 1000);
@@ -1145,7 +1199,7 @@
 
     const CreateTestView = ({ setView, allTests, updateAllData, userData, showNotification }) => {
         const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); 
-        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]); // 5 options
+        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]); // FIX 11: 5 options
         
         const handleSave = () => {
             if(!title) return showNotification({message: "Title required", type:"error"});
@@ -1201,12 +1255,22 @@
         const maxLength = Math.max(maths.length, english.length, mixed.length);
         
         chartInstanceRef.current = new Chart(ctx, {
-          type: 'line', data: { labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6', tension: 0.2}, {label: 'English (%)', data: english, borderColor: '#ec4899', tension: 0.2}, {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6', tension: 0.2} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } }, responsive: true }
+          type: 'line', 
+          // FIX 6: Point radius to show single items
+          data: { 
+              labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), 
+              datasets: [ 
+                  {label: 'Maths (%)', data: maths, borderColor: '#3b82f6', tension: 0.2, pointRadius: 6, pointHoverRadius: 8}, 
+                  {label: 'English (%)', data: english, borderColor: '#ec4899', tension: 0.2, pointRadius: 6, pointHoverRadius: 8},
+                  {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6', tension: 0.2, pointRadius: 6, pointHoverRadius: 8}
+              ]
+          }, 
+          options: { scales: { y: { beginAtZero: true, max: 100 } }, responsive: true }
         });
       }, [userData, allTests]);
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Back</button></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
               <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100"><canvas ref={chartRef}></canvas></div>
           </div>
       );
@@ -1219,6 +1283,7 @@
       const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false); 
       const [parentPin, setParentPin] = useState(userData.parentPin || "1234");
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
+      
       return (
         <div className="p-4 sm:p-8 min-h-screen flex items-center justify-center">
           <div className="max-w-lg mx-auto w-full bg-white border-4 border-slate-100 rounded-[2rem] p-8 sm:p-10 shadow-2xl">
@@ -1278,10 +1343,14 @@
                               {achievementsList.filter(a => a.category === cat).map(a => {
                                   const unl = userData.achievements[a.id];
                                   return (
-                                      <div key={a.id} className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center min-h-[200px] ${unl ? 'bg-white border-amber-400 shadow-xl transform hover:-translate-y-1' : 'bg-slate-50 border-slate-200 opacity-60 grayscale'}`}>
+                                      <div key={a.id} className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center min-h-[200px] relative ${unl ? 'bg-white border-amber-400 shadow-xl transform hover:-translate-y-1' : 'bg-slate-50 border-slate-200 opacity-60 grayscale'}`}>
                                           <div className={`text-6xl mb-4 ${unl ? '' : 'opacity-50'}`}>{a.icon || '🏆'}</div>
                                           <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
+                                          {/* FIX 10: Progress tracker on locked badges */}
+                                          {!unl && a.getProgress && (
+                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full">{a.getProgress(userData)}</div>
+                                          )}
                                       </div>
                                   )
                               })}
@@ -1323,17 +1392,18 @@
       const [appData, setAppData] = useState(null);
       const [view, setView] = useState('loading');
       const [selectedTest, setSelectedTest] = useState(null);
-      const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+      const [notificationQueue, setNotificationQueue] = useState([]);
       const [modal, setModal] = useState({ show: false });
       
       const isInitialized = useRef(false);
 
-      const dismissNotification = useCallback(() => {
-          setNotification({ show: false, message: '', type: 'success' });
+      // FIX 1: Notification Queue System
+      const showNotification = useCallback(({ message, type = 'success' }) => {
+        setNotificationQueue(prev => [...prev, { message, type, id: Date.now() + Math.random() }]);
       }, []);
 
-      const showNotification = useCallback(({ message, type = 'success' }) => {
-        setNotification({ show: true, message, type });
+      const dismissNotification = useCallback((idToRemove) => {
+        setNotificationQueue(prev => prev.filter(n => n.id !== idToRemove));
       }, []);
 
       const hideModal = () => setModal({ show: false });
@@ -1368,7 +1438,6 @@
             });
         }
         
-        // Handle Daily resets & Login Streak
         const todayStr = new Date().toDateString();
         const lastLogin = loadedData.userData.lastLoginDate;
         
@@ -1523,7 +1592,7 @@
           {view === 'loading' && <LoadingSpinner message="Loading Portal System..." />}
           {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={showNotification} />}
           {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModalWrapper} />}
-          {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />}
+          {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} updateUserData={updateUserData} />}
           {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={showNotification} />}
           {view === 'parentDashboard' && <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
           {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={showNotification} />}
@@ -1531,7 +1600,7 @@
           {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           {view === 'achievements' && <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           
-          {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={dismissNotification} />}
+          <NotificationManager notifications={notificationQueue} onDismiss={dismissNotification} />
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
         </div>
       );
