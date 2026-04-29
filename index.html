@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
+  
+  <!-- PWA / Mobile Web App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#f0f9ff" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -17,7 +25,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
-    body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; color: #0f172a; }
+    body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; color: #0f172a; -webkit-tap-highlight-color: transparent; }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
     .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(4px); }
     .notification-bar { position: fixed; top: 20px; right: 20px; z-index: 1001; transition: opacity 0.5s, transform 0.5s; }
@@ -25,8 +33,6 @@
     @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
     .flash-correct { animation: flash-green 0.6s ease-out; }
     .flash-incorrect { animation: flash-red 0.6s ease-out; }
-    
-    /* Specificity fix for Dyslexia Mode */
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
     .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
   </style>
@@ -171,7 +177,7 @@
       }
     ];
 
-    // --- FULL Achievements Data ---
+    // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣' },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -276,7 +282,6 @@
           if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
         
-        // BUG FIX: Adjusted thresholds for built in papers
         if (!has('clutchPerformer') && p.isFullPractice && p.totalQuestions >= 10 && p.lastQuestionCorrect) unlock('clutchPerformer');
         
         if (p.finishedTestId && (p.finishedTestId.includes('full') || p.finishedTestId.includes('seag') || p.finishedTestId.includes('boss'))) {
@@ -552,7 +557,7 @@
       };
 
       const handleDailyChallenge = () => {
-        let allQuestions = allTests.flatMap(t => t.questions);
+        let allQuestions = allTests.filter(t => t.id !== 'daily-challenge' && t.id !== 'mistakes-test').flatMap(t => t.questions);
         if(allQuestions.length < 5) return showNotification({message: "Not enough questions for a challenge yet!", type: "error"});
         const dailyQs = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
         const challenge = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQs };
@@ -588,6 +593,9 @@
       const bossTests = allTests.filter(t => t.isBoss);
 
       const userLevel = userData.level || 1;
+
+      // Calculate "This Week" stats
+      const testsThisWeek = Object.values(userData.progress || {}).filter(p => p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000).length;
 
       const renderTestCard = (test) => {
           const progress = userData.progress?.[test.id];
@@ -626,17 +634,17 @@
               <span className="text-lg text-slate-500 font-bold">{userData.xp || 0} / {xpForNextLevel} XP</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
+              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-3xl font-bold font-orbitron">Daily Challenge</h2>
                 <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
                   <div className="text-2xl mb-1">🔥</div>
-                  <div className="font-bold">{userData.dailyChallengeStreak || 0} Day Streak</div>
+                  <div className="font-bold">{userData.dailyChallengeStreak || 0} Day</div>
                 </div>
               </div>
               <p className="text-xl opacity-90 mb-8 font-semibold">A quick 5-question warmup!</p>
@@ -646,12 +654,22 @@
                 <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition">Start Challenge</button>
               )}
             </div>
+
             <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
               <h2 className="text-3xl font-bold mb-2 font-orbitron">Review Mistakes</h2>
               <p className="opacity-90 text-lg mb-6">Turn past errors into strengths.</p>
-              <div className="relative group">
-                  <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 shadow-lg text-xl transition">Practice Mistakes</button>
+              <div className="relative group mt-auto">
+                  <button onClick={handlePracticeMistakes} disabled={!hasMistakes} className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-xl transition">Practice Mistakes</button>
                   {!hasMistakes && <p className="absolute text-center w-full mt-2 text-sm font-bold opacity-80">You don't have any mistakes yet!</p>}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+              <h2 className="text-3xl font-bold mb-2 font-orbitron">This Week</h2>
+              <p className="opacity-90 text-lg mb-6">Your progress over the last 7 days.</p>
+              <div className="flex justify-between items-center bg-white/20 p-4 rounded-xl mt-auto">
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Tests</p><p className="text-3xl font-black">{testsThisWeek}</p></div>
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Accuracy</p><p className="text-3xl font-black">{userData.totalAttempts > 0 ? Math.round((userData.totalCorrectAnswers / userData.totalAttempts) * 100) : 0}%</p></div>
               </div>
             </div>
           </div>
@@ -750,7 +768,7 @@
       const [shuffledOrder, setShuffledOrder] = useState(null);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
-      const timeLimitMs = settings.mode === 'Test' ? 45 * 60 * 1000 : 0; 
+      const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
       
       const questionStartTimeRef = useRef(Date.now());
       const accumulatedElapsedMsRef = useRef(existingProgress?.accumulatedElapsedMs || 0);
@@ -871,7 +889,7 @@
           <div className="bg-white border-2 border-slate-100 rounded-3xl shadow-xl p-6 sm:p-10 w-full max-w-4xl relative">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-sky-900 font-orbitron">{test.title}</h2>
-              {streak > 2 && <span className="text-xl font-bold text-orange-500 animate-pulse">🔥 {streak} Streak!</span>}
+              {streak >= 1 && <span className={`font-bold text-orange-500 ${streak >= 3 ? 'text-2xl animate-pulse' : 'text-lg'}`}>🔥 {streak} Streak!</span>}
               {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
             </div>
             
@@ -986,14 +1004,14 @@
                     );
                 })}
             </div>
-            <button onClick={() => setView('dashboard')} className="mt-10 bg-sky-600 text-white font-bold py-4 px-12 rounded-2xl hover:bg-sky-500 text-2xl shadow-lg transition transform hover:-translate-y-1 relative z-10">Return to Dashboard</button>
+            <button onClick={() => setView('dashboard')} className="mt-10 w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1 relative z-10">Return to Dashboard</button>
           </div>
         </div>
       );
     };
 
     const ParentDashboardView = ({ userData, setView, allTests }) => {
-        const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
+        const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt, mode: p.settings?.mode} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
         
         let totalQs = 0; let totalCorr = 0;
         completedTests.forEach(t => { totalQs += t.questions.length; totalCorr += t.score; });
@@ -1126,7 +1144,8 @@
     };
 
     const CreateTestView = ({ setView, allTests, updateAllData, userData, showNotification }) => {
-        const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); const [questions, setQuestions] = useState([{ question: '', options: ['','','',''], answer: '' }]);
+        const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); 
+        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]); // 5 options
         
         const handleSave = () => {
             if(!title) return showNotification({message: "Title required", type:"error"});
@@ -1141,27 +1160,27 @@
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
                 <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-3xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
-                <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
-                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-4 mb-6 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500" />
+                <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
+                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
                         <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
                         <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-2xl border-2 border-sky-100 relative">
+                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
                             <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
-                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-4 mt-2 mb-4 rounded-xl border border-slate-200 font-semibold text-lg outline-none focus:border-sky-500" rows="3" />
-                            <div className="grid grid-cols-2 gap-3 mb-4">
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-6 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                 {q.options.map((opt, oIndex) => (
-                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className="p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500" />
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
                             <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
-                    <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                        <button onClick={() => setQuestions([...questions, {question:'', options:['','','',''], answer:''}])} className="flex-1 bg-slate-100 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-200 transition text-lg">Add Question</button>
-                        <button onClick={handleSave} className="flex-1 bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-400 shadow-md transition text-lg">Save Test</button>
+                    <div className="flex flex-col sm:flex-row gap-6 mt-10">
+                        <button onClick={() => setQuestions([...questions, {question:'', options:['','','','',''], answer:''}])} className="flex-1 bg-slate-100 text-slate-700 font-bold py-5 rounded-2xl text-xl hover:bg-slate-200 border-2 border-slate-200 transition">Add Question</button>
+                        <button onClick={handleSave} className="flex-1 bg-emerald-500 text-white font-bold py-5 rounded-2xl text-xl hover:bg-emerald-400 shadow-lg transition">Save Test</button>
                     </div>
                 </div>
             </div>
@@ -1194,7 +1213,11 @@
     };
 
     const SettingsView = ({ userData, setView, updateUserData, showNotification }) => {
-      const [name, setName] = useState(userData.name); const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false); const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false); const [parentPin, setParentPin] = useState(userData.parentPin || "1234");
+      const [name, setName] = useState(userData.name || 'Nicolas'); 
+      const [avatar, setAvatar] = useState(userData.avatar || '👨‍🚀'); 
+      const [dyslexiaFriendly, setDyslexiaFriendly] = useState(userData.dyslexiaFriendly || false); 
+      const [soundEnabled, setSoundEnabled] = useState(userData.soundEnabled !== false); 
+      const [parentPin, setParentPin] = useState(userData.parentPin || "1234");
       const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
       return (
         <div className="p-4 sm:p-8 min-h-screen flex items-center justify-center">
@@ -1202,7 +1225,7 @@
             <h1 className="text-3xl sm:text-4xl font-bold font-orbitron text-sky-900 mb-8 text-center">Profile Settings</h1>
             
             <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Player Name</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 mb-6 font-bold text-xl outline-none focus:border-sky-500" placeholder="Player Name" />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-slate-200 mb-6 font-bold text-xl outline-none focus:border-sky-500 transition" placeholder="Player Name" />
             
             <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Choose Your Avatar</label>
             <div className="grid grid-cols-4 gap-3 mb-8">
@@ -1211,7 +1234,7 @@
             
             <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Dyslexia Friendly Font</span><span className="text-slate-500 font-semibold text-sm">Uses Arial for all text.</span></div>
-                <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-7 h-7 text-sky-600" />
+                <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
             </label>
             
             <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
@@ -1238,7 +1261,7 @@
       const unlockedTitles = achievementsList.filter(a => userData.achievements[a.id] && a.unlocksTitle);
       return (
         <div className="p-4 sm:p-10 min-h-screen max-w-7xl mx-auto">
-          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+          <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
               <h1 className="text-4xl sm:text-5xl font-bold font-orbitron text-sky-900">Achievements 🏆</h1>
               <button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl hover:bg-slate-50 shadow-sm text-lg transition">Back to Dashboard</button>
           </div>
@@ -1284,7 +1307,12 @@
                               </div>
                           ))}
                       </div>
-                  ) : <div className="text-center p-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300"><p className="text-slate-500 font-bold text-2xl">No titles unlocked yet.</p><p className="text-slate-400 font-semibold mt-2 text-lg">Keep earning badges to unlock them!</p></div>}
+                  ) : (
+                      <div className="text-center p-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300">
+                          <p className="text-slate-500 font-bold text-2xl">No titles unlocked yet.</p>
+                          <p className="text-slate-400 font-semibold mt-2 text-lg">Keep earning badges to unlock them!</p>
+                      </div>
+                  )}
               </div>
           )}
         </div>
@@ -1299,6 +1327,10 @@
       const [modal, setModal] = useState({ show: false });
       
       const isInitialized = useRef(false);
+
+      const dismissNotification = useCallback(() => {
+          setNotification({ show: false, message: '', type: 'success' });
+      }, []);
 
       const showNotification = useCallback(({ message, type = 'success' }) => {
         setNotification({ show: true, message, type });
@@ -1325,7 +1357,7 @@
         if (!loadedData || !loadedData.userData) {
           loadedData = { 
             schemaVersion: 1,
-            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234" }, 
+            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1 }, 
             allTests: defaultTests 
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
@@ -1336,8 +1368,22 @@
             });
         }
         
-        const today = new Date().toDateString();
-        if (loadedData.userData.dailyChallenge?.date !== today) {
+        // Handle Daily resets & Login Streak
+        const todayStr = new Date().toDateString();
+        const lastLogin = loadedData.userData.lastLoginDate;
+        
+        if (lastLogin !== todayStr) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (lastLogin === yesterday.toDateString()) {
+                loadedData.userData.loginStreak = (loadedData.userData.loginStreak || 0) + 1;
+            } else {
+                loadedData.userData.loginStreak = 1;
+            }
+            loadedData.userData.lastLoginDate = todayStr;
+        }
+
+        if (loadedData.userData.dailyChallenge?.date !== todayStr) {
             loadedData.userData.dailyChallenge = { ...loadedData.userData.dailyChallenge, completedToday: false };
         }
 
@@ -1380,9 +1426,9 @@
                     const timeToAns = event.payload.timeToAnswer || 0;
                     mutable.lastCorrectAnswerTimes = [...(mutable.lastCorrectAnswerTimes || []), timeToAns].slice(-3);
                     
-                    const tags = Array.isArray(event.payload.tags) ? event.payload.tags : [];
-                    mutable.correctAnswersByTag = mutable.correctAnswersByTag || {};
-                    tags.forEach(t => mutable.correctAnswersByTag[t] = (mutable.correctAnswersByTag[t] || 0) + 1);
+                    if (event.payload.wasReviewed) {
+                        mutable.reviewCorrections = (mutable.reviewCorrections || 0) + 1;
+                    }
 
                     if (mutable.currentStreak > 0 && mutable.currentStreak % 5 === 0) {
                         mutable.xp = (mutable.xp || 0) + 10;
@@ -1394,10 +1440,23 @@
                     mutable.noHintStreak = 0;
                 }
 
+                mutable.perTopicStats = mutable.perTopicStats || {};
+                const tags = Array.isArray(event.payload.tags) ? event.payload.tags : [];
+                
+                mutable.correctAnswersByTag = mutable.correctAnswersByTag || {};
+                tags.forEach(t => {
+                    mutable.correctAnswersByTag[t] = (mutable.correctAnswersByTag[t] || 0) + (isCorrect ? 1 : 0);
+                    
+                    const s = mutable.perTopicStats[t] || { total: 0, correct: 0 };
+                    s.total += 1;
+                    if (isCorrect) s.correct += 1;
+                    mutable.perTopicStats[t] = s;
+                });
+
                 const todayStr = new Date().toDateString();
                 if (mutable.uniqueTagsToday?.date !== todayStr) mutable.uniqueTagsToday = { date: todayStr, tags: [] };
-                if (event.payload.tags && event.payload.tags.length > 0) {
-                    const mergedTags = new Set([...mutable.uniqueTagsToday.tags, ...event.payload.tags]);
+                if (tags.length > 0) {
+                    const mergedTags = new Set([...mutable.uniqueTagsToday.tags, ...tags]);
                     mutable.uniqueTagsToday.tags = Array.from(mergedTags);
                 }
             }
@@ -1472,7 +1531,7 @@
           {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           {view === 'achievements' && <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           
-          {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ show: false })} />}
+          {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={dismissNotification} />}
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
         </div>
       );
