@@ -45,7 +45,6 @@
     }
 
     // --- QUESTION DATA ARRAYS ---
-    // Compressed to single lines per object to ensure code completeness without truncation
     const mathsPack1Qs = [
       { question: "A football pitch measures 115 metres long and 80 metres wide. The area of a rugby pitch is 6,392 square metres. How many square metres smaller is the area of the rugby pitch than the area of the football pitch?", options: ["9200 m²", "2908 m²", "2809 m²", "2808 m²", "6197 m²"], answer: "2808 m²" },
       { question: "Convert this measurement: 1701 g = ___ kg", options: ["17.01 kg", "1.701 kg", "170.1 kg", "1.7 kg", "0.1701 kg"], answer: "1.701 kg" },
@@ -294,7 +293,7 @@
       { question: "A triangle has angles of 52° and 79°. What is the third angle?", answer: "49°", tags: ["geometry", "angles"] }
     ];
 
-    // Assembling the full default tests array
+    // Final Assembly of Default Tests Array
     const defaultTests = [
       { id: "maths-pack-1", title: "Maths Test Pack 1", subject: "Maths", questions: mathsPack1Qs },
       { id: "maths-pack-2", title: "Maths Test Pack 2", subject: "Maths", questions: mathsPack2Qs },
@@ -336,7 +335,6 @@
         { id: 'clutchPerformer', title: 'Clutch Performer', description: 'Correctly answer the final question of a full 56-question practice test.', category: 'Longer-Term' },
         { id: 'geometryGuru', title: 'Geometry Guru', description: 'Score 90%+ on three different tests containing geometry questions.', category: 'Longer-Term', unlocksTitle: 'Geometer' },
         { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term' },
-        // BUG FIX: Marathon Runner logic made dynamic
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete all full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ' },
     ];
 
@@ -776,7 +774,7 @@
                 <div key={test.id} className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-md hover:shadow-xl hover:border-sky-300 transition flex flex-col justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-sky-900 mb-2 font-orbitron">{test.title}</h3>
-                    <p className="text-slate-500 font-bold mb-4">{test.subject} • {test.level ? `Level ${test.level} • ` : ''}{total} Qs</p>
+                    <p className="text-slate-500 font-bold mb-4">{test.subject} {test.level ? `• Level ${test.level}` : ''} • {total} Qs</p>
                     <div className="w-full bg-slate-100 rounded-full h-3 mb-2"><div className="bg-emerald-400 h-3 rounded-full" style={{ width: `${pct}%` }}></div></div>
                     <p className="text-sm font-bold text-slate-400 mb-6">{answered} / {total} answered</p>
                   </div>
@@ -1098,7 +1096,6 @@
           <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 mb-8 shadow-md">
               <h2 className="text-2xl font-bold mb-4 text-sky-900">Data Management</h2>
               <div className="flex flex-wrap gap-4">
-                  {/* IMPORT BUTTON */}
                   <input type="file" accept=".json" id="import-test-pack" className="hidden" onChange={handleImportTestPacks} />
                   <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg inline-block">
                       📥 Import Test Packs (.json)
@@ -1166,9 +1163,20 @@
         const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
         const maths = completed.filter(t=>t.subject==='Maths').map(t=>(t.score/t.questions.length)*100);
         const english = completed.filter(t=>t.subject==='English').map(t=>(t.score/t.questions.length)*100);
+        const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
+        const maxLength = Math.max(maths.length, english.length, mixed.length);
         
         chartInstanceRef.current = new Chart(ctx, {
-          type: 'line', data: { labels: Array.from({length: Math.max(maths.length, english.length)}, (_,i)=>`Test ${i+1}`), datasets: [ {label: 'Maths (%)', data: maths, borderColor: '#3b82f6'}, {label: 'English (%)', data: english, borderColor: '#ec4899'} ]}, options: { scales: { y: { beginAtZero: true, max: 100 } } }
+          type: 'line', 
+          data: { 
+              labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), 
+              datasets: [ 
+                  {label: 'Maths (%)', data: maths, borderColor: '#3b82f6', tension: 0.2}, 
+                  {label: 'English (%)', data: english, borderColor: '#ec4899', tension: 0.2},
+                  {label: 'Mixed (%)', data: mixed, borderColor: '#8b5cf6', tension: 0.2}
+              ]
+          }, 
+          options: { scales: { y: { beginAtZero: true, max: 100 } } }
         });
       }, [userData, allTests]);
       return (
@@ -1258,6 +1266,21 @@
       
       const isInitialized = useRef(false);
 
+      // --- BUG FIX: Modal Wrapper Restored ---
+      const hideModal = () => setModal({ show: false });
+      
+      const showModalWrapper = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
+        setModal({ 
+          show: true, 
+          title, 
+          message, 
+          onConfirm: onConfirm ? () => { onConfirm(); hideModal(); } : null,
+          onCancel: onCancel ? () => { onCancel(); hideModal(); } : hideModal,
+          confirmText,
+          children
+        });
+      };
+
       useEffect(() => {
         if (isInitialized.current) return;
         isInitialized.current = true;
@@ -1322,10 +1345,10 @@
       return (
         <div>
           {view === 'loading' && <LoadingSpinner message="Loading Portal System..." />}
-          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={setModal} hideModal={() => setModal({show:false})} updateAllData={updateAllData} appData={appData} showNotification={setNotification} />}
-          {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={setNotification} showModal={setModal} />}
+          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={setNotification} />}
+          {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={setNotification} showModal={showModalWrapper} />}
           {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} />}
-          {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={setModal} showNotification={setNotification} />}
+          {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={setNotification} />}
           {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={setNotification} />}
           {view === 'performance' && <PerformanceDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
           {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={setNotification} />}
