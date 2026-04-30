@@ -186,7 +186,6 @@
         { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins', icon: '🗺️' },
         { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧', getProgress: (ud) => `${Math.min(ud.reviewCorrections || 0, 1)} / 1` },
         { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins', icon: '🛡️', getProgress: (ud) => `${Math.min(ud.noHintCorrectCount || 0, 5)} / 5` },
-        // FIX 14: Added getProgress to accurateStart
         { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 10)} / 10 attempts` },
         { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊', getProgress: (ud) => `${Math.min(ud.correctRunAfterWrong || 0, 3)} / 3` },
         { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term', icon: '🚀' },
@@ -209,6 +208,12 @@
         { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆', getProgress: (ud) => `${Math.min(ud.dailyChallengeStreak || 0, 7)} / 7` },
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃', getProgress: (ud) => `${Math.min((ud.fullTestsCompleted||[]).length, 3)} / 3` },
     ];
+
+    function xpForAchievementId(id) {
+      const ach = achievementsList.find(a => a.id === id);
+      if (!ach) return 0;
+      switch (ach.category) { case 'Quick Wins': return 3; case 'Medium-Term': return 5; case 'Longer-Term': return 10; default: return 0; }
+    }
 
     function isoWeekString(d) {
       const date = new Date(d);
@@ -294,6 +299,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
+    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -468,7 +474,6 @@
       </div>
     );
 
-    // FIX 1: Robust NotificationManager driving purely off queue length
     const NotificationManager = ({ notifications, onDismiss }) => {
       const current = notifications[0] || null;
       
@@ -478,7 +483,7 @@
             onDismiss(current.id);
         }, 3500);
         return () => clearTimeout(timer);
-      }, [current?.id, onDismiss]); // depends cleanly on current ID
+      }, [current?.id, onDismiss]);
 
       if (!current) return null;
       
@@ -539,7 +544,7 @@
     }
 
     // --- MAIN VIEWS ---
-    const Dashboard = ({ userData, setView, handleSelectTest, allTests, updateAllData, appData, showNotification }) => {
+    const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
@@ -550,13 +555,12 @@
       };
 
       const handleDailyChallenge = () => {
-        // FIX 8: Exclude synthetic tests from random daily draw
         let allQuestions = allTests.filter(t => t.id !== 'daily-challenge' && t.id !== 'mistakes-test').flatMap(t => t.questions);
         if(allQuestions.length < 5) return showNotification({message: "Not enough questions for a challenge yet!", type: "error"});
         const dailyQs = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
         const challenge = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQs };
         updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'daily-challenge'), challenge] }));
-        handleSelectTest('daily-challenge', true); // Skip modal for daily challenge
+        handleSelectTest('daily-challenge', true); 
       };
 
       const handlePracticeMistakes = () => {
@@ -573,10 +577,9 @@
         if (mistakes.length === 0) { showNotification({message: "No mistakes to practice. Great job!", type: "success"}); return; }
         const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes };
         updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] }));
-        handleSelectTest('mistakes-test', true); // Skip modal
+        handleSelectTest('mistakes-test', true);
       };
       
-      // FIX 13: Only count mistakes from COMPLETED tests to prevent cheating/abandoned tests flags
       const hasMistakes = Object.values(userData.progress || {}).some(p => p.completedAt && (p.score || 0) < Object.keys(p.answers || {}).length);
 
       const level1Tests = allTests.filter(t => t.level === 1 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
@@ -585,9 +588,11 @@
       const uncategorizedTests = allTests.filter(t => !t.level && !t.id.includes('full') && !t.id.includes('seag') && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
       const bossTests = allTests.filter(t => t.isBoss);
 
+      const overrideUnlock = !!userData.overrideUnlockAllLevels;
       const userLevel = userData.level || 1;
+      const canAccessLevel2 = overrideUnlock || userLevel >= 2;
+      const canAccessLevel3 = overrideUnlock || userLevel >= 3;
 
-      // FIX 5: Weekly specific accuracy calculation
       const testsThisWeekData = Object.entries(userData.progress || {})
         .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
         .map(([id, p]) => {
@@ -679,7 +684,9 @@
             </div>
           </div>
           
+          {/* THE LEARNING JOURNEY MAP */}
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
+              
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">1</div>
                   <div className="ml-8 md:ml-12">
@@ -692,11 +699,11 @@
               </div>
 
               <div className="relative">
-                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${userLevel >= 2 ? 'bg-amber-500' : 'bg-slate-300'}`}>{userLevel >= 2 ? '2' : '🔒'}</div>
+                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${canAccessLevel2 ? 'bg-amber-500' : 'bg-slate-300'}`}>{canAccessLevel2 ? '2' : '🔒'}</div>
                   <div className="ml-8 md:ml-12">
-                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${userLevel >= 2 ? 'text-amber-700' : 'text-slate-400'}`}>Level 2: Skill Development</h2>
+                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${canAccessLevel2 ? 'text-amber-700' : 'text-slate-400'}`}>Level 2: Skill Development</h2>
                       <p className="text-lg text-slate-500 font-semibold mb-6">Mid P6 • Mixed curriculum & 5-option MCQs.</p>
-                      {userLevel >= 2 ? (
+                      {canAccessLevel2 ? (
                           level2Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level2Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
                       ) : (
                           <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 2 to unlock these challenges!</p></div>
@@ -705,11 +712,11 @@
               </div>
 
               <div className="relative">
-                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${userLevel >= 3 ? 'bg-red-500' : 'bg-slate-300'}`}>{userLevel >= 3 ? '3' : '🔒'}</div>
+                  <div className={`absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md ${canAccessLevel3 ? 'bg-red-500' : 'bg-slate-300'}`}>{canAccessLevel3 ? '3' : '🔒'}</div>
                   <div className="ml-8 md:ml-12">
-                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${userLevel >= 3 ? 'text-red-700' : 'text-slate-400'}`}>Level 3: Exam Standard</h2>
+                      <h2 className={`text-3xl font-bold mb-2 font-orbitron ${canAccessLevel3 ? 'text-red-700' : 'text-slate-400'}`}>Level 3: Exam Standard</h2>
                       <p className="text-lg text-slate-500 font-semibold mb-6">End P6 / P7 • Full SEAG timing & mock papers.</p>
-                      {userLevel >= 3 ? (
+                      {canAccessLevel3 ? (
                           level3Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level3Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
                       ) : (
                           <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 3 to unlock mock exams!</p></div>
@@ -717,7 +724,8 @@
                   </div>
               </div>
 
-              {userLevel >= 3 && bossTests.length > 0 && (
+              {/* BOSS TEST UI */}
+              {canAccessLevel3 && bossTests.length > 0 && (
                   <div className="relative mt-16 p-8 border-4 border-red-500 bg-red-50 rounded-3xl shadow-2xl">
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white font-bold px-6 py-2 rounded-full font-orbitron text-xl shadow-md animate-pulse">ELITE STAGE</div>
                       <h2 className="text-4xl font-black text-red-700 text-center mb-6 font-orbitron">Boss Challenges</h2>
@@ -764,13 +772,11 @@
       const [submittedAnswers, setSubmittedAnswers] = useState(existingProgress?.submittedAnswers || {});
       const [streak, setStreak] = useState(existingProgress?.streak || 0);
       const [hint, setHint] = useState(null);
-      const [isHintLoading, setIsHintLoading] = useState(false);
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
-      // FIX 17: Boss tests have 20 mins
       const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
       
       const questionStartTimeRef = useRef(Date.now());
@@ -789,7 +795,7 @@
         } else if (existingProgress.shuffledOrder) { 
             setShuffledOrder(existingProgress.shuffledOrder); 
         }
-      }, []); // deps empty is safe because test and existingProgress are captured at mount
+      }, []); 
 
       useEffect(() => {
         if (!timerEnabled) return;
@@ -819,7 +825,6 @@
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
-      // Moved up so it can be called correctly
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
@@ -827,7 +832,6 @@
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
         
-        // FIX 2: Only auto-submit if it's an MCQ click
         if (showInstantFeedback && !submittedAnswers[currentQuestionIndex] && !isTextarea) {
             setTimeout(() => handleSubmitAnswer(answer), 0);
         }
@@ -876,13 +880,7 @@
         } else { commitElapsed(); saveProgress(false); setView('dashboard'); }
       }
 
-      const fetchHint = () => { 
-          setIsHintLoading(true);
-          setTimeout(() => {
-              setHint("Try re-reading the question carefully and break it into steps."); 
-              setIsHintLoading(false);
-          }, 600);
-      };
+      const fetchHint = () => { setHint("Try re-reading the question carefully and break it into steps."); };
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       const currentQ = test.questions[originalIndex];
@@ -933,7 +931,6 @@
               )}
             </div>
 
-            {/* FIX 2: Submit Button logic respects free text */}
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-6">
                 <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
@@ -942,7 +939,7 @@
 
             {showInstantFeedback && (
               <div className="my-4 text-center">
-                {hint ? <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-lg font-semibold">{hint}</div> : <button onClick={fetchHint} disabled={isHintLoading} className="text-sky-600 font-bold hover:text-sky-800 text-lg disabled:opacity-50">{isHintLoading ? '✨ Thinking...' : '💡 Need a hint?'}</button>}
+                {hint ? <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-lg font-semibold">{hint}</div> : <button onClick={fetchHint} className="text-sky-600 font-bold hover:text-sky-800 text-lg">💡 Need a hint?</button>}
               </div>
             )}
 
@@ -988,7 +985,6 @@
           else band = "Band 6";
       }
 
-      // FIX 4: "Try Again" triggers mode selector safely
       const handleTryAgain = () => {
           updateUserData(prev => {
               const newProgress = { ...prev.progress };
@@ -996,7 +992,7 @@
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
           setView('dashboard');
-          setTimeout(() => handleSelectTest(testId), 50); // Give view time to reset then pop modal
+          setTimeout(() => handleSelectTest(testId), 50);
       };
 
       return (
@@ -1041,18 +1037,27 @@
       );
     };
 
-    const ParentDashboardView = ({ userData, setView, allTests }) => {
+    const ParentDashboardView = ({ userData, setView, allTests, updateAllData }) => {
         const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt, mode: p.settings?.mode} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
         
         let totalQs = 0; let totalCorr = 0;
         completedTests.forEach(t => { totalQs += t.questions.length; totalCorr += t.score; });
         const overallAcc = totalQs > 0 ? Math.round((totalCorr / totalQs) * 100) : 0;
+        const overrideOn = !!userData?.overrideUnlockAllLevels;
 
         return (
             <div className="p-4 sm:p-8 max-w-5xl mx-auto min-h-screen">
                 <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
                     <h1 className="text-4xl sm:text-5xl font-bold text-sky-900 font-orbitron">Parent Dashboard</h1>
-                    <div className="flex gap-4">
+                    
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
+                          <button onClick={() => { updateAllData(prev => ({ ...prev, userData: { ...prev.userData, overrideUnlockAllLevels: !overrideOn } })); }} className={`font-bold py-2 px-4 rounded-xl ${overrideOn ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                            {overrideOn ? 'Disable: Unlock All' : 'Unlock All Levels'}
+                          </button>
+                          <span className="text-slate-500 text-sm font-semibold hidden sm:inline">{overrideOn ? 'All levels unlocked' : 'Levels respect progress'}</span>
+                        </div>
+                        
                         <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
                         <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
                     </div>
@@ -1082,16 +1087,14 @@
     };
 
     const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
-      
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
             message: "Are you sure? This deletes ALL progress, XP, stats, and achievements but keeps tests.", 
             confirmText: "Reset Everything", 
             onConfirm: () => {
-                // FIX 3: Complete object wiping
                 const clean = { 
-                    name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, 
+                    name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, overrideUnlockAllLevels: userData.overrideUnlockAllLevels,
                     progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, 
                     achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [], 
                     lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, 
@@ -1115,7 +1118,6 @@
                 updateAllData(prev => {
                     const newProgress = { ...prev.userData.progress };
                     delete newProgress[testId];
-                    // FIX 8: Persist deleted default test to prevent reappearance
                     const newDeleted = prev.deletedDefaultTests || [];
                     if (defaultTests.some(dt => dt.id === testId)) {
                         newDeleted.push(testId);
@@ -1244,10 +1246,12 @@
       const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
       
       useEffect(() => {
-        if (!chartRef.current || !window.Chart || completed.length === 0) return;
+        if (!chartRef.current || !window.Chart) return;
         const ctx = chartRef.current.getContext('2d');
         if (chartInstanceRef.current) chartInstanceRef.current.destroy();
         
+        if (completed.length === 0) return;
+
         const maths = completed.filter(t=>t.subject==='Maths').map(t=>(t.score/t.questions.length)*100);
         const english = completed.filter(t=>t.subject==='English').map(t=>(t.score/t.questions.length)*100);
         const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
@@ -1269,7 +1273,7 @@
 
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Back</button></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
               <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
                   {completed.length > 0 ? <canvas ref={chartRef}></canvas> : <p className="text-center font-bold text-slate-500 text-xl py-10">No data yet. Complete a test to see your progress!</p>}
               </div>
@@ -1625,7 +1629,7 @@
           {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModalWrapper} />}
           {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} updateUserData={updateUserData} handleSelectTest={handleSelectTest} />}
           {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={showNotification} />}
-          {view === 'parentDashboard' && <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
+          {view === 'parentDashboard' && <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} />}
           {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={showNotification} />}
           {view === 'performance' && <PerformanceDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
           {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
