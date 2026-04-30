@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
   
+  <!-- PWA Meta Tags & Inline Manifest -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#f0f9ff" />
@@ -14,7 +15,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -35,7 +36,6 @@
     .flash-incorrect { animation: flash-red 0.6s ease-out; }
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
     .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
-    .sticky-navigator { position: sticky; top: 1rem; z-index: 50; }
   </style>
 </head>
 <body>
@@ -48,6 +48,7 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
+    // Parent PIN hashing
     async function sha256Hex(message) {
       const enc = new TextEncoder();
       const data = enc.encode(message);
@@ -58,6 +59,7 @@
     function isHashedPin(pinStr) { return typeof pinStr === 'string' && pinStr.startsWith('sha256:') && pinStr.length === 7 + 64; }
     async function hashPin(pin) { if (!pin) return ''; const hex = await sha256Hex(String(pin)); return 'sha256:' + hex; }
 
+    // --- Audio Engine ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
         try {
@@ -83,6 +85,7 @@
         } catch(e) { console.log("Audio not supported"); }
     };
 
+    // --- DATA BANK ---
     const defaultTests = [
       {
         id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
@@ -173,6 +176,7 @@
       }
     ];
 
+    // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -208,6 +212,7 @@
       if (!ach) return 0;
       switch (ach.category) { case 'Quick Wins': return 3; case 'Medium-Term': return 5; case 'Longer-Term': return 10; default: return 0; }
     }
+
     function isoWeekString(d) {
       const date = new Date(d);
       const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -216,6 +221,7 @@
       const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
       return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
     }
+
     function unlockAchievements(userData, event) {
       userData.achievements = userData.achievements || {};
       userData.correctAnswersByTag = userData.correctAnswersByTag || {};
@@ -227,7 +233,9 @@
       const unlockedNow = [];
       const has = (id) => !!userData.achievements[id];
       const unlock = (id) => { if (!userData.achievements[id]) { userData.achievements[id] = true; unlockedNow.push(id); } };
-      const type = event?.type; const p = event?.payload || {};
+      
+      const type = event?.type;
+      const p = event?.payload || {};
       
       if (type === 'ANSWER_SUBMITTED') {
         const tagCounts = userData.correctAnswersByTag || {};
@@ -272,7 +280,9 @@
           userData.weeklyDayMap[weekKey] = days;
           if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
+        
         if (!has('clutchPerformer') && p.isFullPractice && p.totalQuestions >= 10 && p.lastQuestionCorrect) unlock('clutchPerformer');
+        
         if (p.finishedTestId && (p.finishedTestId.includes('full') || p.finishedTestId.includes('seag') || p.finishedTestId.includes('boss'))) {
           const ft = new Set(userData.fullTestsCompleted);
           ft.add(p.finishedTestId);
@@ -287,6 +297,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
+    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -295,6 +306,7 @@
       const s = sec % 60;
       return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
     }
+
     function extractLabeledOptionsFromPrompt(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
@@ -316,6 +328,7 @@
       if (options.filter(Boolean).length >= 2) return { stem: stem || s, options, labels };
       return null;
     }
+
     function tryParseTwoOptionsFromOr(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
@@ -330,6 +343,7 @@
       if (left && left.length >= 2 && right && right.length >= 2) return { stem, options: [left, right] };
       return null;
     }
+
     const unicodeFractionMap = new Map([['½','1/2'],['⅓','1/3'],['⅔','2/3'],['¼','1/4'],['¾','3/4'],['⅕','1/5'],['⅖','2/5'],['⅗','3/5'],['⅘','4/5'],['⅙','1/6'],['⅚','5/6'],['⅛','1/8'],['⅜','3/8'],['⅝','5/8'],['⅞','7/8']]);
     function replaceUnicodeFractions(s) { let out = s; unicodeFractionMap.forEach((ascii, uni) => { out = out.replaceAll(uni, ascii); }); return out; }
     function normalizeDecimalSyntax(s) { let t = s.trim(); if (/\d/.test(t) && (t.match(/,/g)?.length === 1) && !t.includes('.')) { t = t.replace(',', '.'); } return t.replace(/(^|\s)\.(\d)/g, '$10.$2'); }
@@ -338,6 +352,7 @@
     function detectPercentUnit(raw) { if (!raw) return false; return /%|\bpercent\b|\bper\s*cent\b/i.test(String(raw || '')); }
     function stripPercentText(raw) { if (!raw) return ''; return String(raw || '').replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
     function unitStripForNumeric(raw) { if (raw == null) return ''; return String(raw).replace(/[£$€]/g, '').replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '').trim(); }
+    
     function normalizeNumericLike(raw) {
       if (raw == null) return { ok: false };
       let s = String(raw).trim();
@@ -351,14 +366,15 @@
       if (val == null) return { ok: false };
       return { ok: true, value: val, isPercent: hadPercent };
     }
+
     function compareNumericAnswers(studentRaw, correctRaw, options = {}) {
       const { toleranceAbs = 1e-4, toleranceRel = 1e-3, percentEquivalence = 'both' } = options;
       const s = normalizeNumericLike(studentRaw); const c = normalizeNumericLike(correctRaw);
       if (!s.ok || !c.ok) return { equal: false };
       const candidates = [];
       if (s.isPercent === c.isPercent) candidates.push([s.value, c.value]);
-      if ((percentEquivalence === 'both' || percentEquivalence === 'studentToPercent') && c.isPercent && !s.isPercent) candidates.push([s.value * 100, c.value]);
-      if ((percentEquivalence === 'both' || percentEquivalence === 'correctToPercent') && s.isPercent && !c.isPercent) candidates.push([s.value, c.value * 100]);
+      if (percentEquivalence === 'both' || percentEquivalence === 'studentToPercent') { if (c.isPercent && !s.isPercent) candidates.push([s.value * 100, c.value]); }
+      if (percentEquivalence === 'both' || percentEquivalence === 'correctToPercent') { if (s.isPercent && !c.isPercent) candidates.push([s.value, c.value * 100]); }
       for (const [sv, cv] of candidates) {
         const diff = Math.abs(sv - cv);
         const rel = Math.abs(diff / (Math.abs(cv) > 0 ? Math.abs(cv) : 1));
@@ -366,6 +382,7 @@
       }
       return { equal: false };
     }
+
     function stripOuterQuotesAndEndPunct(s) { return String(s || '').replace(/^[“”"']+|[“”"']+$/g, '').replace(/[.?!]+$/g, '').trim(); }
     function stripLeadingArticles(s) { return String(s || '').replace(/^(?:an?|the)\s+/i, '').trim(); }
     const normalizeAnswer = (answer, tags = []) => {
@@ -373,40 +390,86 @@
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
+    
+    // --- UPDATED NORMALIZATION FOR UI ---
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const normalizeTestPack = (test) => {
         if (!test) return test;
         const t = { ...test };
-        t.passages = test.passages || test.materials || [];
+        t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => {
+            if (!q) return q;
+            if (q._normalized) return q;
+            q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
+            let raw = q.options ?? q.choices ?? [];
+            const opts = [];
+            if (Array.isArray(raw) && raw.length > 0) {
+              if (typeof raw[0] === 'string') {
+                raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+              } else {
+                raw.forEach((o, i) => {
+                  if (o == null) return;
+                  if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
+                  else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
+                });
+              }
+            } else {
+              const labeled = extractLabeledOptionsFromPrompt(q.question);
+              if (labeled) labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+            }
+            q.options = opts;
+            q._isMCQ = Array.isArray(opts) && opts.length >= 2;
+            
+            let correctId = null;
+            if (q.correctOptionId) correctId = String(q.correctOptionId);
+            else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
+            else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
+            else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
+            else if (typeof q.answer === 'string') {
+              const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
+              if (candidate) correctId = candidate.id;
+            }
+            q._correctOptionId = correctId;
+            q._normalized = true;
+            return q;
+        });
         return t;
     };
+    
     const isAnswerCorrect = (question, userAnswer) => {
       if (!question) return false;
-      const correctAnswer = question.answer;
       const tags = question.tags || [];
-      const qText = question.question || '';
-      
-      const labeled = extractLabeledOptionsFromPrompt(qText);
-      if (labeled && labeled.options?.length >= 2) {
-        const s = String(userAnswer ?? '').trim().toLowerCase();
-        const c = String(correctAnswer ?? '').trim().toLowerCase();
-        if (/^[a-z]$/.test(c)) return s === c;
-        if (/^[a-z]$/.test(s)) {
-          const idx = s.charCodeAt(0) - 97;
-          const chosen = labeled.options[idx]?.trim().toLowerCase();
-          return chosen && chosen === c;
+      if (question._isMCQ) {
+        if (userAnswer == null || userAnswer === '') return false;
+        const u = String(userAnswer).trim();
+        if (/^\d+$/.test(u)) {
+          const idx = Number(u);
+          const id = ALPHABET[idx] || String(idx);
+          return question._correctOptionId ? id === question._correctOptionId : false;
         }
-        return s === c;
+        if (/^[A-Z]$/i.test(u)) {
+          return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
+        }
+        if (question.options.some(o => o.id === u)) {
+          return question._correctOptionId ? u === question._correctOptionId : false;
+        }
+        const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
+        if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
+        return false;
       }
-      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions')) {
+      
+      const correctAnswer = question.answer;
+      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number')) {
         const sVal = unitStripForNumeric(userAnswer);
         const cVal = unitStripForNumeric(correctAnswer);
         if (compareNumericAnswers(sVal, cVal).equal) return true;
       }
+      
       const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
       const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
       if (sNorm.ok && cNorm.ok) {
         if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
       }
+      
       const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
       const normalizedUser = normalizeAnswer(userAnswer, tags);
       if (normalizedCorrect === normalizedUser) return true;
@@ -419,12 +482,13 @@
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
+      
       useEffect(() => {
         const generate = async () => {
           setLoading(true);
           try {
             const hasOptions = Array.isArray(question.options) && question.options.length > 0;
-            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}` : '';
+            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt.text || opt}`).join(' | ')}` : '';
             const prompt = `You are a kind tutor for a 10-year-old. Explain clearly why the answer is wrong and why the correct answer is right. Question: ${question.question}. ${optionsText} User's answer: ${userAnswer}. Correct answer: ${correctAnswer}`;
             const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
             const response = await fetch('/.netlify/functions/gemini-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -437,11 +501,12 @@
         };
         generate();
       }, [question, userAnswer, correctAnswer]);
-      if (loading) return <div className="mt-3 p-4 bg-sky-50 border border-sky-200 rounded-lg text-sky-800">Generating explanation...</div>;
+
+      if (loading) return <div className="mt-3 p-4 bg-sky-50 border border-sky-200 rounded-lg text-sky-800 font-bold">Generating explanation...</div>;
       return (
         <div className="mt-3 p-4 bg-sky-50 border border-sky-200 rounded-lg">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1"><p className="text-sky-800 text-sm">{explanation}</p></div>
+            <div className="flex-1"><p className="text-sky-800 text-sm font-semibold">{explanation}</p></div>
             <button onClick={onClose} className="text-sky-600 font-bold hover:text-sky-800">✕</button>
           </div>
         </div>
@@ -457,12 +522,17 @@
 
     const NotificationManager = ({ notifications, onDismiss }) => {
       const current = notifications[0] || null;
+      
       useEffect(() => {
         if (!current) return;
-        const timer = setTimeout(() => { onDismiss(current.id); }, 3500);
+        const timer = setTimeout(() => {
+            onDismiss(current.id);
+        }, 3500);
         return () => clearTimeout(timer);
       }, [current?.id, onDismiss]);
+
       if (!current) return null;
+      
       const bgColor = current.type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
       return (
         <div aria-live="polite" className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
@@ -519,7 +589,7 @@
         );
     }
 
-    // --- SAGA MAP DASHBOARD OVERHAUL ---
+    // --- MAIN VIEWS ---
     const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
@@ -892,7 +962,7 @@
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
+            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -923,6 +993,7 @@
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Quest..." />;
       const currentQ = test.questions[originalIndex];
+      normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       
       const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
@@ -953,11 +1024,17 @@
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-              {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswerSelect(opt, false)} disabled={isSubmitted} className={`p-6 rounded-2xl border-4 text-left text-xl font-bold transition-all min-h-[80px] shadow-sm ${userAnswers[originalIndex] === opt ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                  {opt}
-                </button>
-              )) : renderAsLabeled ? labeled.options.map((o, idx) => {
+              {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => {
+                // Determine display option text vs id properly for buttons
+                const optObj = currentQ.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(opt));
+                const optId = optObj ? optObj.id : opt;
+                const checked = userAnswers[originalIndex] === optId || userAnswers[originalIndex] === opt;
+                return (
+                  <button key={i} onClick={() => handleAnswerSelect(optId, false)} disabled={isSubmitted} className={`p-6 rounded-2xl border-4 text-left text-xl font-bold transition-all min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    {opt}
+                  </button>
+                )
+              }) : renderAsLabeled ? labeled.options.map((o, idx) => {
                 if (!o) return null; const letter = String.fromCharCode(97 + idx); const checked = userAnswers[originalIndex] === letter;
                 return (
                   <label key={letter} className={`p-6 rounded-2xl border-4 flex items-center gap-5 text-xl font-bold transition-all cursor-pointer min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
@@ -972,7 +1049,7 @@
 
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-8">
-                <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
+                <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
               </div>
             )}
 
@@ -989,7 +1066,7 @@
                 <button onClick={() => setShowExplanation(true)} className="mt-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl text-lg font-bold hover:bg-slate-200 border-2 border-slate-300 shadow-sm transition">🤖 Explain my mistake</button>
               </div>
             )}
-            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
+            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question._isMCQ && lastAnswerResult.question._correctOptionId ? (lastAnswerResult.question.options.find(o=>o.id===lastAnswerResult.question._correctOptionId)?.text || lastAnswerResult.question.answer) : lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-12 pt-8 border-t-4 border-slate-100">
               <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-xl px-6 py-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Exit Quest</button>
@@ -1096,6 +1173,7 @@
                           </button>
                           <span className="text-slate-500 text-sm font-semibold hidden sm:inline">{overrideOn ? 'All levels unlocked' : 'Levels respect progress'}</span>
                         </div>
+                        
                         <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
                         <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
                     </div>
@@ -1352,7 +1430,7 @@
             </label>
 
             <div className="pt-6 border-t-2 border-slate-100 mb-8">
-                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN (stored securely)</label>
+                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN</label>
                 <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
             </div>
 
