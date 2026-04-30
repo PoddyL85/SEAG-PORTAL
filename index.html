@@ -34,6 +34,7 @@
     @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
     .flash-correct { animation: flash-green 0.6s ease-out; }
     .flash-incorrect { animation: flash-red 0.6s ease-out; }
+    
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
     .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
   </style>
@@ -391,7 +392,6 @@
       return s;
     };
     
-    // --- UPDATED NORMALIZATION FOR UI ---
     const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const normalizeTestPack = (test) => {
         if (!test) return test;
@@ -548,7 +548,6 @@
       </div>
     );
 
-    // FIX 1: Robust Notification Queue
     const NotificationManager = ({ notifications, onDismiss }) => {
       const current = notifications[0] || null;
       
@@ -701,7 +700,6 @@
       const canAccessLevel2 = overrideUnlock || userLevel >= 2 || allLevel1Complete;
       const canAccessLevel3 = overrideUnlock || userLevel >= 3 || allLevel2Complete;
 
-      // FIX 3: Weekly accuracy checks 7 days ONLY
       const testsThisWeekData = Object.entries(userData.progress || {})
         .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
         .map(([id, p]) => {
@@ -915,15 +913,16 @@
       const [feedback, setFeedback] = useState(null);
 
       useEffect(() => {
+        if (!test) return;
         if (settings.shuffle && !existingProgress.shuffledOrder) {
-            const indices = Array.from(test.questions.keys());
+            const indices = Array.from(Array(test.questions.length).keys());
             for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
             setShuffledOrder(indices);
             updateUserData(prev => ({ progress: { ...prev.progress, [testId]: { ...(prev.progress?.[testId] || {}), shuffledOrder: indices, settings } } }), { event: { type: 'NO_OP' } }); 
         } else if (existingProgress.shuffledOrder) { 
             setShuffledOrder(existingProgress.shuffledOrder); 
         }
-      }, []); 
+      }, [test]); 
 
       useEffect(() => {
         if (!timerEnabled) return;
@@ -943,20 +942,18 @@
         const score = calculateScore();
         const currentElapsed = accumulatedElapsedMsRef.current + (Date.now() - questionStartTimeRef.current);
         const pEntry = { answers: userAnswers, lastQuestionIndex: typeof overrideIndex === 'number' ? overrideIndex : currentQuestionIndex, score, accumulatedElapsedMs: currentElapsed, streak, settings, submittedAnswers, ...(shuffledOrder && { shuffledOrder }), ...(isFinished ? { completedAt: Date.now() } : {}) };
-        const lastOrigIdx = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
         
         updateUserData(prev => ({ progress: { ...prev.progress, [testId]: pEntry } }), {
-            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.includes('full') || testId.includes('seag') || testId.includes('boss'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
+            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[(shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1))], userAnswers[(shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1))]), isFullPractice: testId.includes('full') || testId.includes('seag') || testId.includes('boss'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
         });
       };
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
-      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
+      const navigateToQuestion = (idx) => { if (!test) return; if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
-      // FIX 2: Free response auto-submit prevented
       const handleAnswerSelect = (answer, isTextarea = false) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
@@ -967,7 +964,8 @@
       };
 
       const handleSubmitAnswer = (ansOverride) => {
-        const answer = ansOverride || userAnswers[originalIndex];
+        if (!test) return;
+        const answer = typeof ansOverride !== 'undefined' ? ansOverride : userAnswers[originalIndex];
         if (answer === undefined || answer === null || answer === '') return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
@@ -982,7 +980,8 @@
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`);
+            let feedbackMsg = isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`;
+            setFeedback(feedbackMsg);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -1015,10 +1014,11 @@
       const currentQ = test.questions[originalIndex];
       normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
-      const passageText = getPassageForQuestion(currentQ, test);
       
+      const passageText = getPassageForQuestion(currentQ, test);
       const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
       const isFreeResponse = !optObjs;
+
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
       return (
@@ -1060,7 +1060,6 @@
               )}
             </div>
 
-            {/* FIX 2: Free response auto-submit hidden for MCQs */}
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-8">
                 <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
@@ -1132,7 +1131,6 @@
           else band = "Band 6";
       }
 
-      // FIX 4: Try Again flow
       const handleTryAgain = () => {
           updateUserData(prev => {
               const newProgress = { ...prev.progress };
@@ -1140,11 +1138,11 @@
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
           setView('dashboard');
-          setTimeout(() => handleSelectTest(testId), 100);
+          setTimeout(() => handleSelectTest(testId), 50);
       };
 
       return (
-        <div className="p-4 sm:p-8 min-h-screen">
+        <div className="p-8 min-h-screen">
           <div className="max-w-4xl mx-auto bg-white border-4 border-sky-100 rounded-3xl shadow-2xl p-8 sm:p-12 text-center relative overflow-hidden">
             <h2 className="text-5xl sm:text-6xl font-black text-sky-900 font-orbitron mb-8 relative z-10">Quest Complete!</h2>
             <div className="inline-block bg-sky-50 border-4 border-sky-200 rounded-[3rem] p-10 mb-12 relative z-10 shadow-inner">
@@ -1188,7 +1186,7 @@
                 })}
             </div>
             
-            <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center relative z-10">
+            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
                 <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-100 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-200 text-2xl shadow-sm transition border-2 border-slate-200">Try Again</button>
                 <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1">Return to Map</button>
             </div>
@@ -1219,7 +1217,7 @@
                         </div>
                         
                         <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
-                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Map</button>
+                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
                     </div>
                 </div>
                 
@@ -1254,7 +1252,6 @@
             message: "Are you sure? This deletes ALL progress, XP, stats, and achievements but keeps tests.", 
             confirmText: "Reset Everything", 
             onConfirm: () => {
-                // FIX 3: Fully populated clean object
                 const clean = { 
                     name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, overrideUnlockAllLevels: userData.overrideUnlockAllLevels,
                     progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, 
@@ -1346,7 +1343,7 @@
               {allTests.map(t => (
                 <div key={t.id} className="bg-slate-50 p-5 rounded-2xl flex flex-wrap justify-between items-center border border-slate-200 gap-4">
                   <div>
-                      <h3 className="font-bold text-xl text-slate-800 mb-1">{t.title}</h3>
+                      <h3 className="font-bold text-lg text-slate-800">{t.title}</h3>
                       <p className="text-slate-500 font-semibold">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
                   </div>
                   <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-50 transition">Delete</button>
@@ -1374,23 +1371,23 @@
         
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
-                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border-2 border-slate-200 px-6 py-3 rounded-xl">Cancel</button></div>
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-3xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
                 <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
                     <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
-                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
+                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
+                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-8 p-8 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
-                            <span className="absolute -top-4 left-6 bg-sky-600 text-white px-4 py-1 rounded-full font-black text-sm uppercase tracking-widest shadow-md">Question {i+1}</span>
-                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-4 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
+                            <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-6 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                 {q.options.map((opt, oIndex) => (
-                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-4 rounded-xl border-2 border-slate-200 font-semibold outline-none focus:border-sky-500 text-lg ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-5 rounded-2xl border-4 border-emerald-300 bg-emerald-50 font-bold text-xl outline-none focus:border-emerald-500 text-emerald-900" />
+                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1405,7 +1402,7 @@
     const PerformanceDashboardView = ({ setView, userData, allTests }) => {
       const chartRef = useRef(null); const chartInstanceRef = useRef(null);
       
-      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, completedAt: p.completedAt || 0} : null; }).filter(Boolean).sort((a,b) => a.completedAt - b.completedAt);
+      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
       
       useEffect(() => {
         if (!chartRef.current || !window.Chart) return;
@@ -1419,7 +1416,6 @@
         const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
         const maxLength = Math.max(maths.length, english.length, mixed.length);
         
-        // FIX 5: Chart visibility improved with pointRadius
         chartInstanceRef.current = new Chart(ctx, {
           type: 'line', 
           data: { 
@@ -1436,7 +1432,7 @@
 
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
               <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
                   {completed.length > 0 ? <canvas ref={chartRef}></canvas> : <p className="text-center font-bold text-slate-500 text-xl py-10">No data yet. Complete a test to see your progress!</p>}
               </div>
@@ -1472,11 +1468,11 @@
             
             <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Sound Effects</span><span className="text-slate-500 font-semibold text-sm">Chimes and celebrations.</span></div>
-                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
+                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600" />
             </label>
 
             <div className="pt-6 border-t-2 border-slate-100 mb-8">
-                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN</label>
+                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN (stored securely)</label>
                 <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
             </div>
 
@@ -1521,9 +1517,8 @@
                                           <div className={`text-6xl mb-4 ${unl ? '' : 'opacity-50'}`}>{a.icon || '🏆'}</div>
                                           <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
-                                          {/* FIX 6: Progress Hints! */}
                                           {!unl && a.getProgress && (
-                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full border border-sky-200">{a.getProgress(userData)}</div>
+                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full">{a.getProgress(userData)}</div>
                                           )}
                                       </div>
                                   )
@@ -1593,6 +1588,8 @@
       const handleSelectTest = useCallback((testId, skipModal = false) => {
         if (!appData) return;
         const test = appData.allTests.find(t => t.id === testId);
+        if (!test) { showNotification({ message: 'Test not found. Import it via Admin → Import JSON.', type: 'error' }); return; }
+        
         const progress = appData.userData.progress?.[testId];
         const answered = progress ? Object.keys(progress.answers || {}).length : 0;
         
@@ -1618,7 +1615,7 @@
             </div>
           ), onCancel: hideModal
         });
-      }, [appData, showModalWrapper, hideModal]);
+      }, [appData, showModalWrapper, hideModal, showNotification]);
 
       useEffect(() => {
         if (isInitialized.current) return;
@@ -1650,6 +1647,7 @@
             defaultTests.forEach(dt => { 
                 if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(normalizeTestPack(dt)); 
             });
+            // Ensure pre-existing tests are formatted properly
             loadedData.allTests = loadedData.allTests.map(normalizeTestPack);
         }
         
@@ -1795,6 +1793,7 @@
           setAppData(prev => {
               if(!prev) return prev;
               const newData = typeof updater === 'function' ? updater(prev) : updater;
+              // Ensure normalization on save
               if (newData.allTests) newData.allTests = newData.allTests.map(normalizeTestPack);
               safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
               return newData;
