@@ -14,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,10 @@
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
     .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(4px); }
     .notification-bar { position: fixed; top: 20px; right: 20px; z-index: 1001; transition: opacity 0.5s, transform 0.5s; }
-    
+    @keyframes flash-green { 0% { background-color: #dcfce7; border-color: #22c55e; } 100% { background-color: white; border-color: #e2e8f0; } }
+    @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
+    .flash-correct { animation: flash-green 0.6s ease-out; }
+    .flash-incorrect { animation: flash-red 0.6s ease-out; }
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
     .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
   </style>
@@ -299,7 +302,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format & Parse Helpers ---
+    // --- Format, Normalization & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -392,92 +395,94 @@
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
-    
-    // --- FATAL BUG FIX: Restored GLOBAL normalizeQuestion Function ---
+
+    // FATAL BUG FIX: Restoring normalizeQuestion function
     const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
     function normalizeQuestion(q) {
-        if (!q) return q;
-        if (q._normalized) return q;
-        
-        const newQ = { ...q };
-        newQ.question = newQ.question || newQ.text || newQ.prompt || newQ.stem || newQ.body || newQ.questionText || '';
-        let raw = newQ.options ?? newQ.choices ?? [];
-        const opts = [];
-        
-        if (Array.isArray(raw) && raw.length > 0) {
-          if (typeof raw[0] === 'string') {
-            raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-          } else {
-            raw.forEach((o, i) => {
-              if (o == null) return;
-              if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
-              else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
-            });
-          }
+      if (!q) return q;
+      if (q._normalized) return q;
+      
+      q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
+      let raw = q.options ?? q.choices ?? [];
+      const opts = [];
+      
+      if (Array.isArray(raw) && raw.length > 0) {
+        if (typeof raw[0] === 'string') {
+          raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
         } else {
-          const labeled = extractLabeledOptionsFromPrompt(newQ.question);
-          if (labeled) {
-              labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-              newQ.question = labeled.stem;
-          } else {
-              const implicit = tryParseTwoOptionsFromOr(newQ.question);
-              if (implicit) {
-                  implicit.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-                  newQ.question = implicit.stem;
-              }
-          }
+          raw.forEach((o, i) => {
+            if (o == null) return;
+            if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
+            else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
+          });
         }
-        
-        newQ.options = opts;
-        newQ._isMCQ = Array.isArray(opts) && opts.length >= 2;
-        
-        let correctId = null;
-        if (newQ.correctOptionId) correctId = String(newQ.correctOptionId);
-        else if (newQ.correctAnswerLetter) correctId = String(newQ.correctAnswerLetter).toUpperCase();
-        else if (typeof newQ.correctAnswer === 'number') correctId = ALPHABET[newQ.correctAnswer] || String(newQ.correctAnswer);
-        else if (typeof newQ.answer === 'string' && /^[A-E]$/i.test(newQ.answer.trim())) correctId = newQ.answer.trim().toUpperCase();
-        else if (typeof newQ.answer === 'string') {
-          const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(newQ.answer));
-          if (candidate) correctId = candidate.id;
+      } else {
+        const labeled = extractLabeledOptionsFromPrompt(q.question);
+        if (labeled) {
+            labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+            q.question = labeled.stem;
+        } else {
+            const implicit = tryParseTwoOptionsFromOr(q.question);
+            if (implicit) {
+                implicit.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+                q.question = implicit.stem;
+            }
         }
-        
-        newQ._correctOptionId = correctId;
-        newQ._normalized = true;
-        return newQ;
+      }
+      
+      q.options = opts;
+      q._isMCQ = Array.isArray(opts) && opts.length >= 2;
+      
+      let correctId = null;
+      if (q.correctOptionId) correctId = String(q.correctOptionId);
+      else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
+      else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
+      else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
+      else if (typeof q.answer === 'string') {
+        const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
+        if (candidate) correctId = candidate.id;
+      }
+      
+      q._correctOptionId = correctId;
+      q._normalized = true;
+      return q;
     }
 
     const normalizeTestPack = (test) => {
         if (!test) return test;
         const t = { ...test };
         t.passages = test.passages || test.materials || [];
-        t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion(q));
+        // Vital: actually map over and normalize the questions during init!
+        t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion({...q}));
         return t;
     };
     
     const isAnswerCorrect = (question, userAnswer) => {
       if (!question) return false;
-      const tags = question.tags || [];
-      if (question._isMCQ) {
+      const q = question._normalized ? question : normalizeQuestion({...question});
+      const tags = q.tags || [];
+      
+      if (q._isMCQ) {
         if (userAnswer == null || userAnswer === '') return false;
         const u = String(userAnswer).trim();
         if (/^\d+$/.test(u)) {
           const idx = Number(u);
           const id = ALPHABET[idx] || String(idx);
-          return question._correctOptionId ? id === question._correctOptionId : false;
+          return q._correctOptionId ? id === q._correctOptionId : false;
         }
         if (/^[A-Z]$/i.test(u)) {
-          return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
+          return q._correctOptionId ? u.toUpperCase() === q._correctOptionId : false;
         }
-        if (question.options.some(o => o.id === u)) {
-          return question._correctOptionId ? u === question._correctOptionId : false;
+        if (q.options.some(o => o.id === u)) {
+          return q._correctOptionId ? u === q._correctOptionId : false;
         }
-        const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
-        if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
+        const matched = q.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
+        if (matched) return q._correctOptionId ? matched.id === q._correctOptionId : false;
         return false;
       }
       
-      const correctAnswer = question.answer;
+      const correctAnswer = q.answer;
       if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number')) {
         const sVal = unitStripForNumeric(userAnswer);
         const cVal = unitStripForNumeric(correctAnswer);
@@ -628,12 +633,12 @@
         );
     }
 
-    // --- TRUE GAMIFIED MAP UI ---
+    // --- MAIN VIEWS ---
     const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
-      const handleAdminAccess = async () => {
+      const handleAdminAccess = () => {
           let pinInput = '';
           showModal({
               title: "Parent Access",
@@ -711,9 +716,21 @@
       const canAccessLevel2 = overrideUnlock || userLevel >= 2 || allLevel1Complete;
       const canAccessLevel3 = overrideUnlock || userLevel >= 3 || allLevel2Complete;
 
+      const testsThisWeekData = Object.entries(userData.progress || {})
+        .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
+        .map(([id, p]) => {
+            const test = allTests.find(t => t.id === id);
+            return { score: p.score, total: test ? test.questions.length : 0 };
+        });
+      
+      const testsThisWeekCount = testsThisWeekData.length;
+      let thisWeekScore = 0; let thisWeekTotal = 0;
+      testsThisWeekData.forEach(t => { thisWeekScore += t.score; thisWeekTotal += t.total; });
+      const thisWeekAccuracy = thisWeekTotal > 0 ? Math.round((thisWeekScore / thisWeekTotal) * 100) : 0;
+
       const getGlobalIndex = (testId) => orderedCoreTests.findIndex(t => t.id === testId);
 
-      // --- SAGA MAP NODE (Duolingo Style 3D Buttons) ---
+      // --- SAGA MAP NODE RENDERING ---
       const renderMapNode = (test, globalIndex) => {
           const progress = userData.progress?.[test.id];
           const isCompleted = !!progress?.completedAt;
@@ -722,105 +739,124 @@
 
           const emoji = test.subject === 'Maths' ? '🧮' : (test.subject === 'English' ? '📖' : '⚔️');
 
-          // Sine wave offsets: 0, 40, 70, 40, 0, -40, -70, -40
-          const offsetBase = [0, 40, 70, 40, 0, -40, -70, -40];
+          const offsetBase = [-60, 60, -90, 90, -40, 40];
           const xOffset = offsetBase[globalIndex % offsetBase.length];
 
-          // 3D Button styling classes
-          let btnClass = "bg-slate-300 border-slate-400 text-slate-500 opacity-80 cursor-not-allowed";
-          if (isActive) btnClass = "bg-amber-400 border-amber-600 text-amber-900 active-node";
-          if (isCompleted) btnClass = "bg-emerald-400 border-emerald-600 text-white hover:bg-emerald-300";
-
           return (
-            <div key={test.id} className="relative z-10 my-8 flex flex-col items-center w-full" style={{ paddingLeft: `${xOffset}px` }}>
-               
+            <div key={test.id} className="relative z-10 my-8 flex flex-col items-center" style={{ transform: `translateX(${xOffset}px)` }}>
                {isActive && isUnlocked && (
-                  <div className="absolute -top-14 animate-bounce bg-white text-amber-600 font-black px-4 py-2 rounded-2xl shadow-lg border-2 border-amber-200 z-20 whitespace-nowrap">
+                  <div className="absolute -top-12 animate-bounce bg-white text-amber-600 font-black px-4 py-2 rounded-xl shadow-lg border-2 border-amber-200 whitespace-nowrap z-20">
                      START QUEST 👇
                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-b-2 border-r-2 border-amber-200 rotate-45"></div>
                   </div>
                )}
-
                <button 
                   onClick={() => isUnlocked ? handleSelectTest(test.id) : null}
                   disabled={!isUnlocked}
-                  className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl shadow-xl transition-all duration-150 border-b-[8px] active:border-b-0 active:translate-y-[8px] outline-none ${btnClass}`}
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-xl transition-all duration-200 border-b-[8px] active:border-b-0 active:translate-y-[8px] outline-none ${
+                    isActive ? 'bg-amber-400 border-amber-600 ring-4 ring-amber-200' :
+                    isCompleted ? 'bg-emerald-400 border-emerald-600' :
+                    isUnlocked ? 'bg-sky-400 border-sky-600 hover:bg-sky-300' :
+                    'bg-slate-300 border-slate-400 cursor-not-allowed opacity-80'
+                  }`}
                >
                   {isUnlocked ? emoji : '🔒'}
                   {isCompleted && (
-                      <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md text-xl border-2 border-slate-100">⭐</div>
+                      <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md text-xl border-2 border-slate-100">
+                          ⭐
+                      </div>
                   )}
                </button>
-               
-               <div className="mt-4 w-48 text-center pointer-events-none">
-                  <span className="bg-white/95 px-3 py-2 rounded-xl shadow-md border border-slate-200 text-sm font-bold text-slate-700 font-orbitron block truncate">
+               <div className="absolute top-full mt-3 w-48 text-center">
+                  <div className="bg-white/90 px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-sm font-bold text-slate-700 font-orbitron">
                     {test.title}
-                  </span>
+                  </div>
                </div>
             </div>
           );
       };
 
-      // Scene Decorators
-      const SceneLayer = ({ children }) => (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-30 text-5xl">
-              {children}
-          </div>
-      );
-
       return (
-        <div className="min-h-screen bg-gradient-to-b from-sky-100 via-emerald-100 to-indigo-200 font-sans">
-          {/* Base Camp (Top Header) */}
-          <div className="max-w-4xl mx-auto px-4 sm:px-10 pt-10">
-              <div className="bg-white/80 backdrop-blur-md border-4 border-white rounded-[2rem] p-8 shadow-xl mb-12">
-                  <div className="flex flex-wrap justify-between items-center gap-6">
-                    <div>
-                      <h1 className="text-4xl sm:text-5xl font-black text-sky-900 font-orbitron">
-                        <span className="text-6xl mr-4">{userData.avatar || '👨‍🚀'}</span> 
-                        Hero {userData.name}
-                      </h1>
-                      <p className="text-xl text-sky-700 font-bold mt-2">Level {userData.level || 1} • {userData.xp || 0} XP</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <button onClick={() => setView('achievements')} className="bg-amber-400 border-b-4 border-amber-600 text-amber-900 font-bold py-3 px-6 rounded-2xl shadow-sm hover:bg-amber-300 transition active:border-b-0 active:translate-y-[4px]">🏆 Achievements</button>
-                      <button onClick={handleAdminAccess} className="bg-slate-200 border-b-4 border-slate-400 text-slate-700 font-bold py-3 px-6 rounded-2xl shadow-sm hover:bg-slate-300 transition active:border-b-0 active:translate-y-[4px]">⚙️ Parents</button>
-                    </div>
-                  </div>
-              </div>
-
-              {/* Side Quests */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-                  <button onClick={handleDailyChallenge} className="bg-white/80 backdrop-blur-md border-b-8 border-slate-200 rounded-[2rem] p-6 shadow-lg hover:bg-white transition active:border-b-0 active:translate-y-[8px] flex items-center justify-between group">
-                      <div className="text-left">
-                          <h2 className="text-2xl font-black text-slate-800 font-orbitron">Wandering Merchant</h2>
-                          <p className="text-slate-500 font-bold">Daily 5-Quest Warmup</p>
-                      </div>
-                      <div className="text-5xl group-hover:scale-110 transition">📜</div>
-                  </button>
-
-                  <button onClick={!hasMistakes ? null : handlePracticeMistakes} disabled={!hasMistakes} className={`bg-white/80 backdrop-blur-md border-b-8 border-slate-200 rounded-[2rem] p-6 shadow-lg transition flex items-center justify-between group ${hasMistakes ? 'hover:bg-white active:border-b-0 active:translate-y-[8px]' : 'opacity-60 cursor-not-allowed'}`}>
-                      <div className="text-left">
-                          <h2 className="text-2xl font-black text-slate-800 font-orbitron">Healing Spring</h2>
-                          <p className="text-slate-500 font-bold">{hasMistakes ? 'Review past errors' : 'You are fully healed!'}</p>
-                      </div>
-                      <div className="text-5xl group-hover:scale-110 transition">🧪</div>
-                  </button>
-              </div>
+        <div className="p-4 sm:p-10 max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-sky-900 flex items-center font-orbitron">
+                <span className="text-6xl mr-4">{userData.avatar || '👨‍🚀'}</span> 
+                Hero {userData.name}!
+              </h1>
+              <p className="text-xl text-sky-700 font-semibold mt-2">The realm needs your wisdom. Journey through the lands to unlock the Citadel!</p>
+            </div>
+            <div className="flex gap-3 mt-4 sm:mt-0">
+              <button onClick={() => setView('settings')} className="bg-white border-2 border-slate-200 text-slate-600 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-slate-50 transition">Profile</button>
+              <button onClick={() => setView('achievements')} className="bg-yellow-400 text-yellow-900 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-yellow-300 transition">Achievements</button>
+              <button onClick={handleAdminAccess} className="bg-slate-200 text-slate-700 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-slate-300 transition">⚙️ Parents</button>
+            </div>
           </div>
+          
+          <div className="bg-white border-2 border-sky-100 rounded-3xl p-6 mb-10 shadow-lg">
+            <div className="flex justify-between items-center mb-3 font-orbitron">
+              <span className="font-bold text-sky-700 text-2xl">Level {userData.level || 1} {userData.title && <span className="ml-3 text-lg bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-sans">{userData.title}</span>}</span>
+              <span className="text-lg text-slate-500 font-bold">{userData.xp || 0} / {xpForNextLevel} XP</span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col cursor-pointer" onClick={handleDailyChallenge}>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-3xl font-bold font-orbitron">Wandering Merchant</h2>
+                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
+                  <div className="text-2xl mb-1">📜</div>
+                </div>
+              </div>
+              <p className="text-xl opacity-90 mb-8 font-semibold">A quick 5-question quest!</p>
+              <div className="mt-auto">
+                  {userData.dailyChallenge?.completedToday ? (
+                    <div className="w-full bg-white/20 text-center font-bold py-4 rounded-xl text-xl">Quest Complete!</div>
+                  ) : (
+                    <button className="w-full bg-white text-emerald-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition pointer-events-none">Visit Merchant</button>
+                  )}
+              </div>
+            </div>
 
-          {/* THE WINDING PATH MAP */}
+            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col cursor-pointer" onClick={!hasMistakes ? null : handlePracticeMistakes}>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-3xl font-bold font-orbitron">The Healing Spring</h2>
+                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
+                  <div className="text-2xl mb-1">🧪</div>
+                </div>
+              </div>
+              <p className="text-xl opacity-90 mb-8 font-semibold">Turn past errors into strength.</p>
+              <div className="relative group mt-auto">
+                  <button disabled={!hasMistakes} className="w-full bg-white text-blue-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 shadow-lg text-xl transition pointer-events-none">Enter Spring</button>
+                  {!hasMistakes && <p className="absolute text-center w-full mt-2 text-sm font-bold opacity-80">You are fully healed!</p>}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-3xl font-bold font-orbitron">Adventurer's Log</h2>
+                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
+                  <div className="text-2xl mb-1">🗺️</div>
+                </div>
+              </div>
+              <p className="text-xl opacity-90 mb-6 font-semibold">Your deeds over the last 7 days.</p>
+              <div className="flex justify-between items-center bg-white/20 p-4 rounded-xl mt-auto">
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Quests</p><p className="text-3xl font-black">{testsThisWeekCount}</p></div>
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Accuracy</p><p className="text-3xl font-black">{thisWeekAccuracy}%</p></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* THE NEW SAGA MAP UI */}
           <div className="relative max-w-lg mx-auto py-10 flex flex-col items-center">
               
               {/* Background Path Line */}
-              <div className="absolute top-0 bottom-0 left-1/2 w-4 bg-white/40 rounded-full transform -translate-x-1/2 border-x-2 border-white/60 z-0"></div>
+              <div className="absolute top-0 bottom-0 w-6 bg-slate-200 rounded-full shadow-inner opacity-60"></div>
 
               {/* ZONE 1 */}
-              <SceneLayer>
-                  <div className="absolute top-[5%] left-[10%]">🌲</div>
-                  <div className="absolute top-[15%] right-[15%]">🍄</div>
-                  <div className="absolute top-[25%] left-[20%]">🌲</div>
-              </SceneLayer>
-
               <div className="relative z-10 bg-emerald-100 border-4 border-emerald-500 text-emerald-800 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-6 font-orbitron">
                   🍄 Whispering Woods
               </div>
@@ -832,12 +868,7 @@
               )}
 
               {/* ZONE 2 */}
-              <SceneLayer>
-                  <div className="absolute top-[40%] right-[10%]">💎</div>
-                  <div className="absolute top-[50%] left-[15%]">🦇</div>
-              </SceneLayer>
-
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-24 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel2 ? '💎 Crystal Caverns' : '🔒 Zone Locked'}
               </div>
               
@@ -850,12 +881,7 @@
               )}
 
               {/* ZONE 3 */}
-              <SceneLayer>
-                  <div className="absolute top-[70%] left-[10%]">☁️</div>
-                  <div className="absolute top-[80%] right-[20%]">🏰</div>
-              </SceneLayer>
-
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-24 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel3 ? '🏰 Sky Citadel' : '🔒 Zone Locked'}
               </div>
               
@@ -870,7 +896,7 @@
               {/* BOSS STAGE */}
               {canAccessLevel3 && bossTests.length > 0 && (
                   <>
-                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-3 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] mt-24 mb-6 font-orbitron">
+                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-3 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] mt-20 mb-6 font-orbitron">
                           🐉 Dragon's Lair (Boss)
                       </div>
                       {bossTests.map(t => renderMapNode(t, getGlobalIndex(t.id)))}
@@ -906,7 +932,7 @@
       const [flash, setFlash] = useState(null);
       const [feedback, setFeedback] = useState(null);
 
-      // FATAL BUG FIX: Strict Guard Clauses
+      // GUARARD CLAUSE TO PREVENT FATAL RENDER BUG
       if (!test || !test.questions || test.questions.length === 0 || (settings.shuffle && !shuffledOrder)) {
           return <LoadingSpinner message="Preparing Quest..." />;
       }
@@ -948,11 +974,6 @@
       };
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
-      
-      // FATAL BUG FIX: Verify question exists
-      const currentQ = test.questions[originalIndex];
-      if (!currentQ) return <LoadingSpinner message="Loading Question..." />;
-
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
@@ -973,17 +994,18 @@
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
         
-        const isCorrect = isAnswerCorrect(currentQ, answer);
+        const question = test.questions[originalIndex];
+        const isCorrect = isAnswerCorrect(question, answer);
         
-        setLastAnswerResult({ isCorrect, userAnswer: answer, question: currentQ });
-        updateUserData({}, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: currentQ.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
+        setLastAnswerResult({ isCorrect, userAnswer: answer, question });
+        updateUserData({}, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: question.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
         
         setStreak(isCorrect ? streak + 1 : 0);
         playSound(isCorrect ? 'correct' : 'incorrect', userData.soundEnabled !== false);
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${currentQ._isMCQ && currentQ._correctOptionId ? (currentQ.options.find(o => o.id === currentQ._correctOptionId)?.text || currentQ.answer) : currentQ.answer}`);
+            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -1011,6 +1033,9 @@
       }
 
       const fetchHint = () => { setHint("Try re-reading the question carefully and break it into steps."); };
+
+      const currentQ = test.questions[originalIndex];
+      if (!currentQ) return <LoadingSpinner message="Loading Question..." />;
 
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       const passageText = getPassageForQuestion(currentQ, test);
@@ -1058,7 +1083,6 @@
               )}
             </div>
 
-            {/* Submit logic isolated to free-response */}
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-8">
                 <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
@@ -1111,10 +1135,17 @@
     };
 
     const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData, handleSelectTest }) => {
+      useEffect(() => {
+          if (!testDetails || !allTests.find(t => t.id === testDetails.id) || !userData.progress?.[testDetails.id]) {
+              setView('dashboard');
+          }
+      }, [testDetails, allTests, userData, setView]);
+
+      if (!testDetails) return null;
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
       const progress = userData.progress?.[testId];
-      if (!test || !progress) { setView('dashboard'); return null; }
+      if (!test || !progress) return null;
       
       const score = progress.score || 0;
       const total = test.questions.length;
@@ -1137,11 +1168,11 @@
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
           setView('dashboard');
-          setTimeout(() => handleSelectTest(testId), 50);
+          setTimeout(() => handleSelectTest(testId), 100);
       };
 
       return (
-        <div className="p-8 min-h-screen">
+        <div className="p-4 sm:p-8 min-h-screen">
           <div className="max-w-4xl mx-auto bg-white border-4 border-sky-100 rounded-3xl shadow-2xl p-8 sm:p-12 text-center relative overflow-hidden">
             <h2 className="text-5xl sm:text-6xl font-black text-sky-900 font-orbitron mb-8 relative z-10">Quest Complete!</h2>
             <div className="inline-block bg-sky-50 border-4 border-sky-200 rounded-[3rem] p-10 mb-12 relative z-10 shadow-inner">
@@ -1216,7 +1247,7 @@
                         </div>
                         
                         <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
-                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Map</button>
+                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
                     </div>
                 </div>
                 
@@ -1370,23 +1401,23 @@
         
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
-                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border-2 border-slate-200 px-6 py-3 rounded-xl">Cancel</button></div>
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
                 <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
                     <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
-                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
+                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
+                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-8 p-8 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
-                            <span className="absolute -top-4 left-6 bg-sky-600 text-white px-4 py-1 rounded-full font-black text-sm uppercase tracking-widest shadow-md">Question {i+1}</span>
-                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-4 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
+                            <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-6 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                 {q.options.map((opt, oIndex) => (
-                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-4 rounded-xl border-2 border-slate-200 font-semibold outline-none focus:border-sky-500 text-lg ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-5 rounded-2xl border-4 border-emerald-300 bg-emerald-50 font-bold text-xl outline-none focus:border-emerald-500 text-emerald-900" />
+                            <input type="text" placeholder="Exact Correct Answer (option text or letter A..E)" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1471,7 +1502,7 @@
             </label>
 
             <div className="pt-6 border-t-2 border-slate-100 mb-8">
-                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN</label>
+                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN (stored securely)</label>
                 <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
             </div>
 
@@ -1587,7 +1618,7 @@
       const handleSelectTest = useCallback((testId, skipModal = false) => {
         if (!appData) return;
         const test = appData.allTests.find(t => t.id === testId);
-        if (!test) { showNotification({ message: 'Test not found. Import it via Admin → Import JSON.', type: 'error' }); return; }
+        if (!test) { showNotification({ message: 'Test not found. Import it via Admin.', type: 'error' }); return; }
         
         const progress = appData.userData.progress?.[testId];
         const answered = progress ? Object.keys(progress.answers || {}).length : 0;
@@ -1624,12 +1655,7 @@
         let loadedData = null;
         
         if (savedData) {
-            try {
-                loadedData = JSON.parse(savedData);
-            } catch (err) {
-                console.warn('seagPortalData parse failed, resetting data', err);
-                localStorage.removeItem('seagPortalData');
-            }
+            try { loadedData = JSON.parse(savedData); } catch (err) { console.warn('seagPortalData parse failed, resetting data', err); localStorage.removeItem('seagPortalData'); }
         }
         
         if (!loadedData || !loadedData.userData) {
@@ -1646,7 +1672,6 @@
             defaultTests.forEach(dt => { 
                 if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(normalizeTestPack(dt)); 
             });
-            // Ensure pre-existing tests are formatted properly
             loadedData.allTests = loadedData.allTests.map(normalizeTestPack);
         }
         
@@ -1792,7 +1817,6 @@
           setAppData(prev => {
               if(!prev) return prev;
               const newData = typeof updater === 'function' ? updater(prev) : updater;
-              // Ensure normalization on save
               if (newData.allTests) newData.allTests = newData.allTests.map(normalizeTestPack);
               safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
               return newData;
