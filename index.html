@@ -178,7 +178,7 @@
       }
     ];
 
-    // --- Achievements Data with Dynamic Progress Functions ---
+    // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -186,7 +186,8 @@
         { id: 'topicExplorer', title: 'Topic Explorer', description: 'Attempt questions from 2 different topics in one day.', category: 'Quick Wins', icon: '🗺️' },
         { id: 'mistakeFixer', title: 'Mistake Fixer', description: 'Correctly answer 1 previously-wrong question.', category: 'Quick Wins', icon: '🔧', getProgress: (ud) => `${Math.min(ud.reviewCorrections || 0, 1)} / 1` },
         { id: 'noHintHeroMini', title: 'No-Hint Hero (Mini)', description: 'Answer 5 questions correctly without using hints.', category: 'Quick Wins', icon: '🛡️', getProgress: (ud) => `${Math.min(ud.noHintCorrectCount || 0, 5)} / 5` },
-        { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯' },
+        // FIX 14: Added getProgress to accurateStart
+        { id: 'accurateStart', title: 'Accurate Start', description: 'Achieve 70% accuracy over your first 10 answers.', category: 'Quick Wins', icon: '🎯', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 10)} / 10 attempts` },
         { id: 'comebackKid', title: 'Comeback Kid', description: 'Get 3 correct answers in a row after getting one wrong.', category: 'Quick Wins', icon: '🥊', getProgress: (ud) => `${Math.min(ud.correctRunAfterWrong || 0, 3)} / 3` },
         { id: 'speedStreak', title: 'Speed Streak', description: 'Get 3 correct in a row, each under 30 seconds.', category: 'Medium-Term', icon: '🚀' },
         { id: 'consistencyStar', title: 'Consistency Star', description: 'Practice 2 days in a row.', category: 'Medium-Term', icon: '⭐', getProgress: (ud) => `${Math.min(ud.loginStreak || 0, 2)} / 2` },
@@ -208,12 +209,6 @@
         { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆', getProgress: (ud) => `${Math.min(ud.dailyChallengeStreak || 0, 7)} / 7` },
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃', getProgress: (ud) => `${Math.min((ud.fullTestsCompleted||[]).length, 3)} / 3` },
     ];
-
-    function xpForAchievementId(id) {
-      const ach = achievementsList.find(a => a.id === id);
-      if (!ach) return 0;
-      switch (ach.category) { case 'Quick Wins': return 3; case 'Medium-Term': return 5; case 'Longer-Term': return 10; default: return 0; }
-    }
 
     function isoWeekString(d) {
       const date = new Date(d);
@@ -299,7 +294,6 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -474,25 +468,17 @@
       </div>
     );
 
-    // FIX 1: Notification Queue Component
+    // FIX 1: Robust NotificationManager driving purely off queue length
     const NotificationManager = ({ notifications, onDismiss }) => {
-      const [current, setCurrent] = useState(null);
+      const current = notifications[0] || null;
       
       useEffect(() => {
-        if (!current && notifications.length > 0) {
-            setCurrent(notifications[0]);
-        }
-      }, [notifications, current]);
-
-      useEffect(() => {
-        if (current) {
-            const timer = setTimeout(() => {
-                onDismiss(current.id);
-                setCurrent(null);
-            }, 3500);
-            return () => clearTimeout(timer);
-        }
-      }, [current, onDismiss]);
+        if (!current) return;
+        const timer = setTimeout(() => {
+            onDismiss(current.id);
+        }, 3500);
+        return () => clearTimeout(timer);
+      }, [current?.id, onDismiss]); // depends cleanly on current ID
 
       if (!current) return null;
       
@@ -532,7 +518,7 @@
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Enable Hints & Feedback</label><input type="checkbox" checked={useHints} onChange={() => setUseHints(!useHints)} className="w-6 h-6 rounded text-sky-500" /></div>
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Shuffle Questions</label><input type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-sky-500" /></div>
                 </div>
-                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold">Start Custom Test</button>
+                <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold transition">Start Custom Test</button>
             </div>
         );
     }
@@ -552,44 +538,25 @@
         );
     }
 
-    const Dashboard = ({ userData, setView, setSelectedTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
+    // --- MAIN VIEWS ---
+    const Dashboard = ({ userData, setView, handleSelectTest, allTests, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
-      const handleSelectTest = (testId) => {
-        const test = allTests.find(t => t.id === testId);
-        const progress = userData.progress?.[testId];
-        const answered = progress ? Object.keys(progress.answers || {}).length : 0;
-        if (progress && answered > 0 && answered < test.questions.length) {
-          setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice', shuffle: false } });
-          setView('quiz'); return;
-        }
-        showModal({
-          title: "Choose Your Mode",
-          children: (
-            <div className="space-y-4">
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-2 border-sky-300 transition"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-2 border-amber-300 transition"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
-              <CustomModeSelector onStart={(settings) => { setSelectedTest({ id: testId, settings }); setView('quiz'); hideModal(); }} />
-            </div>
-          ), onCancel: hideModal
-        });
-      };
-
       const handleAdminAccess = () => {
-          const pin = prompt("Please enter Parent PIN to access the Admin Panel:");
+          const pin = prompt("Please enter Parent PIN to access Admin Panel:");
           if (pin === (userData.parentPin || "1234")) setView('parentDashboard');
           else if (pin !== null) alert("Incorrect PIN.");
       };
 
       const handleDailyChallenge = () => {
+        // FIX 8: Exclude synthetic tests from random daily draw
         let allQuestions = allTests.filter(t => t.id !== 'daily-challenge' && t.id !== 'mistakes-test').flatMap(t => t.questions);
         if(allQuestions.length < 5) return showNotification({message: "Not enough questions for a challenge yet!", type: "error"});
         const dailyQs = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
         const challenge = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQs };
         updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'daily-challenge'), challenge] }));
-        setSelectedTest({ id: 'daily-challenge', settings: { mode: 'Practice', shuffle: true } });
-        setView('quiz');
+        handleSelectTest('daily-challenge', true); // Skip modal for daily challenge
       };
 
       const handlePracticeMistakes = () => {
@@ -606,11 +573,11 @@
         if (mistakes.length === 0) { showNotification({message: "No mistakes to practice. Great job!", type: "success"}); return; }
         const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes };
         updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] }));
-        setSelectedTest({ id: 'mistakes-test', settings: { mode: 'Practice', shuffle: true } });
-        setView('quiz');
+        handleSelectTest('mistakes-test', true); // Skip modal
       };
       
-      const hasMistakes = Object.values(userData.progress || {}).some(p => (p.score || 0) < Object.keys(p.answers || {}).length);
+      // FIX 13: Only count mistakes from COMPLETED tests to prevent cheating/abandoned tests flags
+      const hasMistakes = Object.values(userData.progress || {}).some(p => p.completedAt && (p.score || 0) < Object.keys(p.answers || {}).length);
 
       const level1Tests = allTests.filter(t => t.level === 1 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
       const level2Tests = allTests.filter(t => t.level === 2 && !t.isBoss && t.id !== 'daily-challenge' && t.id !== 'mistakes-test');
@@ -620,10 +587,18 @@
 
       const userLevel = userData.level || 1;
 
-      // FIX 9: Filter synthetic tests from "This Week"
-      const testsThisWeek = Object.entries(userData.progress || {})
+      // FIX 5: Weekly specific accuracy calculation
+      const testsThisWeekData = Object.entries(userData.progress || {})
         .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
-        .length;
+        .map(([id, p]) => {
+            const test = allTests.find(t => t.id === id);
+            return { score: p.score, total: test ? test.questions.length : 0 };
+        });
+      
+      const testsThisWeekCount = testsThisWeekData.length;
+      let thisWeekScore = 0; let thisWeekTotal = 0;
+      testsThisWeekData.forEach(t => { thisWeekScore += t.score; thisWeekTotal += t.total; });
+      const thisWeekAccuracy = thisWeekTotal > 0 ? Math.round((thisWeekScore / thisWeekTotal) * 100) : 0;
 
       const renderTestCard = (test) => {
           const progress = userData.progress?.[test.id];
@@ -667,7 +642,7 @@
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-3xl font-bold font-orbitron">Daily Challenge</h2>
                 <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
@@ -676,11 +651,13 @@
                 </div>
               </div>
               <p className="text-xl opacity-90 mb-8 font-semibold">A quick 5-question warmup!</p>
-              {userData.dailyChallenge?.completedToday ? (
-                <div className="w-full bg-white/20 text-center font-bold py-4 rounded-xl text-xl">Complete! See you tomorrow.</div>
-              ) : (
-                <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition">Start Challenge</button>
-              )}
+              <div className="mt-auto">
+                  {userData.dailyChallenge?.completedToday ? (
+                    <div className="w-full bg-white/20 text-center font-bold py-4 rounded-xl text-xl">Complete! See you tomorrow.</div>
+                  ) : (
+                    <button onClick={handleDailyChallenge} className="w-full bg-white text-purple-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition">Start Challenge</button>
+                  )}
+              </div>
             </div>
 
             <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
@@ -696,14 +673,13 @@
               <h2 className="text-3xl font-bold mb-2 font-orbitron">This Week</h2>
               <p className="opacity-90 text-lg mb-6">Your progress over the last 7 days.</p>
               <div className="flex justify-between items-center bg-white/20 p-4 rounded-xl mt-auto">
-                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Tests</p><p className="text-3xl font-black">{testsThisWeek}</p></div>
-                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Accuracy</p><p className="text-3xl font-black">{userData.totalAttempts > 0 ? Math.round((userData.totalCorrectAnswers / userData.totalAttempts) * 100) : 0}%</p></div>
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Tests</p><p className="text-3xl font-black">{testsThisWeekCount}</p></div>
+                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Accuracy</p><p className="text-3xl font-black">{thisWeekAccuracy}%</p></div>
               </div>
             </div>
           </div>
           
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
-              
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">1</div>
                   <div className="ml-8 md:ml-12">
@@ -794,6 +770,7 @@
       const [shuffledOrder, setShuffledOrder] = useState(null);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
+      // FIX 17: Boss tests have 20 mins
       const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
       
       const questionStartTimeRef = useRef(Date.now());
@@ -808,11 +785,11 @@
             const indices = Array.from(test.questions.keys());
             for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
             setShuffledOrder(indices);
-            updateUserData(prev => ({ progress: { ...prev.progress, [testId]: { ...existingProgress, shuffledOrder: indices, settings } } }), { event: { type: 'NO_OP' } }); 
+            updateUserData(prev => ({ progress: { ...prev.progress, [testId]: { ...(prev.progress?.[testId] || {}), shuffledOrder: indices, settings } } }), { event: { type: 'NO_OP' } }); 
         } else if (existingProgress.shuffledOrder) { 
             setShuffledOrder(existingProgress.shuffledOrder); 
         }
-      }, []);
+      }, []); // deps empty is safe because test and existingProgress are captured at mount
 
       useEffect(() => {
         if (!timerEnabled) return;
@@ -842,21 +819,16 @@
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
-      // FIX 5: Don't auto-submit free text
-      const handleAnswerSelect = (answer) => {
+      // Moved up so it can be called correctly
+      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
+      const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
+
+      const handleAnswerSelect = (answer, isTextarea = false) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
         
-        const currentQ = test.questions[originalIndex];
-        const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
-        const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
-        const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
-        const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
-        const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
-        const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
-        const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
-
-        if (showInstantFeedback && !submittedAnswers[currentQuestionIndex] && !isFreeResponse) {
+        // FIX 2: Only auto-submit if it's an MCQ click
+        if (showInstantFeedback && !submittedAnswers[currentQuestionIndex] && !isTextarea) {
             setTimeout(() => handleSubmitAnswer(answer), 0);
         }
       };
@@ -885,9 +857,6 @@
         saveProgress(false);
       };
 
-      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
-      const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
-      
       const handleFinish = () => {
         commitElapsed();
         if (testId === 'mistakes-test') {
@@ -907,7 +876,13 @@
         } else { commitElapsed(); saveProgress(false); setView('dashboard'); }
       }
 
-      const fetchHint = async () => { setHint("Try re-reading the question carefully and break it into steps."); };
+      const fetchHint = () => { 
+          setIsHintLoading(true);
+          setTimeout(() => {
+              setHint("Try re-reading the question carefully and break it into steps."); 
+              setIsHintLoading(false);
+          }, 600);
+      };
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       const currentQ = test.questions[originalIndex];
@@ -920,6 +895,7 @@
       const displayStem = isLabeled ? labeled.stem : (implicitOr ? implicitOr.stem : (currentQ.question || ''));
       const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
       const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
+      const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
 
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
@@ -929,7 +905,7 @@
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-sky-900 font-orbitron">{test.title}</h2>
               {streak >= 1 && <span className={`font-bold text-orange-500 ${streak >= 3 ? 'text-2xl animate-pulse' : 'text-lg'}`}>🔥 {streak} Streak!</span>}
-              {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 flex items-center gap-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{test.isBoss && <span className="text-xs uppercase bg-red-200 px-2 rounded font-bold">BOSS</span>}{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
+              {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 flex items-center gap-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{test.isBoss && <span className="text-xs uppercase bg-red-200 px-2 rounded font-bold text-red-800">BOSS TIMER</span>}{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
             </div>
             
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
@@ -941,23 +917,24 @@
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswerSelect(opt)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${userAnswers[originalIndex] === opt ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                <button key={i} onClick={() => handleAnswerSelect(opt, false)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${userAnswers[originalIndex] === opt ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
                   {opt}
                 </button>
               )) : renderAsLabeled ? labeled.options.map((o, idx) => {
                 if (!o) return null; const letter = String.fromCharCode(97 + idx); const checked = userAnswers[originalIndex] === letter;
                 return (
                   <label key={letter} className={`p-5 rounded-2xl border-2 flex items-center gap-4 text-xl font-bold transition-all cursor-pointer min-h-[70px] ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input type="radio" name={`q-${originalIndex}`} disabled={isSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter)} className="w-6 h-6 text-sky-600 focus:ring-sky-500 border-slate-300" />
+                    <input type="radio" name={`q-${originalIndex}`} disabled={isSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter, false)} className="w-6 h-6 text-sky-600 focus:ring-sky-500 border-slate-300" />
                     <span className="uppercase text-sky-700">{letter})</span><span>{o}</span>
                   </label>
                 );
               }) : (
-                <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value)} disabled={isSubmitted} className="w-full col-span-2 p-5 text-xl font-bold border-2 border-slate-200 rounded-2xl focus:border-sky-500 outline-none resize-none bg-white" placeholder="Type your answer here..." rows="4" />
+                <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, true)} disabled={isSubmitted} className="w-full col-span-2 p-5 text-xl font-bold border-2 border-slate-200 rounded-2xl focus:border-sky-500 outline-none resize-none bg-white" placeholder="Type your answer here..." rows="4" />
               )}
             </div>
 
-            {!isSubmitted && (
+            {/* FIX 2: Submit Button logic respects free text */}
+            {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-6">
                 <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
               </div>
@@ -965,7 +942,7 @@
 
             {showInstantFeedback && (
               <div className="my-4 text-center">
-                {hint ? <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-lg font-semibold">{hint}</div> : <button onClick={fetchHint} className="text-sky-600 font-bold hover:text-sky-800 text-lg">💡 Need a hint?</button>}
+                {hint ? <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-lg font-semibold">{hint}</div> : <button onClick={fetchHint} disabled={isHintLoading} className="text-sky-600 font-bold hover:text-sky-800 text-lg disabled:opacity-50">{isHintLoading ? '✨ Thinking...' : '💡 Need a hint?'}</button>}
               </div>
             )}
 
@@ -991,7 +968,7 @@
       );
     };
 
-    const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData }) => {
+    const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData, handleSelectTest }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
       const progress = userData.progress?.[testId];
@@ -1011,14 +988,15 @@
           else band = "Band 6";
       }
 
-      // FIX 4: Try Again button clears test progress
+      // FIX 4: "Try Again" triggers mode selector safely
       const handleTryAgain = () => {
           updateUserData(prev => {
               const newProgress = { ...prev.progress };
               delete newProgress[testId];
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
-          setView('quiz');
+          setView('dashboard');
+          setTimeout(() => handleSelectTest(testId), 50); // Give view time to reset then pop modal
       };
 
       return (
@@ -1104,14 +1082,21 @@
     };
 
     const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
-      // FIX 3: Complete data wipe
+      
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
-            message: "Are you sure? This deletes progress, XP, stats, and achievements but keeps tests.", 
+            message: "Are you sure? This deletes ALL progress, XP, stats, and achievements but keeps tests.", 
             confirmText: "Reset Everything", 
             onConfirm: () => {
-                const clean = { name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [], lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } };
+                // FIX 3: Complete object wiping
+                const clean = { 
+                    name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, 
+                    progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, 
+                    achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [], 
+                    lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, 
+                    noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } 
+                };
                 updateAllData(prev => ({ ...prev, userData: clean }));
                 showNotification({message: "Reset complete.", type: 'success'}); 
                 setTimeout(() => window.location.reload(), 1000);
@@ -1126,9 +1111,17 @@
             confirmText: "Delete",
             onConfirm: () => {
                 const tests = allTests.filter(x => x.id !== testId);
-                const newProgress = { ...userData.progress };
-                delete newProgress[testId];
-                updateAllData(prev => ({ ...prev, userData: { ...prev.userData, progress: newProgress }, allTests: tests }));
+                
+                updateAllData(prev => {
+                    const newProgress = { ...prev.userData.progress };
+                    delete newProgress[testId];
+                    // FIX 8: Persist deleted default test to prevent reappearance
+                    const newDeleted = prev.deletedDefaultTests || [];
+                    if (defaultTests.some(dt => dt.id === testId)) {
+                        newDeleted.push(testId);
+                    }
+                    return { ...prev, userData: { ...prev.userData, progress: newProgress }, allTests: tests, deletedDefaultTests: newDeleted };
+                });
                 showNotification({message:'Test Deleted', type:'success'});
             }
         });
@@ -1143,15 +1136,19 @@
                 const importedData = JSON.parse(e.target.result);
                 const testsToImport = Array.isArray(importedData) ? importedData : [importedData];
                 if (!testsToImport[0].id || !testsToImport[0].questions) throw new Error("Invalid format.");
-                const newAllTests = [...allTests];
-                let added = 0; let updated = 0;
-                testsToImport.forEach(newTest => {
-                    const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
-                    if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
-                    else { newAllTests.push(newTest); added++; }
+                
+                updateAllData(prev => {
+                    const newAllTests = [...prev.allTests];
+                    let added = 0; let updated = 0;
+                    testsToImport.forEach(newTest => {
+                        const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
+                        if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
+                        else { newAllTests.push(newTest); added++; }
+                    });
+                    setTimeout(() => showNotification({ message: `Success! Added ${added} new tests, updated ${updated}.`, type: 'success' }), 0);
+                    return { ...prev, allTests: newAllTests };
                 });
-                updateAllData(prev => ({ ...prev, allTests: newAllTests }));
-                showNotification({ message: `Success! Added ${added} new tests, updated ${updated}.`, type: 'success' });
+                
             } catch (error) { showNotification({ message: `Import failed: ${error.message}`, type: 'error' }); } 
             finally { event.target.value = ""; }
         };
@@ -1199,7 +1196,7 @@
 
     const CreateTestView = ({ setView, allTests, updateAllData, userData, showNotification }) => {
         const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); 
-        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]); // FIX 11: 5 options
+        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]);
         
         const handleSave = () => {
             if(!title) return showNotification({message: "Title required", type:"error"});
@@ -1243,12 +1240,14 @@
 
     const PerformanceDashboardView = ({ setView, userData, allTests }) => {
       const chartRef = useRef(null); const chartInstanceRef = useRef(null);
+      
+      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
+      
       useEffect(() => {
-        if (!chartRef.current || !window.Chart) return;
+        if (!chartRef.current || !window.Chart || completed.length === 0) return;
         const ctx = chartRef.current.getContext('2d');
         if (chartInstanceRef.current) chartInstanceRef.current.destroy();
         
-        const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
         const maths = completed.filter(t=>t.subject==='Maths').map(t=>(t.score/t.questions.length)*100);
         const english = completed.filter(t=>t.subject==='English').map(t=>(t.score/t.questions.length)*100);
         const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
@@ -1256,7 +1255,6 @@
         
         chartInstanceRef.current = new Chart(ctx, {
           type: 'line', 
-          // FIX 6: Point radius to show single items
           data: { 
               labels: Array.from({length: maxLength}, (_,i)=>`Attempt ${i+1}`), 
               datasets: [ 
@@ -1267,11 +1265,14 @@
           }, 
           options: { scales: { y: { beginAtZero: true, max: 100 } }, responsive: true }
         });
-      }, [userData, allTests]);
+      }, [userData, allTests, completed]);
+
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
-              <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100"><canvas ref={chartRef}></canvas></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Back</button></div>
+              <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
+                  {completed.length > 0 ? <canvas ref={chartRef}></canvas> : <p className="text-center font-bold text-slate-500 text-xl py-10">No data yet. Complete a test to see your progress!</p>}
+              </div>
           </div>
       );
     };
@@ -1347,7 +1348,6 @@
                                           <div className={`text-6xl mb-4 ${unl ? '' : 'opacity-50'}`}>{a.icon || '🏆'}</div>
                                           <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
-                                          {/* FIX 10: Progress tracker on locked badges */}
                                           {!unl && a.getProgress && (
                                               <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full">{a.getProgress(userData)}</div>
                                           )}
@@ -1397,7 +1397,6 @@
       
       const isInitialized = useRef(false);
 
-      // FIX 1: Notification Queue System
       const showNotification = useCallback(({ message, type = 'success' }) => {
         setNotificationQueue(prev => [...prev, { message, type, id: Date.now() + Math.random() }]);
       }, []);
@@ -1406,7 +1405,7 @@
         setNotificationQueue(prev => prev.filter(n => n.id !== idToRemove));
       }, []);
 
-      const hideModal = () => setModal({ show: false });
+      const hideModal = useCallback(() => setModal({ show: false }), []);
       
       const showModalWrapper = useCallback(({ title, message, onConfirm, onCancel, confirmText, children }) => {
         setModal({ 
@@ -1415,7 +1414,37 @@
           onCancel: onCancel ? () => { onCancel(); hideModal(); } : hideModal,
           confirmText, children
         });
-      }, []);
+      }, [hideModal]);
+
+      const handleSelectTest = useCallback((testId, skipModal = false) => {
+        if (!appData) return;
+        const test = appData.allTests.find(t => t.id === testId);
+        const progress = appData.userData.progress?.[testId];
+        const answered = progress ? Object.keys(progress.answers || {}).length : 0;
+        
+        if (progress && answered > 0 && answered < test.questions.length) {
+            setSelectedTest({ id: testId, settings: progress.settings || { mode: 'Practice', shuffle: false } });
+            setView('quiz'); 
+            return;
+        }
+
+        if (skipModal) {
+            setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: true } });
+            setView('quiz');
+            return;
+        }
+
+        showModalWrapper({
+          title: "Choose Your Mode",
+          children: (
+            <div className="space-y-4">
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-2 border-sky-300 transition"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-2 border-amber-300 transition"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
+              <CustomModeSelector onStart={(settings) => { setSelectedTest({ id: testId, settings }); setView('quiz'); hideModal(); }} />
+            </div>
+          ), onCancel: hideModal
+        });
+      }, [appData, showModalWrapper, hideModal]);
 
       useEffect(() => {
         if (isInitialized.current) return;
@@ -1427,14 +1456,16 @@
         if (!loadedData || !loadedData.userData) {
           loadedData = { 
             schemaVersion: 1,
-            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1 }, 
-            allTests: defaultTests 
+            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } }, 
+            allTests: defaultTests,
+            deletedDefaultTests: []
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
         } else {
             const existingIds = loadedData.allTests.map(t => t.id);
+            const deleted = loadedData.deletedDefaultTests || [];
             defaultTests.forEach(dt => { 
-                if (!existingIds.includes(dt.id)) loadedData.allTests.push(dt); 
+                if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(dt); 
             });
         }
         
@@ -1590,9 +1621,9 @@
       return (
         <div>
           {view === 'loading' && <LoadingSpinner message="Loading Portal System..." />}
-          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} setSelectedTest={setSelectedTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={showNotification} />}
+          {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} handleSelectTest={handleSelectTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={showNotification} />}
           {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModalWrapper} />}
-          {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} updateUserData={updateUserData} />}
+          {view === 'results' && <ResultsView userData={appData.userData} setView={setView} testDetails={selectedTest} allTests={appData.allTests} updateUserData={updateUserData} handleSelectTest={handleSelectTest} />}
           {view === 'admin' && <AdminView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showModal={showModalWrapper} showNotification={showNotification} />}
           {view === 'parentDashboard' && <ParentDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
           {view === 'createTest' && <CreateTestView userData={appData.userData} setView={setView} allTests={appData.allTests} updateAllData={updateAllData} showNotification={showNotification} />}
