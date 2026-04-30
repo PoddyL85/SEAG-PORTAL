@@ -393,7 +393,7 @@
       return s;
     };
     
-    const isAnswerCorrect = (question, userAnswer) => {
+    const isAnswerCorrectLegacy = (question, userAnswer) => {
       if (!question) return false;
       const correctAnswer = question.answer;
       const tags = question.tags || [];
