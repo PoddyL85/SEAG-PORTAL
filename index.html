@@ -4,16 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
+  
+  <!-- PWA Meta Tags & Inline Manifest -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#f0f9ff" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -44,7 +48,7 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
-    // --- Audio Engine (unchanged) ---
+    // --- Audio Engine ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
         try {
@@ -83,7 +87,7 @@
         } catch(e) { console.log("Audio not supported"); }
     };
 
-    // --- DATA BANK (unchanged content, we'll normalize on load) ---
+    // --- DATA BANK ---
     const defaultTests = [
       {
         id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
@@ -174,7 +178,7 @@
       }
     ];
 
-    // --- Achievements Data (unchanged) ---
+    // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -295,7 +299,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format & Parse Helpers (EXTENDED & NORMALIZATION) ---
+    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -350,7 +354,7 @@
     function detectPercentUnit(raw) { return /%|\bpercent\b|\bper\s*cent\b/.test(raw.toLowerCase()); }
     function stripPercentText(raw) { return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
     function unitStripForNumeric(raw) { if (raw == null) return ''; return String(raw).replace(/[£$€]/g, '').replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '').trim(); }
-
+    
     function normalizeNumericLike(raw) {
       if (raw == null) return { ok: false };
       let s = String(raw).trim();
@@ -387,6 +391,45 @@
       if (answer == null) return '';
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
+    };
+    
+    const isAnswerCorrect = (question, userAnswer) => {
+      if (!question) return false;
+      const correctAnswer = question.answer;
+      const tags = question.tags || [];
+      const qText = question.question || '';
+      
+      const labeled = extractLabeledOptionsFromPrompt(qText);
+      if (labeled && labeled.options?.length >= 2) {
+        const s = String(userAnswer ?? '').trim().toLowerCase();
+        const c = String(correctAnswer ?? '').trim().toLowerCase();
+        if (/^[a-z]$/.test(c)) return s === c;
+        if (/^[a-z]$/.test(s)) {
+          const idx = s.charCodeAt(0) - 97;
+          const chosen = labeled.options[idx]?.trim().toLowerCase();
+          return chosen && chosen === c;
+        }
+        return s === c;
+      }
+      
+      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions')) {
+        const sVal = unitStripForNumeric(userAnswer);
+        const cVal = unitStripForNumeric(correctAnswer);
+        if (compareNumericAnswers(sVal, cVal).equal) return true;
+      }
+      
+      const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
+      const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
+      if (sNorm.ok && cNorm.ok) {
+        if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
+      }
+      
+      const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
+      const normalizedUser = normalizeAnswer(userAnswer, tags);
+      if (normalizedCorrect === normalizedUser) return true;
+      const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
+      const looseUser = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedUser));
+      return looseCorrect === looseUser;
     };
 
     // --- NEW: Normalization helpers for questions & tests ---
@@ -446,51 +489,63 @@
       return t;
     }
 
-    // --- isAnswerCorrect: updated to use normalized question object ---
-    const isAnswerCorrect = (question, userAnswer) => {
+    // --- Passage helper: find passage text for a question (from inline PASSAGE:, explicit fields, or test.passages) ---
+    function getPassageForQuestion(q, test) {
+      if (!q) return null;
+      // 1) explicit field on question
+      if (q.passageText) return String(q.passageText);
+      if (q.passage) return String(q.passage);
+      if (q.relatedPassageId || q.passageId) {
+        const pid = q.relatedPassageId || q.passageId;
+        if (test && Array.isArray(test.passages)) {
+          const p = test.passages.find(x => x.id === pid || x.passageId === pid);
+          if (p) return (p.text || p.passage || p).toString();
+        }
+      }
+      // 2) inline PASSAGE: ... followed by newline(s)
+      const raw = String(q.question || '');
+      const inlineMatch = raw.match(/^PASSAGE:\s*(?:['"])?([\s\S]*?)(?:['"])?\s*\n+/i);
+      if (inlineMatch && inlineMatch[1]) return inlineMatch[1].trim();
+      // 3) inline PASSAGE: '...' where passage is quoted (same line)
+      const quotedMatch = raw.match(/PASSAGE:\s*['"]([^'"]+)['"]/i);
+      if (quotedMatch && quotedMatch[1]) return quotedMatch[1].trim();
+      return null;
+    }
+
+    // --- isAnswerCorrect (updated to use normalized fields) ---
+    const isAnswerCorrectNormalized = (question, userAnswer) => {
       if (!question) return false;
-      // ensure normalized
       normalizeQuestion(question);
       const tags = question.tags || [];
-      // MCQ handling: compare by option id primarily
       if (question._isMCQ) {
         if (userAnswer == null || userAnswer === '') return false;
         const u = String(userAnswer).trim();
-        // if user passed index like '0' or numeric, convert to letter
         if (/^\d+$/.test(u)) {
           const idx = Number(u);
           const id = ALPHABET[idx] || String(idx);
           return question._correctOptionId ? id === question._correctOptionId : false;
         }
-        // if user passed single-letter like 'a' or 'D'
         if (/^[A-Z]$/i.test(u)) {
           return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
         }
-        // if user passed an option id directly (like 'A', 'B1') check
         if (question.options.some(o => o.id === u)) {
           return question._correctOptionId ? u === question._correctOptionId : false;
         }
-        // if user passed the option text, compare normalized texts
         const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
         if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
         return false;
       }
-
-      // Non-MCQ: numeric comparators
+      // numeric and text fallback
       if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number') || tags.includes('measures') || tags.includes('decimals')) {
         const sVal = unitStripForNumeric(userAnswer);
         const cVal = unitStripForNumeric(question.answer);
         if (compareNumericAnswers(sVal, cVal).equal) return true;
       }
-
-      // Attempt numeric equality for free response too
       const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
       const cNorm = normalizeNumericLike(unitStripForNumeric(question.answer));
       if (sNorm.ok && cNorm.ok) {
         if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
       }
-
-      // fallback text normalization
       const normalizedCorrect = normalizeAnswer(question.answer, tags);
       const normalizedUser = normalizeAnswer(userAnswer, tags);
       if (normalizedCorrect === normalizedUser) return true;
@@ -499,7 +554,10 @@
       return looseCorrect === looseUser;
     };
 
-    // --- Sub-Components (unchanged) ---
+    // Keep backward-compatible name used elsewhere
+    const isAnswerCorrect = isAnswerCorrectNormalized;
+
+    // --- Sub-Components ---
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
@@ -610,7 +668,7 @@
         );
     }
 
-    // --- MAIN VIEWS (Dashboard unchanged except we normalize tests at import) ---
+    // --- MAIN VIEWS ---
     const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
@@ -829,7 +887,7 @@
       );
     };
 
-    // --- QuizView: updated to use normalized options/IDs ---
+    // --- QuizView: updated with passage modal ---
     const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, showNotification, showModal }) => {
       const { id: testId, settings } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -843,6 +901,9 @@
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
+
+      // NEW: passage popup state
+      const [showPassage, setShowPassage] = useState(false);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
@@ -958,6 +1019,9 @@
       normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       
+      // NEW: find passage text (if any) for this question
+      const passageText = getPassageForQuestion(currentQ, test);
+
       // for rendering: use normalized options
       const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
       const isFreeResponse = !optObjs;
@@ -975,8 +1039,17 @@
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
             
             <div className="mb-6 bg-sky-50 rounded-2xl p-6 border border-sky-100 shadow-sm min-h-[8rem]">
-              <p className="text-slate-500 font-bold mb-2 uppercase tracking-wide text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-              <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{currentQ.question}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-slate-500 font-bold mb-2 uppercase tracking-wide text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
+                  <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{currentQ.question}</p>
+                </div>
+                {passageText && (
+                  <div className="ml-4">
+                    <button onClick={() => setShowPassage(true)} className="bg-white border-2 border-slate-200 px-4 py-2 rounded-xl font-bold hover:bg-slate-50">Read passage</button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -1025,11 +1098,28 @@
               )}
             </div>
           </div>
+
+          {/* Passage Modal */}
+          {showPassage && (
+            <div className="modal-backdrop">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl text-left border-4 border-sky-100 max-h-[80vh] overflow-auto">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-2xl font-bold font-orbitron text-sky-900">Passage</h3>
+                  <button onClick={() => setShowPassage(false)} className="text-sky-600 font-bold hover:text-sky-800">✕</button>
+                </div>
+                <div className="prose prose-lg text-slate-800 whitespace-pre-wrap">
+                  {passageText}
+                </div>
+                <div className="flex justify-end mt-6">
+                  <button onClick={() => setShowPassage(false)} className="bg-slate-100 px-4 py-2 rounded-xl font-bold hover:bg-slate-200">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
 
-    // --- ResultsView: show option text when answers stored as IDs ---
     const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData, handleSelectTest }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -1081,22 +1171,13 @@
             <div className="space-y-4 text-left mt-8 relative z-10">
                 {(progress.shuffledOrder || Array.from(test.questions.keys())).map((originalIndex, displayIndex) => {
                     const actualQuestion = test.questions[originalIndex];
-                    normalizeQuestion(actualQuestion);
-                    const userAnswerRaw = progress.answers[originalIndex];
-                    const isCorr = isAnswerCorrect(actualQuestion, userAnswerRaw);
-                    // display user answer text
-                    let userAnswerDisplay = userAnswerRaw;
-                    if (actualQuestion._isMCQ && userAnswerRaw) {
-                      const found = actualQuestion.options.find(o => o.id === userAnswerRaw || normalizeAnswer(o.text) === normalizeAnswer(userAnswerRaw));
-                      userAnswerDisplay = found ? `${found.id}) ${found.text}` : userAnswerRaw;
-                    }
-                    // correct display
-                    let correctDisplay = actualQuestion._isMCQ && actualQuestion._correctOptionId ? `${actualQuestion._correctOptionId}) ${actualQuestion.options.find(o=>o.id===actualQuestion._correctOptionId)?.text || actualQuestion.answer}` : actualQuestion.answer;
+                    const userAnswer = progress.answers[originalIndex];
+                    const isCorr = isAnswerCorrect(actualQuestion, userAnswer);
                     return (
                         <div key={displayIndex} className={`p-5 rounded-2xl border-l-8 shadow-sm ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
                             <p className="font-bold text-slate-800 mb-2">{displayIndex+1}. {actualQuestion.question}</p>
-                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswerDisplay || 'Blank'}</p>
-                            {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {correctDisplay}</p>}
+                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswer || 'Blank'}</p>
+                            {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {actualQuestion.answer}</p>}
                         </div>
                     );
                 })}
@@ -1111,8 +1192,6 @@
       );
     };
 
-    // --- ParentDashboardView, AdminView, CreateTestView, PerformanceDashboardView, SettingsView, AchievementsView ---
-    // Only change: AdminView import handler must normalize imported tests before storing.
     const ParentDashboardView = ({ userData, setView, allTests, updateAllData }) => {
         const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt, mode: p.settings?.mode} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
         
@@ -1471,7 +1550,6 @@
       );
     };
 
-    // --- App (initialization normalizes tests) ---
     function App() {
       const [appData, setAppData] = useState(null);
       const [view, setView] = useState('loading');
@@ -1546,7 +1624,6 @@
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
         } else {
-            // ensure default tests are present and normalize everything
             const existingIds = loadedData.allTests.map(t => t.id);
             const deleted = loadedData.deletedDefaultTests || [];
             defaultTests.forEach(dt => { 
