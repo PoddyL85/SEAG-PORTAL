@@ -106,97 +106,6 @@
         } catch(e) { console.log("Audio not supported"); }
     };
 
-    // ---------- defaultTests (full test bank re-inserted) ----------
-    const defaultTests = [
-      {
-        id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
-        questions: [
-          { question: "What is the value of the 7 in the number 4,702?", options: ["7", "70", "700", "7000"], answer: "700", tags: ["number", "place value"] },
-          { question: "What is 45 + 37?", options: ["72", "82", "92", "73"], answer: "82", tags: ["number", "addition"] },
-          { question: "Subtract 18 from 50.", options: ["22", "32", "42", "28"], answer: "32", tags: ["number", "subtraction"] },
-          { question: "What is 6 multiplied by 8?", options: ["42", "46", "48", "54"], answer: "48", tags: ["number", "multiplication"] },
-          { question: "Divide 42 by 7.", options: ["5", "6", "7", "8"], answer: "6", tags: ["number", "division"] },
-          { question: "Which of these numbers is even?", options: ["13", "27", "44", "81"], answer: "44", tags: ["number", "properties"] },
-          { question: "What is the next number in this sequence: 5, 10, 15, 20, ___?", options: ["21", "25", "30", "35"], answer: "25", tags: ["number", "sequences"] },
-          { question: "Round 64 to the nearest 10.", options: ["60", "65", "70", "100"], answer: "60", tags: ["number", "rounding"] },
-          { question: "Write the number 'two thousand, four hundred and ten' in figures.", options: ["2041", "2401", "2410", "2014"], answer: "2410", tags: ["number", "place value"] },
-          { question: "What is half of 84?", options: ["40", "42", "44", "48"], answer: "42", tags: ["number", "halving"] },
-          { question: "What is double 36?", options: ["62", "66", "72", "76"], answer: "72", tags: ["number", "doubling"] },
-          { question: "Find the sum of 120 and 85.", options: ["195", "205", "215", "105"], answer: "205", tags: ["number", "addition"] },
-          { question: "What is 100 minus 43?", options: ["57", "67", "53", "63"], answer: "57", tags: ["number", "subtraction"] },
-          { question: "Which number is a multiple of 5?", options: ["12", "19", "25", "31"], answer: "25", tags: ["number", "multiples"] },
-          { question: "What is 9 × 4?", options: ["32", "36", "40", "45"], answer: "36", tags: ["number", "multiplication"] },
-          { question: "Share 24 sweets equally among 4 children. How many does each get?", options: ["4", "5", "6", "8"], answer: "6", tags: ["number", "division"] },
-          { question: "Identify the odd number.", options: ["16", "22", "38", "50"], answer: "16", tags: ["number", "properties"] },
-          { question: "Complete the sequence: 12, 10, 8, 6, ___", options: ["2", "3", "4", "5"], answer: "4", tags: ["number", "sequences"] },
-          { question: "Round 187 to the nearest 100.", options: ["100", "150", "180", "200"], answer: "200", tags: ["number", "rounding"] },
-          { question: "Which number is larger: 3,099 or 3,101?", options: ["3,099", "3,101", "They are equal", "Cannot tell"], answer: "3,101", tags: ["number", "place value"] },
-          { question: "What is 15 + 15 + 15?", options: ["30", "45", "50", "60"], answer: "45", tags: ["number", "addition"] },
-          { question: "If I have 50p and spend 22p, how much is left?", options: ["28p", "38p", "18p", "32p"], answer: "28p", tags: ["number", "subtraction"] },
-          { question: "What is 7 multiplied by 0?", options: ["0", "1", "7", "70"], answer: "0", tags: ["number", "multiplication"] },
-          { question: "How many tens are in 450?", options: ["4", "5", "45", "50"], answer: "45", tags: ["number", "place value"] },
-          { question: "What is the difference between 30 and 14?", options: ["14", "16", "24", "44"], answer: "16", tags: ["number", "subtraction"] }
-        ]
-      },
-      {
-        id: "l2-english-punctuation-1", title: "Level 2: Punctuation Precision", subject: "English", level: 2, childStage: "Mid P6", purpose: "Development",
-        questions: [
-          { question: "Which sentence uses an apostrophe correctly?", options: ["The cats' bowl was empty.", "The cat's bowl was empty.", "The cats bowl' was empty.", "The cats bowl was' empty."], answer: "The cat's bowl was empty.", tags: ["punctuation", "apostrophes"] },
-          { question: "Choose the correctly punctuated sentence.", options: ["I need apples milk and bread.", "I need apples, milk, and bread.", "I need, apples, milk and bread.", "I need apples, milk and bread."], answer: "I need apples, milk and bread.", tags: ["punctuation", "commas"] },
-          { question: "Where should the speech marks go? Hello, said the teacher.", options: ["\"Hello, said\" the teacher.", "\"Hello,\" said the teacher.", "Hello, \"said the teacher.\"", "\"Hello, said the teacher.\""], answer: "\"Hello,\" said the teacher.", tags: ["punctuation", "speech marks"] },
-          { question: "Which word needs a capital letter? we went to belfast on tuesday.", options: ["we", "went", "belfast", "tuesday", "We, Belfast, Tuesday"], answer: "We, Belfast, Tuesday", tags: ["punctuation", "capitalisation"] },
-          { question: "Identify the correct contraction for 'do not'.", options: ["don't", "do'nt", "dont'", "d'not"], answer: "don't", tags: ["punctuation", "contractions"] },
-          { question: "Which sentence uses a question mark correctly?", options: ["I wonder where he went?", "Where are you going?", "She asked what time it was?", "He shouted, look out?"], answer: "Where are you going?", tags: ["punctuation", "question marks"] },
-          { question: "What punctuation is missing? The boys coat was blue.", options: ["Comma", "Full stop", "Apostrophe", "Question mark"], answer: "Apostrophe", tags: ["punctuation", "apostrophes"] },
-          { question: "Choose the sentence that uses commas correctly to separate clauses.", options: ["When it rains I use an umbrella.", "When it rains, I use an umbrella.", "When, it rains I use an umbrella.", "When it rains I use, an umbrella."], answer: "When it rains, I use an umbrella.", tags: ["punctuation", "commas"] },
-          { question: "Which of these ends with an exclamation mark?", options: ["How old are you", "What a beautiful day", "I like to read", "She went home"], answer: "What a beautiful day", tags: ["punctuation", "exclamation marks"] },
-          { question: "Find the correctly punctuated sentence.", options: ["Its raining today.", "It's raining today.", "Its' raining today.", "I'ts raining today."], answer: "It's raining today.", tags: ["punctuation", "apostrophes"] },
-          { question: "Which sentence correctly shows plural possession?", options: ["The boys' bikes were red.", "The boy's bikes were red.", "The boys bike's were red.", "The boys bikes' were red."], answer: "The boys' bikes were red.", tags: ["punctuation", "apostrophes"] },
-          { question: "Where is the colon needed? To make the cake you need flour, sugar and eggs.", options: ["After 'cake'", "After 'need'", "After 'flour'", "No colon needed"], answer: "After 'need'", tags: ["punctuation", "colons"] },
-          { question: "Choose the correct sentence.", options: ["\"Stop!\" she shouted.", "\"Stop\"! she shouted.", "Stop! \"she shouted.\"", "\"Stop! she shouted.\""], answer: "\"Stop!\" she shouted.", tags: ["punctuation", "speech marks"] },
-          { question: "Which sentence uses its/it's correctly?", options: ["The dog chased it's tail.", "Its time to go home.", "The bird flapped its wings.", "Look at its' feathers."], answer: "The bird flapped its wings.", tags: ["punctuation", "apostrophes"] },
-          { question: "Identify the sentence with correct list punctuation.", options: ["My hobbies are swimming, reading and, running.", "My hobbies are swimming, reading, and running.", "My hobbies are, swimming, reading and running.", "My hobbies are swimming, reading and running."], answer: "My hobbies are swimming, reading and running.", tags: ["punctuation", "commas"] },
-          { question: "What is missing here: Wow That was amazing", options: ["Two full stops", "An exclamation mark and a full stop", "A question mark and a full stop", "Two commas"], answer: "An exclamation mark and a full stop", tags: ["punctuation", "exclamation marks"] },
-          { question: "Which word is a contraction of 'they are'?", options: ["their", "there", "they're", "theyr'e"], answer: "they're", tags: ["punctuation", "contractions"] },
-          { question: "Choose the correctly punctuated sentence.", options: ["On Monday we will visit Granny.", "On Monday, we will visit Granny.", "On Monday we, will visit Granny.", "On, Monday we will visit Granny."], answer: "On Monday, we will visit Granny.", tags: ["punctuation", "commas"] },
-          { question: "Which of these requires a capital letter?", options: ["summer", "hospital", "january", "river"], answer: "january", tags: ["punctuation", "capitalisation"] },
-          { question: "How should this end? 'Can you pass the salt'", options: [".", "!", "?", ","], answer: "?", tags: ["punctuation", "question marks"] },
-          { question: "Select the correctly punctuated speech.", options: ["He whispered \"be quiet.\"", "He whispered, \"Be quiet.\"", "\"He whispered,\" Be quiet.", "\"Be quiet\", he whispered."], answer: "He whispered, \"Be quiet.\"", tags: ["punctuation", "speech marks"] },
-          { question: "Which of the following is correct?", options: ["Lets go to the park.", "Let's go to the park.", "Lets' go to the park.", "L'ets go to the park."], answer: "Let's go to the park.", tags: ["punctuation", "apostrophes"] },
-          { question: "Identify the sentence needing a comma.", options: ["I like cats and dogs.", "Although it was cold we went out.", "The sky is blue.", "He ran fast."], answer: "Although it was cold we went out.", tags: ["punctuation", "commas"] },
-          { question: "Where should the apostrophe go in 'couldnt'?", options: ["could'nt", "c'ouldnt", "couldn't", "couldnt'"], answer: "couldn't", tags: ["punctuation", "contractions"] },
-          { question: "Which sentence is fully correct?", options: ["The childrens toys were lost.", "The children's toys were lost.", "The childrens' toys were lost.", "The children toy's were lost."], answer: "The children's toys were lost.", tags: ["punctuation", "apostrophes"] }
-        ]
-      },
-      {
-        id: "seag-full-mock-1", title: "Level 3: Full SEAG Mock Paper 1", subject: "Mixed", level: 3, childStage: "P7 Exam Prep", purpose: "Exam standard",
-        questions: [
-            { question: "PASSAGE: 'The lighthouse keeper, Old Finn, had watched over the rocky coast for forty years. Every evening, without fail, he climbed the spiral staircase and lit the great lamp.'\nHow long had Finn been the lighthouse keeper?", options: ["Ten years", "Twenty years", "Thirty years", "Forty years", "Fifty years"], answer: "Forty years", tags: ["comprehension", "retrieval"] },
-            { question: "Choose the correctly spelled word.", options: ["recieve", "receive", "receve", "receeve", "recieve"], answer: "receive", tags: ["spelling"] },
-            { question: "Which sentence uses a relative clause correctly?", options: ["The boy, which won the race, was happy.", "The boy, who won the race, was happy.", "The boy, whom won the race, was happy.", "The boy, whose won the race, was happy.", "The boy, that won the race, was happy."], answer: "The boy, who won the race, was happy.", tags: ["grammar", "relative clauses"] },
-            { question: "Which sentence uses a colon correctly?", options: ["She needed: milk, eggs and bread.", "She needed the following: milk, eggs and bread.", "She: needed milk, eggs and bread.", "She needed milk: eggs and bread.", "She needed milk, eggs: and bread."], answer: "She needed the following: milk, eggs and bread.", tags: ["punctuation", "colons"] },
-            { question: "Write the plural of 'half'.", answer: "halves", tags: ["grammar", "plurals"] },
-            { question: "What is 4,506 ÷ 6?", options: ["650", "701", "750", "751", "760"], answer: "751", tags: ["number", "division"] },
-            { question: "A shop sells apples for 35p each. How much do 12 apples cost?", options: ["£3.50", "£3.80", "£4.00", "£4.20", "£4.50"], answer: "£4.20", tags: ["money", "multiplication"] },
-            { question: "A rectangle has a length of 13 cm and a width of 7 cm. What is its perimeter?", options: ["20 cm", "40 cm", "91 cm", "91 cm²", "40 cm²"], answer: "40 cm", tags: ["geometry", "perimeter"] },
-            { question: "What is 15% of 240?", options: ["24", "30", "36", "40", "48"], answer: "36", tags: ["percentages"] },
-            { question: "A bag has 4 red, 6 blue and 10 green counters. What is the probability of picking a blue counter?", options: ["1/5", "3/10", "2/5", "1/2", "3/5"], answer: "3/10", tags: ["probability", "fractions"] },
-            { question: "A rectangle has an area of 84 cm² and a length of 12 cm. What is its width?", answer: "7 cm", tags: ["geometry", "area"] },
-            { question: "What is 3.75 × 4?", answer: "15", tags: ["decimals", "multiplication"] }
-        ]
-      },
-      {
-id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3, isBoss: true, childStage: "Advanced P7", purpose: "Elite Challenge",
-        questions: [
-            { question: "A train leaves Belfast at 14:35 and arrives in Dublin 2 hours and 18 minutes later. It is delayed by 14 minutes. What time does it arrive?", options: ["16:53", "17:07", "16:49", "17:15", "17:00"], answer: "17:07", tags: ["time", "addition"] },
-            { question: "A rectangular garden has a perimeter of 48m. The length is 3 times the width. What is the area of the garden?", options: ["108 m²", "144 m²", "72 m²", "96 m²", "120 m²"], answer: "108 m²", tags: ["geometry", "algebra"] },
-            { question: "If 3x + 12 = 45, what is the value of 2x - 5?", options: ["17", "11", "22", "19", "25"], answer: "17", tags: ["algebra"] },
-            { question: "A jacket is reduced by 30% in a sale. The sale price is £42. What was the original price?", options: ["£54.60", "£60.00", "£72.00", "£65.00", "£50.00"], answer: "£60.00", tags: ["percentages", "reverse"] },
-            { question: "Identify the word class of the capitalized word: The boy ran FAST down the street.", options: ["Noun", "Adjective", "Verb", "Adverb", "Preposition"], answer: "Adverb", tags: ["grammar", "word class"] }
-        ]
-      }
-    ];
-
     // ---------- achievementsList (full) ----------
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
@@ -562,7 +471,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
       if (!current) return null;
       const bgColor = current.type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
       return (
-        <div className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
+        <div className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition transform ${bgColor}`}>
           {current.message}
         </div>
       );
@@ -821,7 +730,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                     <p className="text-lg text-slate-500 font-semibold mb-6">Early P6 • Shorter, topic-focused questions.</p>
                     {level1Tests.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level1Tests.map(renderTestCard)}</div>
-                    ) : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>}
+                    ) : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet. Import tests via Admin → Import JSON.</p></div>}
                   </div>
               </div>
 
@@ -831,7 +740,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                     <h2 className={`text-3xl font-bold mb-2 font-orbitron ${canAccessLevel2 ? 'text-amber-700' : 'text-slate-400'}`}>Level 2: Skill Development</h2>
                     <p className="text-lg text-slate-500 font-semibold mb-6">Mid P6 • Mixed curriculum & 5-option MCQs.</p>
                     {canAccessLevel2 ? (
-                    level2Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level2Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
+                    level2Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level2Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet. Import tests via Admin → Import JSON.</p></div>
                     ) : (
                     <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 2 to unlock these challenges!</p></div>
                     )}
@@ -844,7 +753,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                     <h2 className={`text-3xl font-bold mb-2 font-orbitron ${canAccessLevel3 ? 'text-red-700' : 'text-slate-400'}`}>Level 3: Exam Standard</h2>
                     <p className="text-lg text-slate-500 font-semibold mb-6">End P6 / P7 • Full SEAG timing & mock papers.</p>
                     {canAccessLevel3 ? (
-                    level3Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level3Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet.</p></div>
+                    level3Tests.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{level3Tests.map(renderTestCard)}</div> : <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl text-center"><p className="text-slate-500 font-bold">No tests loaded yet. Import tests via Admin → Import JSON.</p></div>
                     ) : (
                     <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-3xl text-center opacity-60"><p className="text-slate-500 font-bold text-xl">Reach Level 3 to unlock mock exams!</p></div>
                     )}
@@ -910,7 +819,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
       const [showPassage, setShowPassage] = useState(false);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer) || settings.mode === 'Speed';
-      const timeLimitMsTotal = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0;
+      const timeLimitMsTotal = settings.mode === 'Test' ? (test && test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0;
       const perQuestionTimeMs = settings.mode === 'Speed' ? ((settings.perQuestionTime || 60) * 1000) : 0;
 
       const questionStartTimeRef = useRef(Date.now());
@@ -921,6 +830,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
 
       // shuffle handling
       useEffect(() => {
+        if (!test) return;
         if (settings.shuffle && !existingProgress.shuffledOrder) {
             const indices = Array.from(Array(test.questions.length).keys());
             for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
@@ -929,7 +839,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
         } else if (existingProgress.shuffledOrder) {
             setShuffledOrder(existingProgress.shuffledOrder);
         }
-      }, []);
+      }, [test]);
 
       // Timer handling (supports total test timer and per-question Speed mode)
       useEffect(() => {
@@ -980,7 +890,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
-      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); questionStartTimeRef.current = Date.now(); saveProgress(false, idx); } };
+      const navigateToQuestion = (idx) => { if (!test) return; if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); questionStartTimeRef.current = Date.now(); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
       const handleAnswerSelect = (answer, isTextarea = false) => {
@@ -993,6 +903,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
       };
 
       const handleSubmitAnswer = (ansOverride) => {
+        if (!test) return;
         const answer = typeof ansOverride !== 'undefined' ? ansOverride : userAnswers[originalIndex];
         if (answer === undefined || answer === null) return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
@@ -1267,7 +1178,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                 <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Current Level</p><p className="text-5xl font-black text-amber-500">{userData.level || 1}</p></div>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
+            <div className="bg-white rounded-3xl p-8 mb-8 shadow-md border-2 border-slate-100">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-sky-900 font-orbitron">Recent Test History</h2>
                   <div className="flex gap-3">
@@ -1278,7 +1189,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                 {completedTests.length > 0 ? (
                     <div className="space-y-4">
                     {completedTests.slice(0, 10).map(t => (
-                    <div key={t.id + t.date} className="flex justify-between items-center bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                    <div key={t.id + t.date} className="flex justify-between items-center bg-slate-50 p-5 rounded-2xl border border-slate-200 gap-4">
                     <div><p className="font-bold text-lg text-slate-800">{t.title}</p><p className="text-sm text-slate-500 font-semibold">{t.date ? new Date(t.date).toLocaleDateString() : 'Unknown'} • {t.mode || 'Unknown Mode'}</p></div>
                     <div className="font-black text-2xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
                     </div>
@@ -1324,11 +1235,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                 updateAllData(prev => {
                     const newProgress = { ...prev.userData.progress };
                     delete newProgress[testId];
-                    const newDeleted = prev.deletedDefaultTests || [];
-                    if (defaultTests.some(dt => dt.id === testId)) {
-                    newDeleted.push(testId);
-                    }
-                    return { ...prev, userData: { ...prev.userData, progress: newProgress }, allTests: tests, deletedDefaultTests: newDeleted };
+                    return { ...prev, userData: { ...prev.userData, progress: newProgress }, allTests: tests };
                 });
                 showNotification({message:'Test Deleted', type:'success'});
             }
@@ -1379,7 +1286,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
               <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Data Import & Reset</h2>
               <div className="flex flex-wrap gap-4">
                 <input type="file" accept=".json" id="import-test-pack" className="hidden" onChange={handleImportTestPacks} />
-                <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg">📥 Import JSON Tests</label>
+                <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl cursor-pointer hover:bg-indigo-500 shadow-md transition text-lg">📥 Import JSON Tests</label>
                 <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-400 text-lg shadow-md transition">⚠️ Reset All Player Data</button>
               </div>
           </div>
@@ -1396,6 +1303,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
                   <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-50 transition">Delete</button>
                 </div>
               ))}
+              {allTests.length === 0 && <div className="text-center p-8 text-slate-500 font-bold">No tests imported yet. Use "Import JSON Tests" above to add your test packs.</div>}
             </div>
           </div>
         </div>
@@ -1714,6 +1622,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
       const handleSelectTest = useCallback((testId, skipModal = false) => {
         if (!appData) return;
         const test = appData.allTests.find(t => t.id === testId);
+        if (!test) { showNotification({ message: 'Test not found. Import it via Admin → Import JSON.', type: 'error' }); return; }
         const progress = appData.userData.progress?.[testId];
         const answered = progress ? Object.keys(progress.answers || {}).length : 0;
 
@@ -1737,7 +1646,7 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
             </div>
           ), onCancel: hideModal
         });
-      }, [appData, showModalWrapper, hideModal]);
+      }, [appData, showModalWrapper, hideModal, showNotification]);
 
       useEffect(() => {
         if (isInitialized.current) return;
@@ -1751,16 +1660,12 @@ id: "boss-test-1", title: "🔥 SEAG Boss Challenge", subject: "Mixed", level: 3
           loadedData = {
             schemaVersion: 1,
             userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] }, stars: 0, dyslexiaFriendly: false, dyslexiaPaper: 'default' },
-            allTests: (defaultTests && defaultTests.length > 0 ? defaultTests.map(normalizeTestPack) : []),
+            allTests: [], // <-- no embedded tests: empty until import
             deletedDefaultTests: []
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
         } else {
-            const existingIds = (loadedData.allTests || []).map(t => t.id);
-            const deleted = loadedData.deletedDefaultTests || [];
-            (defaultTests || []).forEach(dt => {
-                if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(dt);
-            });
+            // ensure tests are normalized and keep previously imported tests
             loadedData.allTests = (loadedData.allTests || []).map(normalizeTestPack);
             // upgrade plain PIN to hashed form if needed
             if (loadedData.userData && loadedData.userData.parentPin && !isHashedPin(loadedData.userData.parentPin)) {
