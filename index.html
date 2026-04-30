@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -23,6 +24,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
   <style>
     body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; color: #0f172a; -webkit-tap-highlight-color: transparent; }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
@@ -40,10 +42,12 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
     function safeSetLocalStorage(key, value) {
       try { localStorage.setItem(key, value); return true; } 
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
+
     // --- Audio Engine ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
@@ -82,6 +86,7 @@
             }
         } catch(e) { console.log("Audio not supported"); }
     };
+
     // --- DATA BANK ---
     const defaultTests = [
       {
@@ -172,6 +177,7 @@
         ]
       }
     ];
+
     // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
@@ -202,11 +208,13 @@
         { id: 'dedicatedDabbler', title: 'Dedicated Dabbler', description: 'Complete the Daily Challenge 7 days in a row.', category: 'Longer-Term', icon: '📆', getProgress: (ud) => `${Math.min(ud.dailyChallengeStreak || 0, 7)} / 7` },
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃', getProgress: (ud) => `${Math.min((ud.fullTestsCompleted||[]).length, 3)} / 3` },
     ];
+
     function xpForAchievementId(id) {
       const ach = achievementsList.find(a => a.id === id);
       if (!ach) return 0;
       switch (ach.category) { case 'Quick Wins': return 3; case 'Medium-Term': return 5; case 'Longer-Term': return 10; default: return 0; }
     }
+
     function isoWeekString(d) {
       const date = new Date(d);
       const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -215,6 +223,7 @@
       const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
       return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
     }
+
     function unlockAchievements(userData, event) {
       userData.achievements = userData.achievements || {};
       userData.correctAnswersByTag = userData.correctAnswersByTag || {};
@@ -289,6 +298,7 @@
       }
       return { updated: userData, unlockedIds: unlockedNow };
     }
+
     // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
@@ -298,6 +308,7 @@
       const s = sec % 60;
       return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
     }
+
     function extractLabeledOptionsFromPrompt(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
@@ -319,6 +330,7 @@
       if (options.filter(Boolean).length >= 2) return { stem: stem || s, options, labels };
       return null;
     }
+
     function tryParseTwoOptionsFromOr(prompt) {
       if (!prompt) return null;
       const s = String(prompt).replace(/\s+/g, ' ').trim();
@@ -333,13 +345,14 @@
       if (left && left.length >= 2 && right && right.length >= 2) return { stem, options: [left, right] };
       return null;
     }
+
     const unicodeFractionMap = new Map([['½','1/2'],['⅓','1/3'],['⅔','2/3'],['¼','1/4'],['¾','3/4'],['⅕','1/5'],['⅖','2/5'],['⅗','3/5'],['⅘','4/5'],['⅙','1/6'],['⅚','5/6'],['⅛','1/8'],['⅜','3/8'],['⅝','5/8'],['⅞','7/8']]);
     function replaceUnicodeFractions(s) { let out = s; unicodeFractionMap.forEach((ascii, uni) => { out = out.replaceAll(uni, ascii); }); return out; }
     function normalizeDecimalSyntax(s) { let t = s.trim(); if (/\d/.test(t) && (t.match(/,/g)?.length === 1) && !t.includes('.')) { t = t.replace(',', '.'); } return t.replace(/(^|\s)\.(\d)/g, '$10.$2'); }
     function parseAsciiFraction(frac) { const m = frac.trim().match(/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/); if (!m) return null; const num = parseFloat(m[1]); const den = parseFloat(m[2]); if (!isFinite(num) || !isFinite(den) || den === 0) return null; return num / den; }
     function parseMixedFraction(s) { const m = s.trim().match(/^([+-]?\d+)\s+(\d+)\s*\/\s*(\d+)$/); if (!m) return null; const w = parseFloat(m[1]); const n = parseFloat(m[2]); const d = parseFloat(m[3]); if (!isFinite(w) || !isFinite(n) || !isFinite(d) || d === 0) return null; return w + (w < 0 ? -1 : 1) * (n / d); }
-    function detectPercentUnit(raw) { if (!raw) return false; return /%|\bpercent\b|\bper\s*cent\b/.test(String(raw).toLowerCase()); }
-    function stripPercentText(raw) { if (!raw) return ''; return String(raw).replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
+    function detectPercentUnit(raw) { return /%|\bpercent\b|\bper\s*cent\b/.test(raw.toLowerCase()); }
+    function stripPercentText(raw) { return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
     function unitStripForNumeric(raw) { if (raw == null) return ''; return String(raw).replace(/[£$€]/g, '').replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '').trim(); }
     
     function normalizeNumericLike(raw) {
@@ -355,6 +368,7 @@
       if (val == null) return { ok: false };
       return { ok: true, value: val, isPercent: hadPercent };
     }
+
     function compareNumericAnswers(studentRaw, correctRaw, options = {}) {
       const { toleranceAbs = 1e-4, toleranceRel = 1e-3, percentEquivalence = 'both' } = options;
       const s = normalizeNumericLike(studentRaw); const c = normalizeNumericLike(correctRaw);
@@ -370,6 +384,7 @@
       }
       return { equal: false };
     }
+
     function stripOuterQuotesAndEndPunct(s) { return s.replace(/^[“”"']+|[“”"']+$/g, '').replace(/[.?!]+$/g, '').trim(); }
     function stripLeadingArticles(s) { return s.replace(/^(?:an?|the)\s+/i, '').trim(); }
     const normalizeAnswer = (answer, tags = []) => {
@@ -377,14 +392,8 @@
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
-    const normalizeTestPack = (test) => {
-        if (!test) return test;
-        const t = { ...test };
-        t.passages = test.passages || test.materials || [];
-        return t;
-    };
     
-    const isAnswerCorrect = (question, userAnswer) => {
+    const isAnswerCorrectLegacy = (question, userAnswer) => {
       if (!question) return false;
       const correctAnswer = question.answer;
       const tags = question.tags || [];
@@ -423,6 +432,131 @@
       return looseCorrect === looseUser;
     };
 
+    // --- NEW: Normalization helpers for questions & tests ---
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    function normalizeQuestion(q) {
+      if (!q) return q;
+      if (q._normalized) return q;
+      // ensure question text
+      q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
+      // normalize options
+      let raw = q.options ?? q.choices ?? [];
+      const opts = [];
+      if (Array.isArray(raw) && raw.length > 0) {
+        if (typeof raw[0] === 'string') {
+          raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+        } else {
+          raw.forEach((o, i) => {
+            if (o == null) return;
+            if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
+            else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
+          });
+        }
+      } else {
+        // try to extract labeled options from stem
+        const labeled = extractLabeledOptionsFromPrompt(q.question);
+        if (labeled) {
+          labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+        }
+      }
+      q.options = opts; // may be empty array
+      q._isMCQ = Array.isArray(opts) && opts.length >= 2;
+      // determine canonical correct option id
+      let correctId = null;
+      if (q.correctOptionId) correctId = String(q.correctOptionId);
+      else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
+      else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
+      else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
+      else if (typeof q.answer === 'string') {
+        // match by option text (loose)
+        const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
+        if (candidate) correctId = candidate.id;
+      }
+      q._correctOptionId = correctId; // may be null for free-response
+      // for numeric free-response, keep normalized expected if present in 'answer'
+      if (!q._isMCQ && typeof q.answer !== 'undefined') {
+        q._expectedAnswerText = q.answer;
+      }
+      q._normalized = true;
+      return q;
+    }
+
+    function normalizeTestPack(test) {
+      if (!test) return test;
+      const t = { ...test };
+      t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion({ ...q }));
+      t.passages = test.passages || test.materials || test.passages || [];
+      return t;
+    }
+
+    // --- Passage helper: find passage text for a question (from inline PASSAGE:, explicit fields, or test.passages) ---
+    function getPassageForQuestion(q, test) {
+      if (!q) return null;
+      // 1) explicit field on question
+      if (q.passageText) return String(q.passageText);
+      if (q.passage) return String(q.passage);
+      if (q.relatedPassageId || q.passageId) {
+        const pid = q.relatedPassageId || q.passageId;
+        if (test && Array.isArray(test.passages)) {
+          const p = test.passages.find(x => x.id === pid || x.passageId === pid);
+          if (p) return (p.text || p.passage || p).toString();
+        }
+      }
+      // 2) inline PASSAGE: ... followed by newline(s)
+      const raw = String(q.question || '');
+      const inlineMatch = raw.match(/^PASSAGE:\s*(?:['"])?([\s\S]*?)(?:['"])?\s*\n+/i);
+      if (inlineMatch && inlineMatch[1]) return inlineMatch[1].trim();
+      // 3) inline PASSAGE: '...' where passage is quoted (same line)
+      const quotedMatch = raw.match(/PASSAGE:\s*['"]([^'"]+)['"]/i);
+      if (quotedMatch && quotedMatch[1]) return quotedMatch[1].trim();
+      return null;
+    }
+
+    // --- isAnswerCorrect (updated to use normalized fields) ---
+    const isAnswerCorrectNormalized = (question, userAnswer) => {
+      if (!question) return false;
+      normalizeQuestion(question);
+      const tags = question.tags || [];
+      if (question._isMCQ) {
+        if (userAnswer == null || userAnswer === '') return false;
+        const u = String(userAnswer).trim();
+        if (/^\d+$/.test(u)) {
+          const idx = Number(u);
+          const id = ALPHABET[idx] || String(idx);
+          return question._correctOptionId ? id === question._correctOptionId : false;
+        }
+        if (/^[A-Z]$/i.test(u)) {
+          return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
+        }
+        if (question.options.some(o => o.id === u)) {
+          return question._correctOptionId ? u === question._correctOptionId : false;
+        }
+        const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
+        if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
+        return false;
+      }
+      // numeric and text fallback
+      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number') || tags.includes('measures') || tags.includes('decimals')) {
+        const sVal = unitStripForNumeric(userAnswer);
+        const cVal = unitStripForNumeric(question.answer);
+        if (compareNumericAnswers(sVal, cVal).equal) return true;
+      }
+      const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
+      const cNorm = normalizeNumericLike(unitStripForNumeric(question.answer));
+      if (sNorm.ok && cNorm.ok) {
+        if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
+      }
+      const normalizedCorrect = normalizeAnswer(question.answer, tags);
+      const normalizedUser = normalizeAnswer(userAnswer, tags);
+      if (normalizedCorrect === normalizedUser) return true;
+      const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
+      const looseUser = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedUser));
+      return looseCorrect === looseUser;
+    };
+
+    // Keep backward-compatible name used elsewhere
+    const isAnswerCorrect = isAnswerCorrectNormalized;
+
     // --- Sub-Components ---
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
@@ -433,7 +567,7 @@
           setLoading(true);
           try {
             const hasOptions = Array.isArray(question.options) && question.options.length > 0;
-            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}` : '';
+            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt.text || opt}`).join(' | ')}` : '';
             const prompt = `You are a kind tutor for a 10-year-old. Explain clearly why the answer is wrong and why the correct answer is right. Question: ${question.question}. ${optionsText} User's answer: ${userAnswer}. Correct answer: ${correctAnswer}`;
             const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
             const response = await fetch('/.netlify/functions/gemini-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -480,7 +614,7 @@
       
       const bgColor = current.type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
       return (
-        <div aria-live="polite" className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
+        <div className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
           {current.message}
         </div>
       );
@@ -488,7 +622,7 @@
 
     const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
       return (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
+        <div className="modal-backdrop">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center border-4 border-sky-100">
             <h2 className="text-3xl font-bold text-sky-900 mb-4 font-orbitron">{title}</h2>
             {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
@@ -540,20 +674,9 @@
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
       const handleAdminAccess = () => {
-          let pinInput = '';
-          showModal({
-              title: "Parent Access",
-              message: "Please enter Parent PIN:",
-              children: (
-                  <input type="password" autoFocus className="w-full p-4 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold tracking-widest mt-4" onChange={e => pinInput = e.target.value} />
-              ),
-              confirmText: "Unlock",
-              onConfirm: () => {
-                  if (pinInput === (userData.parentPin || "1234")) setView('parentDashboard');
-                  else showNotification({message: "Incorrect PIN.", type: "error"});
-              },
-              onCancel: () => {}
-          });
+          const pin = prompt("Please enter Parent PIN to access Admin Panel:");
+          if (pin === (userData.parentPin || "1234")) setView('parentDashboard');
+          else if (pin !== null) alert("Incorrect PIN.");
       };
 
       const handleDailyChallenge = () => {
@@ -577,8 +700,8 @@
           });
         });
         if (mistakes.length === 0) { showNotification({message: "No mistakes to practice. Great job!", type: "success"}); return; }
-        const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes };
-        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), normalizeTestPack(mistakesTest)] }));
+        const mistakesTest = normalizeTestPack({ id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes });
+        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] }));
         handleSelectTest('mistakes-test', true);
       };
       
@@ -686,7 +809,9 @@
             </div>
           </div>
           
+          {/* THE LEARNING JOURNEY MAP */}
           <div className="space-y-16 pl-4 md:pl-8 border-l-8 border-sky-200">
+              
               <div className="relative">
                   <div className="absolute -left-[2.1rem] md:-left-[2.6rem] top-0 w-12 h-12 md:w-14 md:h-14 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md">1</div>
                   <div className="ml-8 md:ml-12">
@@ -724,6 +849,7 @@
                   </div>
               </div>
 
+              {/* BOSS TEST UI */}
               {canAccessLevel3 && bossTests.length > 0 && (
                   <div className="relative mt-16 p-8 border-4 border-red-500 bg-red-50 rounded-3xl shadow-2xl">
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white font-bold px-6 py-2 rounded-full font-orbitron text-xl shadow-md animate-pulse">ELITE STAGE</div>
@@ -761,6 +887,7 @@
       );
     };
 
+    // --- QuizView: updated with passage modal ---
     const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, showNotification, showModal }) => {
       const { id: testId, settings } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -774,6 +901,9 @@
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
+
+      // NEW: passage popup state
+      const [showPassage, setShowPassage] = useState(false);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
@@ -827,6 +957,7 @@
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
+      // store answers as option-id (like 'A') for MCQs; free-response keep string
       const handleAnswerSelect = (answer, isTextarea = false) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
@@ -837,7 +968,7 @@
       };
 
       const handleSubmitAnswer = (ansOverride) => {
-        const answer = ansOverride || userAnswers[originalIndex];
+        const answer = typeof ansOverride !== 'undefined' ? ansOverride : userAnswers[originalIndex];
         if (answer === undefined || answer === null || answer === '') return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
@@ -852,7 +983,9 @@
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
+            // present user-friendly message: show option text if MCQ and stored as id
+            let feedbackMsg = isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`;
+            setFeedback(feedbackMsg);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -883,17 +1016,15 @@
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       const currentQ = test.questions[originalIndex];
+      normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       
-      const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
-      const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
-      const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
-      const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
-      const displayStem = isLabeled ? labeled.stem : (implicitOr ? implicitOr.stem : (currentQ.question || ''));
-      const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
-      const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
-      const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
+      // NEW: find passage text (if any) for this question
+      const passageText = getPassageForQuestion(currentQ, test);
 
+      // for rendering: use normalized options
+      const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
+      const isFreeResponse = !optObjs;
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
       return (
@@ -908,24 +1039,31 @@
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
             
             <div className="mb-6 bg-sky-50 rounded-2xl p-6 border border-sky-100 shadow-sm min-h-[8rem]">
-              <p className="text-slate-500 font-bold mb-2 uppercase tracking-wide text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-              <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{displayStem}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-slate-500 font-bold mb-2 uppercase tracking-wide text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
+                  <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{currentQ.question}</p>
+                </div>
+                {passageText && (
+                  <div className="ml-4">
+                    <button onClick={() => setShowPassage(true)} className="bg-white border-2 border-slate-200 px-4 py-2 rounded-xl font-bold hover:bg-slate-50">Read passage</button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswerSelect(opt, false)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${userAnswers[originalIndex] === opt ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                  {opt}
-                </button>
-              )) : renderAsLabeled ? labeled.options.map((o, idx) => {
-                if (!o) return null; const letter = String.fromCharCode(97 + idx); const checked = userAnswers[originalIndex] === letter;
+              {optObjs ? optObjs.map((opt, i) => {
+                const optId = opt.id;
+                const optText = opt.text;
+                const checked = userAnswers[originalIndex] === optId;
                 return (
-                  <label key={letter} className={`p-5 rounded-2xl border-2 flex items-center gap-4 text-xl font-bold transition-all cursor-pointer min-h-[70px] ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input type="radio" name={`q-${originalIndex}`} disabled={isSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter, false)} className="w-6 h-6 text-sky-600 focus:ring-sky-500 border-slate-300" />
-                    <span className="uppercase text-sky-700">{letter})</span><span>{o}</span>
-                  </label>
+                  <button key={optId} onClick={() => handleAnswerSelect(optId, false)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <div className="flex items-start gap-4"><div className="uppercase text-sky-700 font-bold mr-2">{optId})</div><div className="text-left">{optText}</div></div>
+                  </button>
                 );
               }) : (
+                // free response
                 <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, true)} disabled={isSubmitted} className="w-full col-span-2 p-5 text-xl font-bold border-2 border-slate-200 rounded-2xl focus:border-sky-500 outline-none resize-none bg-white" placeholder="Type your answer here..." rows="4" />
               )}
             </div>
@@ -949,7 +1087,7 @@
                 <button onClick={() => setShowExplanation(true)} className="mt-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 border border-slate-300 transition">🤖 Explain my mistake</button>
               </div>
             )}
-            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
+            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question._isMCQ && lastAnswerResult.question._correctOptionId ? (lastAnswerResult.question.options.find(o=>o.id===lastAnswerResult.question._correctOptionId)?.text || lastAnswerResult.question.answer) : lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-10 pt-6 border-t-2 border-slate-100">
               <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Exit & Save</button>
@@ -960,6 +1098,24 @@
               )}
             </div>
           </div>
+
+          {/* Passage Modal */}
+          {showPassage && (
+            <div className="modal-backdrop">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl text-left border-4 border-sky-100 max-h-[80vh] overflow-auto">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-2xl font-bold font-orbitron text-sky-900">Passage</h3>
+                  <button onClick={() => setShowPassage(false)} className="text-sky-600 font-bold hover:text-sky-800">✕</button>
+                </div>
+                <div className="prose prose-lg text-slate-800 whitespace-pre-wrap">
+                  {passageText}
+                </div>
+                <div className="flex justify-end mt-6">
+                  <button onClick={() => setShowPassage(false)} className="bg-slate-100 px-4 py-2 rounded-xl font-bold hover:bg-slate-200">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -1069,7 +1225,7 @@
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
-                    <h2 className="text-2xl font-bold text-sky-900 mb-6 font-orbitron">Recent Test History</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Recent Test History</h2>
                     {completedTests.length > 0 ? (
                         <div className="space-y-4">
                             {completedTests.slice(0, 10).map(t => (
@@ -1086,7 +1242,6 @@
     };
 
     const AdminView = ({ userData, setView, allTests, updateAllData, showModal, showNotification }) => {
-      
       const handleResetAllData = () => {
         showModal({ 
             title: "Reset All Player Data?", 
@@ -1114,6 +1269,7 @@
             confirmText: "Delete",
             onConfirm: () => {
                 const tests = allTests.filter(x => x.id !== testId);
+                
                 updateAllData(prev => {
                     const newProgress = { ...prev.userData.progress };
                     delete newProgress[testId];
@@ -1136,12 +1292,14 @@
             try {
                 const importedData = JSON.parse(e.target.result);
                 const testsToImport = Array.isArray(importedData) ? importedData : [importedData];
-                if (!testsToImport[0].id || !testsToImport[0].questions) throw new Error("Invalid format.");
+                // normalize each imported test
+                const normalized = testsToImport.map(t => normalizeTestPack(t));
+                if (!normalized[0].id || !normalized[0].questions) throw new Error("Invalid format.");
                 
                 updateAllData(prev => {
                     const newAllTests = [...prev.allTests];
                     let added = 0; let updated = 0;
-                    testsToImport.forEach(newTest => {
+                    normalized.forEach(newTest => {
                         const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
                         if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
                         else { newAllTests.push(newTest); added++; }
@@ -1197,14 +1355,15 @@
 
     const CreateTestView = ({ setView, allTests, updateAllData, userData, showNotification }) => {
         const [title, setTitle] = useState(''); const [subject, setSubject] = useState('Maths'); const [level, setLevel] = useState(1); 
-        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]); 
+        const [questions, setQuestions] = useState([{ question: '', options: ['','','','',''], answer: '' }]);
         
         const handleSave = () => {
             if(!title) return showNotification({message: "Title required", type:"error"});
             if(questions.some(q => !q.question || !q.answer)) return showNotification({message: "All questions must have text and an answer.", type: "error"});
             
             const nt = { id: `custom-${Date.now()}`, title, subject, level: Number(level), questions, notes: '' };
-            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, nt] }));
+            const normalized = normalizeTestPack(nt);
+            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, normalized] }));
             showNotification({message: "Test Created!", type:"success"});
             setView('admin');
         };
@@ -1227,7 +1386,7 @@
                                     <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
+                            <input type="text" placeholder="Exact Correct Answer (option text or letter A..E)" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1242,7 +1401,7 @@
     const PerformanceDashboardView = ({ setView, userData, allTests }) => {
       const chartRef = useRef(null); const chartInstanceRef = useRef(null);
       
-      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, completedAt: p.completedAt || 0} : null; }).filter(Boolean).sort((a,b) => a.completedAt - b.completedAt);
+      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
       
       useEffect(() => {
         if (!chartRef.current || !window.Chart) return;
@@ -1454,17 +1613,13 @@
         isInitialized.current = true;
         
         const savedData = localStorage.getItem('seagPortalData');
-        let loadedData = null;
-        if (savedData) {
-            try { loadedData = JSON.parse(savedData); }
-            catch(e) { console.warn('Parse failed', e); loadedData = null; localStorage.removeItem('seagPortalData'); }
-        }
+        let loadedData = savedData ? JSON.parse(savedData) : null;
         
         if (!loadedData || !loadedData.userData) {
           loadedData = { 
             schemaVersion: 1,
             userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } }, 
-            allTests: defaultTests,
+            allTests: defaultTests.map(normalizeTestPack),
             deletedDefaultTests: []
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
@@ -1474,6 +1629,7 @@
             defaultTests.forEach(dt => { 
                 if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(dt); 
             });
+            loadedData.allTests = loadedData.allTests.map(normalizeTestPack);
         }
         
         const todayStr = new Date().toDateString();
@@ -1618,6 +1774,8 @@
           setAppData(prev => {
               if(!prev) return prev;
               const newData = typeof updater === 'function' ? updater(prev) : updater;
+              // ensure tests normalized before saving
+              newData.allTests = (newData.allTests || []).map(normalizeTestPack);
               safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
               return newData;
           });
