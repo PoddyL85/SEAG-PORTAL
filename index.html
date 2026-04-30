@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
   
+  <!-- PWA Meta Tags & Inline Manifest -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#f0f9ff" />
+  <meta name="theme-color" content="#064e3b" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
-  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMDY0ZTNiIiwidGhlbWVfY29sb3IiOiIjMDY0ZTNiIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,12 +30,15 @@
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
     .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(4px); }
     .notification-bar { position: fixed; top: 20px; right: 20px; z-index: 1001; transition: opacity 0.5s, transform 0.5s; }
-    @keyframes flash-green { 0% { background-color: #dcfce7; border-color: #22c55e; } 100% { background-color: white; border-color: #e2e8f0; } }
-    @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
-    .flash-correct { animation: flash-green 0.6s ease-out; }
-    .flash-incorrect { animation: flash-red 0.6s ease-out; }
+    
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
+    .active-node { animation: pulse-ring 2s infinite; }
+    
+    .map-bg { background-attachment: fixed; background-size: cover; background-position: center; }
+    
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
     .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
+    .sticky-navigator { position: sticky; top: 1rem; z-index: 50; }
   </style>
 </head>
 <body>
@@ -47,7 +51,6 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
-    // Parent PIN hashing with local file fallback
     async function sha256Hex(message) {
       if (!window.crypto || !window.crypto.subtle) return message; 
       const enc = new TextEncoder();
@@ -64,7 +67,6 @@
         return 'sha256:' + hex; 
     }
 
-    // --- Audio Engine ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
         try {
@@ -212,12 +214,6 @@
         { id: 'marathonRunner', title: 'Marathon Runner', description: 'Complete 3 full practice tests.', category: 'Longer-Term', unlocksTitle: 'Endurance Champ', icon: '🏃', getProgress: (ud) => `${Math.min((ud.fullTestsCompleted||[]).length, 3)} / 3` },
     ];
 
-    function xpForAchievementId(id) {
-      const ach = achievementsList.find(a => a.id === id);
-      if (!ach) return 0;
-      switch (ach.category) { case 'Quick Wins': return 3; case 'Medium-Term': return 5; case 'Longer-Term': return 10; default: return 0; }
-    }
-
     function isoWeekString(d) {
       const date = new Date(d);
       const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -302,7 +298,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format, Normalization & Parse Helpers ---
+    // --- Format & Parse Helpers ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -395,94 +391,83 @@
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
-
-    // FATAL BUG FIX: Restoring normalizeQuestion function
-    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    function normalizeQuestion(q) {
-      if (!q) return q;
-      if (q._normalized) return q;
-      
-      q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
-      let raw = q.options ?? q.choices ?? [];
-      const opts = [];
-      
-      if (Array.isArray(raw) && raw.length > 0) {
-        if (typeof raw[0] === 'string') {
-          raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-        } else {
-          raw.forEach((o, i) => {
-            if (o == null) return;
-            if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
-            else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
-          });
-        }
-      } else {
-        const labeled = extractLabeledOptionsFromPrompt(q.question);
-        if (labeled) {
-            labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-            q.question = labeled.stem;
-        } else {
-            const implicit = tryParseTwoOptionsFromOr(q.question);
-            if (implicit) {
-                implicit.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
-                q.question = implicit.stem;
-            }
-        }
-      }
-      
-      q.options = opts;
-      q._isMCQ = Array.isArray(opts) && opts.length >= 2;
-      
-      let correctId = null;
-      if (q.correctOptionId) correctId = String(q.correctOptionId);
-      else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
-      else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
-      else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
-      else if (typeof q.answer === 'string') {
-        const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
-        if (candidate) correctId = candidate.id;
-      }
-      
-      q._correctOptionId = correctId;
-      q._normalized = true;
-      return q;
-    }
-
+    // --- UPDATED NORMALIZATION FOR UI ---
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const normalizeTestPack = (test) => {
         if (!test) return test;
         const t = { ...test };
-        t.passages = test.passages || test.materials || [];
-        // Vital: actually map over and normalize the questions during init!
-        t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion({...q}));
+        t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => {
+            if (!q) return q;
+            if (q._normalized) return q;
+            q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
+            let raw = q.options ?? q.choices ?? [];
+            const opts = [];
+            if (Array.isArray(raw) && raw.length > 0) {
+              if (typeof raw[0] === 'string') {
+                raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+              } else {
+                raw.forEach((o, i) => {
+                  if (o == null) return;
+                  if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
+                  else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
+                });
+              }
+            } else {
+              const labeled = extractLabeledOptionsFromPrompt(q.question);
+              if (labeled) {
+                  labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+                  q.question = labeled.stem;
+              } else {
+                  const implicit = tryParseTwoOptionsFromOr(q.question);
+                  if (implicit) {
+                      implicit.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+                      q.question = implicit.stem;
+                  }
+              }
+            }
+            q.options = opts;
+            q._isMCQ = Array.isArray(opts) && opts.length >= 2;
+            
+            let correctId = null;
+            if (q.correctOptionId) correctId = String(q.correctOptionId);
+            else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
+            else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
+            else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
+            else if (typeof q.answer === 'string') {
+              const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
+              if (candidate) correctId = candidate.id;
+            }
+            q._correctOptionId = correctId;
+            q._normalized = true;
+            return q;
+        });
         return t;
     };
     
     const isAnswerCorrect = (question, userAnswer) => {
       if (!question) return false;
-      const q = question._normalized ? question : normalizeQuestion({...question});
-      const tags = q.tags || [];
-      
-      if (q._isMCQ) {
+      const tags = question.tags || [];
+      if (question._isMCQ) {
         if (userAnswer == null || userAnswer === '') return false;
         const u = String(userAnswer).trim();
         if (/^\d+$/.test(u)) {
           const idx = Number(u);
           const id = ALPHABET[idx] || String(idx);
-          return q._correctOptionId ? id === q._correctOptionId : false;
+          return question._correctOptionId ? id === question._correctOptionId : false;
         }
         if (/^[A-Z]$/i.test(u)) {
-          return q._correctOptionId ? u.toUpperCase() === q._correctOptionId : false;
+          return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
         }
-        if (q.options.some(o => o.id === u)) {
-          return q._correctOptionId ? u === q._correctOptionId : false;
+        if (question.options.some(o => o.id === u)) {
+          return question._correctOptionId ? u === question._correctOptionId : false;
         }
-        const matched = q.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
-        if (matched) return q._correctOptionId ? matched.id === q._correctOptionId : false;
+        const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
+        if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
         return false;
       }
       
-      const correctAnswer = q.answer;
+      const correctAnswer = question.answer;
       if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number')) {
         const sVal = unitStripForNumeric(userAnswer);
         const cVal = unitStripForNumeric(correctAnswer);
@@ -593,7 +578,7 @@
             {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
-              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300 transition">Cancel</button>}
+              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300">Cancel</button>}
               {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white transition ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
             </div>
           </div>
@@ -638,7 +623,7 @@
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
-      const handleAdminAccess = () => {
+      const handleAdminAccess = async () => {
           let pinInput = '';
           showModal({
               title: "Parent Access",
@@ -853,10 +838,8 @@
           {/* THE NEW SAGA MAP UI */}
           <div className="relative max-w-lg mx-auto py-10 flex flex-col items-center">
               
-              {/* Background Path Line */}
               <div className="absolute top-0 bottom-0 w-6 bg-slate-200 rounded-full shadow-inner opacity-60"></div>
 
-              {/* ZONE 1 */}
               <div className="relative z-10 bg-emerald-100 border-4 border-emerald-500 text-emerald-800 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-6 font-orbitron">
                   🍄 Whispering Woods
               </div>
@@ -867,7 +850,6 @@
                   <div className="relative z-10 bg-white p-6 rounded-2xl border-2 border-slate-200 font-bold text-slate-500 text-center my-6">No quests loaded.</div>
               )}
 
-              {/* ZONE 2 */}
               <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel2 ? '💎 Crystal Caverns' : '🔒 Zone Locked'}
               </div>
@@ -880,7 +862,6 @@
                   </div>
               )}
 
-              {/* ZONE 3 */}
               <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel3 ? '🏰 Sky Citadel' : '🔒 Zone Locked'}
               </div>
@@ -917,6 +898,7 @@
       const [submittedAnswers, setSubmittedAnswers] = useState(existingProgress?.submittedAnswers || {});
       const [streak, setStreak] = useState(existingProgress?.streak || 0);
       const [hint, setHint] = useState(null);
+      const [isHintLoading, setIsHintLoading] = useState(false);
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
@@ -932,7 +914,7 @@
       const [flash, setFlash] = useState(null);
       const [feedback, setFeedback] = useState(null);
 
-      // GUARARD CLAUSE TO PREVENT FATAL RENDER BUG
+      // FATAL BUG FIX: Add safety guard
       if (!test || !test.questions || test.questions.length === 0 || (settings.shuffle && !shuffledOrder)) {
           return <LoadingSpinner message="Preparing Quest..." />;
       }
@@ -974,6 +956,14 @@
       };
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
+      
+      // FATAL BUG FIX: Add secondary safety guard for current question
+      const currentQ = test.questions[originalIndex];
+      if (!currentQ) {
+          return <LoadingSpinner message="Loading Question..." />;
+      }
+      normalizeQuestion(currentQ);
+
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
@@ -993,7 +983,6 @@
         if (answer === undefined || answer === null || answer === '') return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
-        
         const question = test.questions[originalIndex];
         const isCorrect = isAnswerCorrect(question, answer);
         
@@ -1033,9 +1022,6 @@
       }
 
       const fetchHint = () => { setHint("Try re-reading the question carefully and break it into steps."); };
-
-      const currentQ = test.questions[originalIndex];
-      if (!currentQ) return <LoadingSpinner message="Loading Question..." />;
 
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       const passageText = getPassageForQuestion(currentQ, test);
@@ -1135,17 +1121,10 @@
     };
 
     const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData, handleSelectTest }) => {
-      useEffect(() => {
-          if (!testDetails || !allTests.find(t => t.id === testDetails.id) || !userData.progress?.[testDetails.id]) {
-              setView('dashboard');
-          }
-      }, [testDetails, allTests, userData, setView]);
-
-      if (!testDetails) return null;
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
       const progress = userData.progress?.[testId];
-      if (!test || !progress) return null;
+      if (!test || !progress) { setView('dashboard'); return null; }
       
       const score = progress.score || 0;
       const total = test.questions.length;
@@ -1168,11 +1147,11 @@
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
           setView('dashboard');
-          setTimeout(() => handleSelectTest(testId), 100);
+          setTimeout(() => handleSelectTest(testId), 50);
       };
 
       return (
-        <div className="p-4 sm:p-8 min-h-screen">
+        <div className="p-8 min-h-screen">
           <div className="max-w-4xl mx-auto bg-white border-4 border-sky-100 rounded-3xl shadow-2xl p-8 sm:p-12 text-center relative overflow-hidden">
             <h2 className="text-5xl sm:text-6xl font-black text-sky-900 font-orbitron mb-8 relative z-10">Quest Complete!</h2>
             <div className="inline-block bg-sky-50 border-4 border-sky-200 rounded-[3rem] p-10 mb-12 relative z-10 shadow-inner">
@@ -1217,7 +1196,7 @@
             </div>
             
             <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-100 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-200 text-2xl shadow-sm transition border-2 border-slate-200">Try Again</button>
+                <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-200 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-300 text-2xl shadow-md transition border-2 border-slate-200">Try Again</button>
                 <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1">Return to Map</button>
             </div>
           </div>
@@ -1401,7 +1380,7 @@
         
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
-                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-3xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
                 <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
                     <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
@@ -1417,7 +1396,7 @@
                                     <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer (option text or letter A..E)" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
+                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1498,7 +1477,7 @@
             
             <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Sound Effects</span><span className="text-slate-500 font-semibold text-sm">Chimes and celebrations.</span></div>
-                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
+                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600" />
             </label>
 
             <div className="pt-6 border-t-2 border-slate-100 mb-8">
@@ -1618,7 +1597,7 @@
       const handleSelectTest = useCallback((testId, skipModal = false) => {
         if (!appData) return;
         const test = appData.allTests.find(t => t.id === testId);
-        if (!test) { showNotification({ message: 'Test not found. Import it via Admin.', type: 'error' }); return; }
+        if (!test) { showNotification({ message: 'Test not found. Import it via Admin → Import JSON.', type: 'error' }); return; }
         
         const progress = appData.userData.progress?.[testId];
         const answered = progress ? Object.keys(progress.answers || {}).length : 0;
