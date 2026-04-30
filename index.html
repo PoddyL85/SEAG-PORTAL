@@ -4,20 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Nicolas's SEAG Portal</title>
-  
-  <!-- PWA Meta Tags & Inline Manifest -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#f0f9ff" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -48,7 +44,7 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
-    // --- Audio Engine ---
+    // --- Audio Engine (unchanged) ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
         try {
@@ -87,7 +83,7 @@
         } catch(e) { console.log("Audio not supported"); }
     };
 
-    // --- DATA BANK ---
+    // --- DATA BANK (unchanged content, we'll normalize on load) ---
     const defaultTests = [
       {
         id: "l1-maths-number-1", title: "Level 1: Number & Arithmetic", subject: "Maths", level: 1, childStage: "Early P6", purpose: "Confidence builder",
@@ -178,7 +174,7 @@
       }
     ];
 
-    // --- Achievements Data ---
+    // --- Achievements Data (unchanged) ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -299,7 +295,7 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format & Parse Helpers ---
+    // --- Format & Parse Helpers (EXTENDED & NORMALIZATION) ---
     function formatTime(ms) {
       if (ms < 0) ms = 0;
       const sec = Math.floor(ms / 1000);
@@ -354,7 +350,7 @@
     function detectPercentUnit(raw) { return /%|\bpercent\b|\bper\s*cent\b/.test(raw.toLowerCase()); }
     function stripPercentText(raw) { return raw.replace(/%|\bpercent\b|\bper\s*cent\b/gi, ''); }
     function unitStripForNumeric(raw) { if (raw == null) return ''; return String(raw).replace(/[£$€]/g, '').replace(/\b(cm2|cm²|m2|m²|cm|mm|m|kg|g|km|miles?|meters?|metres?|meter|metre|deg|degrees|°|hrs?|hours?|mins?|minutes?)\b/gi, '').trim(); }
-    
+
     function normalizeNumericLike(raw) {
       if (raw == null) return { ok: false };
       let s = String(raw).trim();
@@ -392,39 +388,110 @@
       let s = String(answer).toLowerCase().trim().replace(/\s+/g, ' ').replace(/\b(a|an|the)\b/g, '').trim();
       return s;
     };
-    
+
+    // --- NEW: Normalization helpers for questions & tests ---
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    function normalizeQuestion(q) {
+      if (!q) return q;
+      if (q._normalized) return q;
+      // ensure question text
+      q.question = q.question || q.text || q.prompt || q.stem || q.body || q.questionText || '';
+      // normalize options
+      let raw = q.options ?? q.choices ?? [];
+      const opts = [];
+      if (Array.isArray(raw) && raw.length > 0) {
+        if (typeof raw[0] === 'string') {
+          raw.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+        } else {
+          raw.forEach((o, i) => {
+            if (o == null) return;
+            if (typeof o === 'string') opts.push({ id: ALPHABET[i] || String(i), text: String(o).trim() });
+            else opts.push({ id: (o.id || ALPHABET[i] || String(i)), text: (o.text || o.label || String(o).trim()) });
+          });
+        }
+      } else {
+        // try to extract labeled options from stem
+        const labeled = extractLabeledOptionsFromPrompt(q.question);
+        if (labeled) {
+          labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+        }
+      }
+      q.options = opts; // may be empty array
+      q._isMCQ = Array.isArray(opts) && opts.length >= 2;
+      // determine canonical correct option id
+      let correctId = null;
+      if (q.correctOptionId) correctId = String(q.correctOptionId);
+      else if (q.correctAnswerLetter) correctId = String(q.correctAnswerLetter).toUpperCase();
+      else if (typeof q.correctAnswer === 'number') correctId = ALPHABET[q.correctAnswer] || String(q.correctAnswer);
+      else if (typeof q.answer === 'string' && /^[A-E]$/i.test(q.answer.trim())) correctId = q.answer.trim().toUpperCase();
+      else if (typeof q.answer === 'string') {
+        // match by option text (loose)
+        const candidate = opts.find(o => normalizeAnswer(o.text) === normalizeAnswer(q.answer));
+        if (candidate) correctId = candidate.id;
+      }
+      q._correctOptionId = correctId; // may be null for free-response
+      // for numeric free-response, keep normalized expected if present in 'answer'
+      if (!q._isMCQ && typeof q.answer !== 'undefined') {
+        q._expectedAnswerText = q.answer;
+      }
+      q._normalized = true;
+      return q;
+    }
+
+    function normalizeTestPack(test) {
+      if (!test) return test;
+      const t = { ...test };
+      t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion({ ...q }));
+      t.passages = test.passages || test.materials || test.passages || [];
+      return t;
+    }
+
+    // --- isAnswerCorrect: updated to use normalized question object ---
     const isAnswerCorrect = (question, userAnswer) => {
       if (!question) return false;
-      const correctAnswer = question.answer;
+      // ensure normalized
+      normalizeQuestion(question);
       const tags = question.tags || [];
-      const qText = question.question || '';
-      
-      const labeled = extractLabeledOptionsFromPrompt(qText);
-      if (labeled && labeled.options?.length >= 2) {
-        const s = String(userAnswer ?? '').trim().toLowerCase();
-        const c = String(correctAnswer ?? '').trim().toLowerCase();
-        if (/^[a-z]$/.test(c)) return s === c;
-        if (/^[a-z]$/.test(s)) {
-          const idx = s.charCodeAt(0) - 97;
-          const chosen = labeled.options[idx]?.trim().toLowerCase();
-          return chosen && chosen === c;
+      // MCQ handling: compare by option id primarily
+      if (question._isMCQ) {
+        if (userAnswer == null || userAnswer === '') return false;
+        const u = String(userAnswer).trim();
+        // if user passed index like '0' or numeric, convert to letter
+        if (/^\d+$/.test(u)) {
+          const idx = Number(u);
+          const id = ALPHABET[idx] || String(idx);
+          return question._correctOptionId ? id === question._correctOptionId : false;
         }
-        return s === c;
+        // if user passed single-letter like 'a' or 'D'
+        if (/^[A-Z]$/i.test(u)) {
+          return question._correctOptionId ? u.toUpperCase() === question._correctOptionId : false;
+        }
+        // if user passed an option id directly (like 'A', 'B1') check
+        if (question.options.some(o => o.id === u)) {
+          return question._correctOptionId ? u === question._correctOptionId : false;
+        }
+        // if user passed the option text, compare normalized texts
+        const matched = question.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(u));
+        if (matched) return question._correctOptionId ? matched.id === question._correctOptionId : false;
+        return false;
       }
-      
-      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions')) {
+
+      // Non-MCQ: numeric comparators
+      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number') || tags.includes('measures') || tags.includes('decimals')) {
         const sVal = unitStripForNumeric(userAnswer);
-        const cVal = unitStripForNumeric(correctAnswer);
+        const cVal = unitStripForNumeric(question.answer);
         if (compareNumericAnswers(sVal, cVal).equal) return true;
       }
-      
+
+      // Attempt numeric equality for free response too
       const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
-      const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
+      const cNorm = normalizeNumericLike(unitStripForNumeric(question.answer));
       if (sNorm.ok && cNorm.ok) {
         if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
       }
-      
-      const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
+
+      // fallback text normalization
+      const normalizedCorrect = normalizeAnswer(question.answer, tags);
       const normalizedUser = normalizeAnswer(userAnswer, tags);
       if (normalizedCorrect === normalizedUser) return true;
       const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
@@ -432,7 +499,7 @@
       return looseCorrect === looseUser;
     };
 
-    // --- Sub-Components ---
+    // --- Sub-Components (unchanged) ---
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
@@ -442,7 +509,7 @@
           setLoading(true);
           try {
             const hasOptions = Array.isArray(question.options) && question.options.length > 0;
-            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt}`).join(' | ')}` : '';
+            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt.text || opt}`).join(' | ')}` : '';
             const prompt = `You are a kind tutor for a 10-year-old. Explain clearly why the answer is wrong and why the correct answer is right. Question: ${question.question}. ${optionsText} User's answer: ${userAnswer}. Correct answer: ${correctAnswer}`;
             const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
             const response = await fetch('/.netlify/functions/gemini-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -543,7 +610,7 @@
         );
     }
 
-    // --- MAIN VIEWS ---
+    // --- MAIN VIEWS (Dashboard unchanged except we normalize tests at import) ---
     const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
@@ -559,7 +626,7 @@
         if(allQuestions.length < 5) return showNotification({message: "Not enough questions for a challenge yet!", type: "error"});
         const dailyQs = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
         const challenge = { id: 'daily-challenge', title: 'Daily Challenge', subject: 'Mixed', questions: dailyQs };
-        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'daily-challenge'), challenge] }));
+        updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'daily-challenge'), normalizeTestPack(challenge)] }));
         handleSelectTest('daily-challenge', true); 
       };
 
@@ -575,7 +642,7 @@
           });
         });
         if (mistakes.length === 0) { showNotification({message: "No mistakes to practice. Great job!", type: "success"}); return; }
-        const mistakesTest = { id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes };
+        const mistakesTest = normalizeTestPack({ id: 'mistakes-test', title: 'Practice Your Mistakes', subject: 'Mixed', questions: mistakes });
         updateAllData(prev => ({ ...prev, allTests: [...prev.allTests.filter(t => t.id !== 'mistakes-test'), mistakesTest] }));
         handleSelectTest('mistakes-test', true);
       };
@@ -762,6 +829,7 @@
       );
     };
 
+    // --- QuizView: updated to use normalized options/IDs ---
     const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, showNotification, showModal }) => {
       const { id: testId, settings } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -828,6 +896,7 @@
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
+      // store answers as option-id (like 'A') for MCQs; free-response keep string
       const handleAnswerSelect = (answer, isTextarea = false) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
@@ -838,8 +907,8 @@
       };
 
       const handleSubmitAnswer = (ansOverride) => {
-        const answer = ansOverride || userAnswers[originalIndex];
-        if (!answer) return;
+        const answer = typeof ansOverride !== 'undefined' ? ansOverride : userAnswers[originalIndex];
+        if (answer === undefined || answer === null || answer === '') return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
         const question = test.questions[originalIndex];
@@ -853,7 +922,9 @@
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question.answer}`);
+            // present user-friendly message: show option text if MCQ and stored as id
+            let feedbackMsg = isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`;
+            setFeedback(feedbackMsg);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -884,17 +955,12 @@
 
       if (!test || (settings.shuffle && !shuffledOrder)) return <LoadingSpinner message="Loading Test..." />;
       const currentQ = test.questions[originalIndex];
+      normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       
-      const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
-      const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
-      const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
-      const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
-      const displayStem = isLabeled ? labeled.stem : (implicitOr ? implicitOr.stem : (currentQ.question || ''));
-      const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
-      const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
-      const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
-
+      // for rendering: use normalized options
+      const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
+      const isFreeResponse = !optObjs;
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
       return (
@@ -910,30 +976,28 @@
             
             <div className="mb-6 bg-sky-50 rounded-2xl p-6 border border-sky-100 shadow-sm min-h-[8rem]">
               <p className="text-slate-500 font-bold mb-2 uppercase tracking-wide text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-              <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{displayStem}</p>
+              <p className="text-2xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">{currentQ.question}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswerSelect(opt, false)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${userAnswers[originalIndex] === opt ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                  {opt}
-                </button>
-              )) : renderAsLabeled ? labeled.options.map((o, idx) => {
-                if (!o) return null; const letter = String.fromCharCode(97 + idx); const checked = userAnswers[originalIndex] === letter;
+              {optObjs ? optObjs.map((opt, i) => {
+                const optId = opt.id;
+                const optText = opt.text;
+                const checked = userAnswers[originalIndex] === optId;
                 return (
-                  <label key={letter} className={`p-5 rounded-2xl border-2 flex items-center gap-4 text-xl font-bold transition-all cursor-pointer min-h-[70px] ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input type="radio" name={`q-${originalIndex}`} disabled={isSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter, false)} className="w-6 h-6 text-sky-600 focus:ring-sky-500 border-slate-300" />
-                    <span className="uppercase text-sky-700">{letter})</span><span>{o}</span>
-                  </label>
+                  <button key={optId} onClick={() => handleAnswerSelect(optId, false)} disabled={isSubmitted} className={`p-5 rounded-2xl border-2 text-left text-xl font-bold transition-all min-h-[70px] ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <div className="flex items-start gap-4"><div className="uppercase text-sky-700 font-bold mr-2">{optId})</div><div className="text-left">{optText}</div></div>
+                  </button>
                 );
               }) : (
+                // free response
                 <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, true)} disabled={isSubmitted} className="w-full col-span-2 p-5 text-xl font-bold border-2 border-slate-200 rounded-2xl focus:border-sky-500 outline-none resize-none bg-white" placeholder="Type your answer here..." rows="4" />
               )}
             </div>
 
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-6">
-                <button onClick={() => handleSubmitAnswer()} disabled={!userAnswers[originalIndex]} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
+                <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-3 px-10 rounded-xl hover:bg-emerald-400 disabled:opacity-50 text-xl shadow-lg transition transform hover:-translate-y-1">Submit Answer</button>
               </div>
             )}
 
@@ -950,7 +1014,7 @@
                 <button onClick={() => setShowExplanation(true)} className="mt-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 border border-slate-300 transition">🤖 Explain my mistake</button>
               </div>
             )}
-            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
+            {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question._isMCQ && lastAnswerResult.question._correctOptionId ? (lastAnswerResult.question.options.find(o=>o.id===lastAnswerResult.question._correctOptionId)?.text || lastAnswerResult.question.answer) : lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-10 pt-6 border-t-2 border-slate-100">
               <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-lg px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Exit & Save</button>
@@ -965,6 +1029,7 @@
       );
     };
 
+    // --- ResultsView: show option text when answers stored as IDs ---
     const ResultsView = ({ userData, setView, testDetails, allTests, updateUserData, handleSelectTest }) => {
       const { id: testId } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -1016,13 +1081,22 @@
             <div className="space-y-4 text-left mt-8 relative z-10">
                 {(progress.shuffledOrder || Array.from(test.questions.keys())).map((originalIndex, displayIndex) => {
                     const actualQuestion = test.questions[originalIndex];
-                    const userAnswer = progress.answers[originalIndex];
-                    const isCorr = isAnswerCorrect(actualQuestion, userAnswer);
+                    normalizeQuestion(actualQuestion);
+                    const userAnswerRaw = progress.answers[originalIndex];
+                    const isCorr = isAnswerCorrect(actualQuestion, userAnswerRaw);
+                    // display user answer text
+                    let userAnswerDisplay = userAnswerRaw;
+                    if (actualQuestion._isMCQ && userAnswerRaw) {
+                      const found = actualQuestion.options.find(o => o.id === userAnswerRaw || normalizeAnswer(o.text) === normalizeAnswer(userAnswerRaw));
+                      userAnswerDisplay = found ? `${found.id}) ${found.text}` : userAnswerRaw;
+                    }
+                    // correct display
+                    let correctDisplay = actualQuestion._isMCQ && actualQuestion._correctOptionId ? `${actualQuestion._correctOptionId}) ${actualQuestion.options.find(o=>o.id===actualQuestion._correctOptionId)?.text || actualQuestion.answer}` : actualQuestion.answer;
                     return (
                         <div key={displayIndex} className={`p-5 rounded-2xl border-l-8 shadow-sm ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
                             <p className="font-bold text-slate-800 mb-2">{displayIndex+1}. {actualQuestion.question}</p>
-                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswer || 'Blank'}</p>
-                            {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {actualQuestion.answer}</p>}
+                            <p className={`font-semibold ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswerDisplay || 'Blank'}</p>
+                            {!isCorr && <p className="font-bold text-slate-700 mt-1">Correct answer: {correctDisplay}</p>}
                         </div>
                     );
                 })}
@@ -1037,6 +1111,8 @@
       );
     };
 
+    // --- ParentDashboardView, AdminView, CreateTestView, PerformanceDashboardView, SettingsView, AchievementsView ---
+    // Only change: AdminView import handler must normalize imported tests before storing.
     const ParentDashboardView = ({ userData, setView, allTests, updateAllData }) => {
         const completedTests = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, date: p.completedAt, mode: p.settings?.mode} : null; }).filter(Boolean).sort((a,b) => b.date - a.date);
         
@@ -1070,7 +1146,7 @@
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
-                    <h2 className="text-2xl font-bold text-sky-900 mb-6 font-orbitron">Recent Test History</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Recent Test History</h2>
                     {completedTests.length > 0 ? (
                         <div className="space-y-4">
                             {completedTests.slice(0, 10).map(t => (
@@ -1137,12 +1213,14 @@
             try {
                 const importedData = JSON.parse(e.target.result);
                 const testsToImport = Array.isArray(importedData) ? importedData : [importedData];
-                if (!testsToImport[0].id || !testsToImport[0].questions) throw new Error("Invalid format.");
+                // normalize each imported test
+                const normalized = testsToImport.map(t => normalizeTestPack(t));
+                if (!normalized[0].id || !normalized[0].questions) throw new Error("Invalid format.");
                 
                 updateAllData(prev => {
                     const newAllTests = [...prev.allTests];
                     let added = 0; let updated = 0;
-                    testsToImport.forEach(newTest => {
+                    normalized.forEach(newTest => {
                         const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
                         if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
                         else { newAllTests.push(newTest); added++; }
@@ -1205,7 +1283,8 @@
             if(questions.some(q => !q.question || !q.answer)) return showNotification({message: "All questions must have text and an answer.", type: "error"});
             
             const nt = { id: `custom-${Date.now()}`, title, subject, level: Number(level), questions, notes: '' };
-            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, nt] }));
+            const normalized = normalizeTestPack(nt);
+            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, normalized] }));
             showNotification({message: "Test Created!", type:"success"});
             setView('admin');
         };
@@ -1228,7 +1307,7 @@
                                     <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
+                            <input type="text" placeholder="Exact Correct Answer (option text or letter A..E)" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1392,6 +1471,7 @@
       );
     };
 
+    // --- App (initialization normalizes tests) ---
     function App() {
       const [appData, setAppData] = useState(null);
       const [view, setView] = useState('loading');
@@ -1461,16 +1541,18 @@
           loadedData = { 
             schemaVersion: 1,
             userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } }, 
-            allTests: defaultTests,
+            allTests: defaultTests.map(normalizeTestPack),
             deletedDefaultTests: []
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
         } else {
+            // ensure default tests are present and normalize everything
             const existingIds = loadedData.allTests.map(t => t.id);
             const deleted = loadedData.deletedDefaultTests || [];
             defaultTests.forEach(dt => { 
                 if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(dt); 
             });
+            loadedData.allTests = loadedData.allTests.map(normalizeTestPack);
         }
         
         const todayStr = new Date().toDateString();
@@ -1615,6 +1697,8 @@
           setAppData(prev => {
               if(!prev) return prev;
               const newData = typeof updater === 'function' ? updater(prev) : updater;
+              // ensure tests normalized before saving
+              newData.allTests = (newData.allTests || []).map(normalizeTestPack);
               safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
               return newData;
           });
