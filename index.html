@@ -414,7 +414,16 @@
               }
             } else {
               const labeled = extractLabeledOptionsFromPrompt(q.question);
-              if (labeled) labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+              if (labeled) {
+                  labeled.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+                  q.question = labeled.stem;
+              } else {
+                  const implicit = tryParseTwoOptionsFromOr(q.question);
+                  if (implicit) {
+                      implicit.options.forEach((t, i) => opts.push({ id: ALPHABET[i] || String(i), text: String(t).trim() }));
+                      q.question = implicit.stem;
+                  }
+              }
             }
             q.options = opts;
             q._isMCQ = Array.isArray(opts) && opts.length >= 2;
@@ -478,6 +487,25 @@
       return looseCorrect === looseUser;
     };
 
+    function getPassageForQuestion(q, test) {
+      if (!q) return null;
+      if (q.passageText) return String(q.passageText);
+      if (q.passage) return String(q.passage);
+      if (q.relatedPassageId || q.passageId) {
+        const pid = q.relatedPassageId || q.passageId;
+        if (test && Array.isArray(test.passages)) {
+          const p = test.passages.find(x => x.id === pid || x.passageId === pid);
+          if (p) return (p.text || p.passage || p).toString();
+        }
+      }
+      const raw = String(q.question || '');
+      const inlineMatch = raw.match(/^PASSAGE:\s*(?:['"])?([\s\S]*?)(?:['"])?\s*\n+/i);
+      if (inlineMatch && inlineMatch[1]) return inlineMatch[1].trim();
+      const quotedMatch = raw.match(/PASSAGE:\s*['"]([^'"]+)['"]/i);
+      if (quotedMatch && quotedMatch[1]) return quotedMatch[1].trim();
+      return null;
+    }
+
     // --- Sub-Components ---
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
@@ -520,6 +548,7 @@
       </div>
     );
 
+    // FIX 1: Robust Notification Queue
     const NotificationManager = ({ notifications, onDismiss }) => {
       const current = notifications[0] || null;
       
@@ -549,7 +578,7 @@
             {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
-              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300">Cancel</button>}
+              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300 transition">Cancel</button>}
               {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white transition ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
             </div>
           </div>
@@ -672,6 +701,7 @@
       const canAccessLevel2 = overrideUnlock || userLevel >= 2 || allLevel1Complete;
       const canAccessLevel3 = overrideUnlock || userLevel >= 3 || allLevel2Complete;
 
+      // FIX 3: Weekly accuracy checks 7 days ONLY
       const testsThisWeekData = Object.entries(userData.progress || {})
         .filter(([id, p]) => id !== 'daily-challenge' && id !== 'mistakes-test' && p.completedAt && (Date.now() - p.completedAt) < 7 * 24 * 60 * 60 * 1000)
         .map(([id, p]) => {
@@ -693,25 +723,19 @@
           const isUnlocked = overrideUnlock || globalIndex <= firstIncompleteIdx || firstIncompleteIdx === -1;
           const isActive = overrideUnlock ? (!isCompleted) : (globalIndex === firstIncompleteIdx);
 
-          // Get Subject Emoji
           const emoji = test.subject === 'Maths' ? '🧮' : (test.subject === 'English' ? '📖' : '⚔️');
 
-          // Trigonometric offset for snake pattern
           const offsetBase = [-60, 60, -90, 90, -40, 40];
           const xOffset = offsetBase[globalIndex % offsetBase.length];
 
           return (
             <div key={test.id} className="relative z-10 my-8 flex flex-col items-center" style={{ transform: `translateX(${xOffset}px)` }}>
-               
-               {/* ACTIVE TOOLTIP */}
                {isActive && isUnlocked && (
                   <div className="absolute -top-12 animate-bounce bg-white text-amber-600 font-black px-4 py-2 rounded-xl shadow-lg border-2 border-amber-200 whitespace-nowrap z-20">
                      START QUEST 👇
                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-b-2 border-r-2 border-amber-200 rotate-45"></div>
                   </div>
                )}
-
-               {/* THE NODE BUTTON */}
                <button 
                   onClick={() => isUnlocked ? handleSelectTest(test.id) : null}
                   disabled={!isUnlocked}
@@ -729,10 +753,8 @@
                       </div>
                   )}
                </button>
-
-               {/* TEST LABEL PILL */}
-               <div className="absolute top-full mt-3 w-40 text-center">
-                  <div className="bg-white/90 px-3 py-1 rounded-lg shadow-sm border border-slate-200 text-sm font-bold text-slate-700 font-orbitron truncate" title={test.title}>
+               <div className="absolute top-full mt-3 w-48 text-center">
+                  <div className="bg-white/90 px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-sm font-bold text-slate-700 font-orbitron">
                     {test.title}
                   </div>
                </div>
@@ -817,10 +839,8 @@
           {/* THE NEW SAGA MAP UI */}
           <div className="relative max-w-lg mx-auto py-10 flex flex-col items-center">
               
-              {/* Background Path Line */}
               <div className="absolute top-0 bottom-0 w-6 bg-slate-200 rounded-full shadow-inner opacity-60"></div>
 
-              {/* ZONE 1 */}
               <div className="relative z-10 bg-emerald-100 border-4 border-emerald-500 text-emerald-800 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-6 font-orbitron">
                   🍄 Whispering Woods
               </div>
@@ -831,8 +851,7 @@
                   <div className="relative z-10 bg-white p-6 rounded-2xl border-2 border-slate-200 font-bold text-slate-500 text-center my-6">No quests loaded.</div>
               )}
 
-              {/* ZONE 2 */}
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-12 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel2 ? '💎 Crystal Caverns' : '🔒 Zone Locked'}
               </div>
               
@@ -844,8 +863,7 @@
                   </div>
               )}
 
-              {/* ZONE 3 */}
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-12 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel3 ? '🏰 Sky Citadel' : '🔒 Zone Locked'}
               </div>
               
@@ -860,7 +878,7 @@
               {/* BOSS STAGE */}
               {canAccessLevel3 && bossTests.length > 0 && (
                   <>
-                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-3 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] my-12 font-orbitron">
+                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-3 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] mt-20 mb-6 font-orbitron">
                           🐉 Dragon's Lair (Boss)
                       </div>
                       {bossTests.map(t => renderMapNode(t, getGlobalIndex(t.id)))}
@@ -884,6 +902,7 @@
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
+      const [showPassage, setShowPassage] = useState(false);
 
       const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
       const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
@@ -937,6 +956,7 @@
       const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
+      // FIX 2: Free response auto-submit prevented
       const handleAnswerSelect = (answer, isTextarea = false) => {
         if (submittedAnswers[currentQuestionIndex]) return;
         setUserAnswers(prev => ({ ...prev, [originalIndex]: answer }));
@@ -995,16 +1015,10 @@
       const currentQ = test.questions[originalIndex];
       normalizeQuestion(currentQ);
       const isSubmitted = !!submittedAnswers[currentQuestionIndex];
+      const passageText = getPassageForQuestion(currentQ, test);
       
-      const labeled = extractLabeledOptionsFromPrompt(currentQ.question || '');
-      const optionsFromData = Array.isArray(currentQ.options) ? currentQ.options.map(o => String(o ?? '').trim()).filter(Boolean) : null;
-      const isLabeled = !optionsFromData && labeled && labeled.options.length >= 2;
-      const implicitOr = !optionsFromData && !isLabeled ? tryParseTwoOptionsFromOr(currentQ.question || '') : null;
-      const displayStem = isLabeled ? labeled.stem : (implicitOr ? implicitOr.stem : (currentQ.question || ''));
-      const renderAsButtonsOptions = optionsFromData && optionsFromData.length >= 2 ? optionsFromData : (implicitOr ? implicitOr.options : null);
-      const renderAsLabeled = isLabeled && labeled.options.map(o => String(o ?? '').trim()).filter(Boolean).length >= 2;
-      const isFreeResponse = !renderAsButtonsOptions && !renderAsLabeled;
-
+      const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
+      const isFreeResponse = !optObjs;
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
       return (
@@ -1019,34 +1033,34 @@
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
             
             <div className="mb-8 bg-sky-50 rounded-3xl p-8 border-2 border-sky-100 shadow-sm min-h-[10rem] flex flex-col justify-center">
-              <p className="text-slate-400 font-bold mb-3 uppercase tracking-wider text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-              <p className="text-2xl text-slate-800 whitespace-pre-wrap font-bold leading-relaxed">{displayStem}</p>
+              <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-slate-400 font-bold mb-3 uppercase tracking-wider text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
+                    <p className="text-2xl text-slate-800 whitespace-pre-wrap font-bold leading-relaxed">{currentQ.question}</p>
+                  </div>
+                  {passageText && (
+                      <button onClick={() => setShowPassage(true)} className="ml-4 bg-white border-2 border-slate-200 px-4 py-2 rounded-xl font-bold hover:bg-slate-50 whitespace-nowrap">📖 Read Passage</button>
+                  )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-              {renderAsButtonsOptions ? renderAsButtonsOptions.map((opt, i) => {
-                // Determine display option text vs id properly for buttons
-                const optObj = currentQ.options.find(o => normalizeAnswer(o.text) === normalizeAnswer(opt));
-                const optId = optObj ? optObj.id : opt;
-                const checked = userAnswers[originalIndex] === optId || userAnswers[originalIndex] === opt;
+              {optObjs ? optObjs.map((opt, i) => {
+                const checked = userAnswers[originalIndex] === opt.id;
                 return (
-                  <button key={i} onClick={() => handleAnswerSelect(optId, false)} disabled={isSubmitted} className={`p-6 rounded-2xl border-4 text-left text-xl font-bold transition-all min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    {opt}
+                  <button key={opt.id} onClick={() => handleAnswerSelect(opt.id, false)} disabled={isSubmitted} className={`p-6 rounded-2xl border-4 text-left text-xl font-bold transition-all min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <div className="flex items-start gap-4">
+                        <div className="uppercase text-sky-700 font-bold mr-2">{opt.id})</div>
+                        <div className="text-left leading-snug">{opt.text}</div>
+                    </div>
                   </button>
                 )
-              }) : renderAsLabeled ? labeled.options.map((o, idx) => {
-                if (!o) return null; const letter = String.fromCharCode(97 + idx); const checked = userAnswers[originalIndex] === letter;
-                return (
-                  <label key={letter} className={`p-6 rounded-2xl border-4 flex items-center gap-5 text-xl font-bold transition-all cursor-pointer min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                    <input type="radio" name={`q-${originalIndex}`} disabled={isSubmitted} checked={checked} onChange={() => handleAnswerSelect(letter, false)} className="w-8 h-8 text-sky-600 focus:ring-sky-500 border-slate-300" />
-                    <span className="uppercase text-sky-700 text-2xl">{letter})</span><span className="leading-snug">{o}</span>
-                  </label>
-                );
               }) : (
                 <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, true)} disabled={isSubmitted} className="w-full col-span-2 p-6 text-2xl font-bold border-4 border-slate-200 rounded-3xl focus:border-sky-500 outline-none resize-none bg-white shadow-inner" placeholder="Type your answer here..." rows="4" />
               )}
             </div>
 
+            {/* FIX 2: Free response auto-submit hidden for MCQs */}
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-8">
                 <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
@@ -1077,6 +1091,23 @@
               )}
             </div>
           </div>
+
+          {showPassage && (
+            <div className="modal-backdrop">
+              <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl text-left border-4 border-sky-100 max-h-[80vh] overflow-auto">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-3xl font-bold font-orbitron text-sky-900">Passage</h3>
+                  <button onClick={() => setShowPassage(false)} className="text-sky-600 text-2xl font-bold hover:text-sky-800">✕</button>
+                </div>
+                <div className="prose prose-xl text-slate-800 whitespace-pre-wrap font-semibold">
+                  {passageText}
+                </div>
+                <div className="flex justify-end mt-8">
+                  <button onClick={() => setShowPassage(false)} className="bg-slate-100 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 text-xl">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -1101,6 +1132,7 @@
           else band = "Band 6";
       }
 
+      // FIX 4: Try Again flow
       const handleTryAgain = () => {
           updateUserData(prev => {
               const newProgress = { ...prev.progress };
@@ -1108,23 +1140,23 @@
               return { progress: newProgress };
           }, { event: { type: 'NO_OP' } });
           setView('dashboard');
-          setTimeout(() => handleSelectTest(testId), 50);
+          setTimeout(() => handleSelectTest(testId), 100);
       };
 
       return (
-        <div className="p-8 min-h-screen">
+        <div className="p-4 sm:p-8 min-h-screen">
           <div className="max-w-4xl mx-auto bg-white border-4 border-sky-100 rounded-3xl shadow-2xl p-8 sm:p-12 text-center relative overflow-hidden">
             <h2 className="text-5xl sm:text-6xl font-black text-sky-900 font-orbitron mb-8 relative z-10">Quest Complete!</h2>
             <div className="inline-block bg-sky-50 border-4 border-sky-200 rounded-[3rem] p-10 mb-12 relative z-10 shadow-inner">
                 <p className="text-3xl text-sky-800 font-bold uppercase tracking-widest mb-4">Final Score</p>
                 <p className="text-7xl font-black text-amber-500 my-4 tracking-tighter">{score} <span className="text-5xl text-sky-800 opacity-50">/ {total}</span></p>
-                <p className="text-2xl text-sky-700 font-bold bg-sky-200 inline-block px-6 py-2 rounded-full mt-4">{pct}% Accuracy</p>
+                <p className="text-2xl text-sky-700 font-bold bg-white px-6 py-2 rounded-full inline-block mt-4">{pct}% Accuracy</p>
             </div>
             
             {band && (
-                <div className="mb-10 bg-purple-100 border-2 border-purple-300 rounded-2xl p-6 text-purple-900 shadow-sm inline-block max-w-lg mx-auto relative z-10">
-                    <h3 className="text-2xl font-bold font-orbitron mb-2">Estimated SEAG Band</h3>
-                    <p className="text-4xl font-black">{band}</p>
+                <div className="mb-10 bg-purple-100 border-4 border-purple-300 rounded-3xl p-8 text-purple-900 shadow-md inline-block max-w-lg mx-auto relative z-10">
+                    <h3 className="text-3xl font-bold font-orbitron mb-2">Estimated SEAG Band</h3>
+                    <p className="text-5xl font-black my-4">{band}</p>
                     <p className="text-sm font-semibold mt-2 opacity-80">{total < 40 ? "*(Based on a partial paper)*" : "This is a rough estimate based on standard past paper curves."}</p>
                 </div>
             )}
@@ -1134,18 +1166,30 @@
                     const actualQuestion = test.questions[originalIndex];
                     const userAnswer = progress.answers[originalIndex];
                     const isCorr = isAnswerCorrect(actualQuestion, userAnswer);
+                    
+                    let displayAns = userAnswer || 'Blank';
+                    if (actualQuestion._isMCQ && actualQuestion.options) {
+                        const opt = actualQuestion.options.find(o => o.id === userAnswer);
+                        if (opt) displayAns = `${opt.id}) ${opt.text}`;
+                    }
+                    let correctAns = actualQuestion.answer;
+                    if (actualQuestion._isMCQ && actualQuestion._correctOptionId) {
+                        const opt = actualQuestion.options.find(o => o.id === actualQuestion._correctOptionId);
+                        if (opt) correctAns = `${opt.id}) ${opt.text}`;
+                    }
+
                     return (
                         <div key={displayIndex} className={`p-6 rounded-3xl border-l-8 shadow-sm ${isCorr ? 'bg-emerald-50 border-emerald-500' : 'bg-red-50 border-red-500'}`}>
                             <p className="font-bold text-slate-800 mb-3 text-xl">{displayIndex+1}. {actualQuestion.question}</p>
-                            <p className={`font-bold text-lg ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {userAnswer || 'Blank'}</p>
-                            {!isCorr && <p className="font-bold text-slate-700 mt-2 text-lg">Correct answer: {actualQuestion.answer}</p>}
+                            <p className={`font-bold text-lg ${isCorr ? 'text-emerald-700' : 'text-red-700'}`}>Your answer: {displayAns}</p>
+                            {!isCorr && <p className="font-bold text-slate-700 mt-2 text-lg">Correct answer: {correctAns}</p>}
                         </div>
                     );
                 })}
             </div>
             
-            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-200 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-300 text-2xl shadow-md transition">Try Again</button>
+            <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center relative z-10">
+                <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-100 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-200 text-2xl shadow-sm transition border-2 border-slate-200">Try Again</button>
                 <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1">Return to Map</button>
             </div>
           </div>
@@ -1167,7 +1211,7 @@
                     <h1 className="text-4xl sm:text-5xl font-bold text-sky-900 font-orbitron">Parent Dashboard</h1>
                     
                     <div className="flex items-center gap-4 flex-wrap">
-                        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
                           <button onClick={() => { updateAllData(prev => ({ ...prev, userData: { ...prev.userData, overrideUnlockAllLevels: !overrideOn } })); }} className={`font-bold py-2 px-4 rounded-xl ${overrideOn ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
                             {overrideOn ? 'Disable: Unlock All' : 'Unlock All Levels'}
                           </button>
@@ -1175,14 +1219,14 @@
                         </div>
                         
                         <button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition">Manage Tests & Data</button>
-                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Student View</button>
+                        <button onClick={() => setView('dashboard')} className="font-bold bg-sky-600 text-white px-6 py-3 rounded-xl hover:bg-sky-500 shadow-sm transition">Exit to Map</button>
                     </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Total Attempts</p><p className="text-5xl font-black text-sky-600">{userData.totalAttempts || 0}</p></div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Overall Accuracy</p><p className="text-5xl font-black text-emerald-500">{overallAcc}%</p></div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Current Level</p><p className="text-5xl font-black text-amber-500">{userData.level || 1}</p></div>
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Total Attempts</p><p className="text-5xl font-black text-sky-600">{userData.totalAttempts || 0}</p></div>
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Overall Accuracy</p><p className="text-5xl font-black text-emerald-500">{overallAcc}%</p></div>
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-slate-100 text-center"><p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Current Level</p><p className="text-5xl font-black text-amber-500">{userData.level || 1}</p></div>
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
@@ -1190,9 +1234,9 @@
                     {completedTests.length > 0 ? (
                         <div className="space-y-4">
                             {completedTests.slice(0, 10).map(t => (
-                                <div key={t.id + t.date} className="flex justify-between items-center bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                                    <div><p className="font-bold text-lg text-slate-800">{t.title}</p><p className="text-sm text-slate-500 font-semibold">{new Date(t.date).toLocaleDateString()} • {t.mode || 'Unknown Mode'}</p></div>
-                                    <div className="font-black text-2xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
+                                <div key={t.id + t.date} className="flex justify-between items-center bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                    <div><p className="font-bold text-xl text-slate-800 mb-1">{t.title}</p><p className="text-sm text-slate-500 font-bold uppercase tracking-wide">{new Date(t.date).toLocaleDateString()} • {t.mode || 'Unknown Mode'}</p></div>
+                                    <div className="font-black text-3xl text-sky-700">{Math.round((t.score/t.questions.length)*100)}%</div>
                                 </div>
                             ))}
                         </div>
@@ -1210,6 +1254,7 @@
             message: "Are you sure? This deletes ALL progress, XP, stats, and achievements but keeps tests.", 
             confirmText: "Reset Everything", 
             onConfirm: () => {
+                // FIX 3: Fully populated clean object
                 const clean = { 
                     name: userData.name || "Nicolas", avatar: userData.avatar || '👨‍🚀', parentPin: userData.parentPin || "1234", soundEnabled: userData.soundEnabled, dyslexiaFriendly: userData.dyslexiaFriendly, overrideUnlockAllLevels: userData.overrideUnlockAllLevels,
                     progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, 
@@ -1261,8 +1306,8 @@
                     let added = 0; let updated = 0;
                     testsToImport.forEach(newTest => {
                         const existingIndex = newAllTests.findIndex(t => t.id === newTest.id);
-                        if (existingIndex >= 0) { newAllTests[existingIndex] = newTest; updated++; } 
-                        else { newAllTests.push(newTest); added++; }
+                        if (existingIndex >= 0) { newAllTests[existingIndex] = normalizeTestPack(newTest); updated++; } 
+                        else { newAllTests.push(normalizeTestPack(newTest)); added++; }
                     });
                     setTimeout(() => showNotification({ message: `Success! Added ${added} new tests, updated ${updated}.`, type: 'success' }), 0);
                     return { ...prev, allTests: newAllTests };
@@ -1301,7 +1346,7 @@
               {allTests.map(t => (
                 <div key={t.id} className="bg-slate-50 p-5 rounded-2xl flex flex-wrap justify-between items-center border border-slate-200 gap-4">
                   <div>
-                      <h3 className="font-bold text-lg text-slate-800">{t.title}</h3>
+                      <h3 className="font-bold text-xl text-slate-800 mb-1">{t.title}</h3>
                       <p className="text-slate-500 font-semibold">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
                   </div>
                   <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-50 transition">Delete</button>
@@ -1322,30 +1367,30 @@
             if(questions.some(q => !q.question || !q.answer)) return showNotification({message: "All questions must have text and an answer.", type: "error"});
             
             const nt = { id: `custom-${Date.now()}`, title, subject, level: Number(level), questions, notes: '' };
-            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, nt] }));
+            updateAllData(prev => ({ ...prev, allTests: [...prev.allTests, normalizeTestPack(nt)] }));
             showNotification({message: "Test Created!", type:"success"});
             setView('admin');
         };
         
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
-                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-3xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border-2 border-slate-200 px-6 py-3 rounded-xl">Cancel</button></div>
                 <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
                     <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
-                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
+                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
+                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
-                            <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
-                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-6 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div key={i} className="mb-8 p-8 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
+                            <span className="absolute -top-4 left-6 bg-sky-600 text-white px-4 py-1 rounded-full font-black text-sm uppercase tracking-widest shadow-md">Question {i+1}</span>
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-4 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                                 {q.options.map((opt, oIndex) => (
-                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-4 rounded-xl border-2 border-slate-200 font-semibold outline-none focus:border-sky-500 text-lg ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
+                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-5 rounded-2xl border-4 border-emerald-300 bg-emerald-50 font-bold text-xl outline-none focus:border-emerald-500 text-emerald-900" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
@@ -1360,7 +1405,7 @@
     const PerformanceDashboardView = ({ setView, userData, allTests }) => {
       const chartRef = useRef(null); const chartInstanceRef = useRef(null);
       
-      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score} : null; }).filter(Boolean);
+      const completed = Object.entries(userData.progress||{}).map(([id, p]) => { const t = allTests.find(x=>x.id===id); return (t && Object.keys(p.answers||{}).length === t.questions.length) ? {...t, score: p.score, completedAt: p.completedAt || 0} : null; }).filter(Boolean).sort((a,b) => a.completedAt - b.completedAt);
       
       useEffect(() => {
         if (!chartRef.current || !window.Chart) return;
@@ -1374,6 +1419,7 @@
         const mixed = completed.filter(t=>t.subject==='Mixed').map(t=>(t.score/t.questions.length)*100);
         const maxLength = Math.max(maths.length, english.length, mixed.length);
         
+        // FIX 5: Chart visibility improved with pointRadius
         chartInstanceRef.current = new Chart(ctx, {
           type: 'line', 
           data: { 
@@ -1390,7 +1436,7 @@
 
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
               <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
                   {completed.length > 0 ? <canvas ref={chartRef}></canvas> : <p className="text-center font-bold text-slate-500 text-xl py-10">No data yet. Complete a test to see your progress!</p>}
               </div>
@@ -1426,7 +1472,7 @@
             
             <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Sound Effects</span><span className="text-slate-500 font-semibold text-sm">Chimes and celebrations.</span></div>
-                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600" />
+                <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
             </label>
 
             <div className="pt-6 border-t-2 border-slate-100 mb-8">
@@ -1475,8 +1521,9 @@
                                           <div className={`text-6xl mb-4 ${unl ? '' : 'opacity-50'}`}>{a.icon || '🏆'}</div>
                                           <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
+                                          {/* FIX 6: Progress Hints! */}
                                           {!unl && a.getProgress && (
-                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full">{a.getProgress(userData)}</div>
+                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full border border-sky-200">{a.getProgress(userData)}</div>
                                           )}
                                       </div>
                                   )
@@ -1593,7 +1640,7 @@
           loadedData = { 
             schemaVersion: 1,
             userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } }, 
-            allTests: defaultTests,
+            allTests: defaultTests.map(normalizeTestPack),
             deletedDefaultTests: []
           };
           safeSetLocalStorage('seagPortalData', JSON.stringify(loadedData));
@@ -1601,8 +1648,9 @@
             const existingIds = loadedData.allTests.map(t => t.id);
             const deleted = loadedData.deletedDefaultTests || [];
             defaultTests.forEach(dt => { 
-                if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(dt); 
+                if (!existingIds.includes(dt.id) && !deleted.includes(dt.id)) loadedData.allTests.push(normalizeTestPack(dt)); 
             });
+            loadedData.allTests = loadedData.allTests.map(normalizeTestPack);
         }
         
         const todayStr = new Date().toDateString();
@@ -1747,6 +1795,7 @@
           setAppData(prev => {
               if(!prev) return prev;
               const newData = typeof updater === 'function' ? updater(prev) : updater;
+              if (newData.allTests) newData.allTests = newData.allTests.map(normalizeTestPack);
               safeSetLocalStorage('seagPortalData', JSON.stringify(newData));
               return newData;
           });
