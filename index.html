@@ -7,14 +7,14 @@
   
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#f0f9ff" />
+  <meta name="theme-color" content="#064e3b" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
-  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmOWZmIiwidGhlbWVfY29sb3IiOiIjZjBmOWZmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmljb2xhcyBTRUFHIFBvcnRhbCIsInNob3J0X25hbWUiOiJTRUFHIFByZXAiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMDY0ZTNiIiwidGhlbWVfY29sb3IiOiIjMDY0ZTNiIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjx0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnPvCdhqw8L3RleHQ+PC9zdmc+IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJzaXplcyI6IjE5MngxOTIifV19">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,14 +27,16 @@
   <style>
     body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; color: #0f172a; -webkit-tap-highlight-color: transparent; }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
-    .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(4px); }
+    .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(6px); }
     .notification-bar { position: fixed; top: 20px; right: 20px; z-index: 1001; transition: opacity 0.5s, transform 0.5s; }
-    @keyframes flash-green { 0% { background-color: #dcfce7; border-color: #22c55e; } 100% { background-color: white; border-color: #e2e8f0; } }
-    @keyframes flash-red { 0% { background-color: #fee2e2; border-color: #ef4444; } 100% { background-color: white; border-color: #e2e8f0; } }
-    .flash-correct { animation: flash-green 0.6s ease-out; }
-    .flash-incorrect { animation: flash-red 0.6s ease-out; }
+    
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
+    .active-node { animation: pulse-ring 2s infinite; }
+    
     .dyslexia-friendly, .dyslexia-friendly * { font-family: 'Open Sans', Arial, sans-serif !important; line-height: 1.8 !important; letter-spacing: 0.05em !important; }
-    .dyslexia-friendly .font-orbitron { font-family: 'Open Sans', Arial, sans-serif !important; }
+    .dyslexia-cream { background-color: #fbf7ec !important; }
+    .dyslexia-blue { background-color: #f0f8ff !important; }
+    .sticky-navigator { position: sticky; top: 1rem; z-index: 50; }
   </style>
 </head>
 <body>
@@ -47,7 +49,6 @@
       catch (e) { console.warn('localStorage write failed:', e); return false; }
     }
 
-    // Parent PIN hashing with local file fallback
     async function sha256Hex(message) {
       if (!window.crypto || !window.crypto.subtle) return message; 
       const enc = new TextEncoder();
@@ -64,15 +65,13 @@
         return 'sha256:' + hex; 
     }
 
-    // --- Audio Engine ---
     const playSound = (type, enabled = true) => {
         if (!enabled) return;
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
+            osc.connect(gain); gain.connect(ctx.destination);
             
             if (type === 'correct') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
@@ -86,6 +85,10 @@
                 osc.type = 'square'; osc.frequency.setValueAtTime(400, ctx.currentTime); osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
                 gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
                 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+            } else if (type === 'buy') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
             }
         } catch(e) { console.log("Audio not supported"); }
     };
@@ -181,7 +184,6 @@
       }
     ];
 
-    // --- Achievements Data ---
     const achievementsList = [
         { id: 'firstSteps', title: 'First Steps', description: 'Attempt your first 5 questions.', category: 'Quick Wins', icon: '🐣', getProgress: (ud) => `${Math.min(ud.totalAttempts || 0, 5)} / 5` },
         { id: 'quickThinker', title: 'Quick Thinker', description: 'Get 1 correct answer in under 20 seconds.', category: 'Quick Wins', icon: '⚡' },
@@ -239,8 +241,7 @@
       const has = (id) => !!userData.achievements[id];
       const unlock = (id) => { if (!userData.achievements[id]) { userData.achievements[id] = true; unlockedNow.push(id); } };
       
-      const type = event?.type;
-      const p = event?.payload || {};
+      const type = event?.type; const p = event?.payload || {};
       
       if (type === 'ANSWER_SUBMITTED') {
         const tagCounts = userData.correctAnswersByTag || {};
@@ -285,9 +286,7 @@
           userData.weeklyDayMap[weekKey] = days;
           if (!has('weeklyWarrior') && Object.keys(days).length >= 5) unlock('weeklyWarrior');
         }
-        
         if (!has('clutchPerformer') && p.isFullPractice && p.totalQuestions >= 10 && p.lastQuestionCorrect) unlock('clutchPerformer');
-        
         if (p.finishedTestId && (p.finishedTestId.includes('full') || p.finishedTestId.includes('seag') || p.finishedTestId.includes('boss'))) {
           const ft = new Set(userData.fullTestsCompleted);
           ft.add(p.finishedTestId);
@@ -302,14 +301,9 @@
       return { updated: userData, unlockedIds: unlockedNow };
     }
 
-    // --- Format, Normalization & Parse Helpers ---
     function formatTime(ms) {
-      if (ms < 0) ms = 0;
-      const sec = Math.floor(ms / 1000);
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+      if (ms < 0) ms = 0; const sec = Math.floor(ms / 1000); const m = Math.floor(sec / 60); const s = sec % 60;
+      return `${m}:${String(s).padStart(2,'0')}`;
     }
 
     function extractLabeledOptionsFromPrompt(prompt) {
@@ -372,18 +366,29 @@
       return { ok: true, value: val, isPercent: hadPercent };
     }
 
+    function roundNumber(val, decimals) {
+      const factor = Math.pow(10, decimals);
+      return Math.round(val * factor) / factor;
+    }
+    
     function compareNumericAnswers(studentRaw, correctRaw, options = {}) {
-      const { toleranceAbs = 1e-4, toleranceRel = 1e-3, percentEquivalence = 'both' } = options;
+      const { toleranceAbs = 1e-4, toleranceRel = 1e-3, percentEquivalence = 'both', rounding } = options;
       const s = normalizeNumericLike(studentRaw); const c = normalizeNumericLike(correctRaw);
       if (!s.ok || !c.ok) return { equal: false };
+      if (rounding && Number.isFinite(rounding.decimals)) {
+        const sd = rounding.decimals;
+        const sv = roundNumber(s.value, sd);
+        const cv = roundNumber(c.value, sd);
+        if (sv === cv) return { equal: true, method: 'rounding' };
+      }
       const candidates = [];
       if (s.isPercent === c.isPercent) candidates.push([s.value, c.value]);
-      if (percentEquivalence === 'both' || percentEquivalence === 'studentToPercent') { if (c.isPercent && !s.isPercent) candidates.push([s.value * 100, c.value]); }
-      if (percentEquivalence === 'both' || percentEquivalence === 'correctToPercent') { if (s.isPercent && !c.isPercent) candidates.push([s.value, c.value * 100]); }
+      if ((percentEquivalence === 'both' || percentEquivalence === 'studentToPercent') && c.isPercent && !s.isPercent) candidates.push([s.value * 100, c.value]);
+      if ((percentEquivalence === 'both' || percentEquivalence === 'correctToPercent') && s.isPercent && !c.isPercent) candidates.push([s.value, c.value * 100]);
       for (const [sv, cv] of candidates) {
         const diff = Math.abs(sv - cv);
         const rel = Math.abs(diff / (Math.abs(cv) > 0 ? Math.abs(cv) : 1));
-        if (diff <= toleranceAbs || rel <= toleranceRel) return { equal: true };
+        if (diff <= toleranceAbs || rel <= toleranceRel) return { equal: true, method: 'tolerance' };
       }
       return { equal: false };
     }
@@ -396,7 +401,6 @@
       return s;
     };
 
-    // FATAL BUG FIX: Restoring normalizeQuestion function
     const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
     function normalizeQuestion(q) {
@@ -445,6 +449,7 @@
       }
       
       q._correctOptionId = correctId;
+      if (!q._isMCQ && typeof q.answer !== 'undefined') q._expectedAnswerText = q.answer;
       q._normalized = true;
       return q;
     }
@@ -453,7 +458,6 @@
         if (!test) return test;
         const t = { ...test };
         t.passages = test.passages || test.materials || [];
-        // Vital: actually map over and normalize the questions during init!
         t.questions = (Array.isArray(test.questions) ? test.questions : []).map(q => normalizeQuestion({...q}));
         return t;
     };
@@ -482,20 +486,20 @@
         return false;
       }
       
-      const correctAnswer = q.answer;
-      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number')) {
+      const rounding = q.rounding || null;
+      if (tags.includes('geometry') || tags.includes('percentages') || tags.includes('fractions') || tags.includes('number') || tags.includes('measures') || tags.includes('decimals')) {
         const sVal = unitStripForNumeric(userAnswer);
-        const cVal = unitStripForNumeric(correctAnswer);
-        if (compareNumericAnswers(sVal, cVal).equal) return true;
+        const cVal = unitStripForNumeric(q.answer);
+        if (compareNumericAnswers(sVal, cVal, { rounding }).equal) return true;
       }
       
       const sNorm = normalizeNumericLike(unitStripForNumeric(userAnswer));
-      const cNorm = normalizeNumericLike(unitStripForNumeric(correctAnswer));
+      const cNorm = normalizeNumericLike(unitStripForNumeric(q.answer));
       if (sNorm.ok && cNorm.ok) {
-        if (compareNumericAnswers(sNorm.value, cNorm.value).equal) return true;
+        if (compareNumericAnswers(sNorm.value, cNorm.value, { rounding }).equal) return true;
       }
       
-      const normalizedCorrect = normalizeAnswer(correctAnswer, tags);
+      const normalizedCorrect = normalizeAnswer(q.answer, tags);
       const normalizedUser = normalizeAnswer(userAnswer, tags);
       if (normalizedCorrect === normalizedUser) return true;
       const looseCorrect = stripLeadingArticles(stripOuterQuotesAndEndPunct(normalizedCorrect));
@@ -526,32 +530,36 @@
     const AIExplanation = ({ question, userAnswer, correctAnswer, onClose }) => {
       const [explanation, setExplanation] = useState('');
       const [loading, setLoading] = useState(true);
+      const [variant, setVariant] = useState(0);
       
-      useEffect(() => {
-        const generate = async () => {
-          setLoading(true);
-          try {
-            const hasOptions = Array.isArray(question.options) && question.options.length > 0;
-            const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt.text || opt}`).join(' | ')}` : '';
-            const prompt = `You are a kind tutor for a 10-year-old. Explain clearly why the answer is wrong and why the correct answer is right. Question: ${question.question}. ${optionsText} User's answer: ${userAnswer}. Correct answer: ${correctAnswer}`;
-            const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
-            const response = await fetch('/.netlify/functions/gemini-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            const data = await response.json();
-            const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.explanation || '';
-            setExplanation(aiText.trim() || `The correct answer is ${correctAnswer}. Think about what makes this answer right.`);
-          } catch (err) {
-            setExplanation(`Don't worry about getting it wrong - that's how we learn! The correct answer is ${correctAnswer}.`);
-          } finally { setLoading(false); }
-        };
-        generate();
-      }, [question, userAnswer, correctAnswer]);
+      const generate = async (variantIndex = 0) => {
+        setLoading(true);
+        try {
+          const hasOptions = Array.isArray(question.options) && question.options.length > 0;
+          const optionsText = hasOptions ? `Options: ${question.options.map((opt, i) => `${i + 1}) ${opt.text || opt}`).join(' | ')}` : '';
+          const style = variantIndex === 0 ? 'Explain kindly for a 10-year-old, step-by-step.' : variantIndex === 1 ? 'Explain like you would to a friend; use a quick example.' : 'Give a short visual example and a real-world analogy.';
+          const prompt = `${style} Question: ${question.question}. ${optionsText} User's answer: ${userAnswer}. Correct answer: ${correctAnswer}`;
+          const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
+          const response = await fetch('/.netlify/functions/gemini-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const data = await response.json();
+          const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.explanation || '';
+          setExplanation(aiText.trim() || `The correct answer is ${correctAnswer}. Think about what makes this answer right.`);
+        } catch (err) {
+          setExplanation(`Don't worry about getting it wrong - that's how we learn! The correct answer is ${correctAnswer}.`);
+        } finally { setLoading(false); }
+      };
+
+      useEffect(() => { generate(variant); }, [question, userAnswer, correctAnswer, variant]);
 
       if (loading) return <div className="mt-3 p-4 bg-sky-50 border border-sky-200 rounded-lg text-sky-800 font-bold">Generating explanation...</div>;
       return (
         <div className="mt-3 p-4 bg-sky-50 border border-sky-200 rounded-lg">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1"><p className="text-sky-800 text-sm font-semibold">{explanation}</p></div>
-            <button onClick={onClose} className="text-sky-600 font-bold hover:text-sky-800">✕</button>
+            <div className="flex flex-col gap-2 ml-4">
+              <button onClick={() => setVariant((v)=> (v+1)%3)} className="text-sky-600 font-bold hover:text-sky-800">🔁 Explain differently</button>
+              <button onClick={onClose} className="text-sky-600 font-bold hover:text-sky-800">✕</button>
+            </div>
           </div>
         </div>
       );
@@ -577,7 +585,7 @@
 
       if (!current) return null;
       
-      const bgColor = current.type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
+      const bgColor = current.type === 'success' ? 'bg-emerald-500' : current.type === 'error' ? 'bg-red-500' : 'bg-sky-500';
       return (
         <div aria-live="polite" className={`notification-bar p-5 rounded-xl text-white font-bold shadow-xl text-lg transition-all transform ${bgColor}`}>
           {current.message}
@@ -587,14 +595,14 @@
 
     const Modal = ({ title, message, onConfirm, onCancel, confirmText, children }) => {
       return (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center border-4 border-sky-100">
-            <h2 className="text-3xl font-bold text-sky-900 mb-4 font-orbitron">{title}</h2>
-            {message && <p className="text-slate-600 font-semibold mb-8">{message}</p>}
+        <div className="modal-backdrop z-[2000]" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md text-center border-4 border-sky-100">
+            <h2 className="text-3xl font-black text-sky-900 mb-4 font-orbitron">{title}</h2>
+            {message && <p className="text-slate-600 font-bold mb-8 text-lg">{message}</p>}
             {children}
             <div className="flex justify-center gap-4 mt-8">
-              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-bold py-3 px-6 rounded-xl hover:bg-slate-300 transition">Cancel</button>}
-              {onConfirm && confirmText && <button onClick={onConfirm} className={`font-bold py-3 px-6 rounded-xl text-white transition ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
+              {onCancel && <button onClick={onCancel} className="bg-slate-200 text-slate-800 font-black py-4 px-6 rounded-2xl hover:bg-slate-300 transition w-full">Cancel</button>}
+              {onConfirm && confirmText && <button onClick={onConfirm} className={`font-black py-4 px-6 rounded-2xl text-white transition w-full ${confirmText === 'Delete' || confirmText.includes('Reset') ? 'bg-red-500 hover:bg-red-400' : 'bg-sky-600 hover:bg-sky-500'}`}>{confirmText}</button>}
             </div>
           </div>
         </div>
@@ -614,38 +622,84 @@
                     <div className="flex items-center justify-between"><label className="font-semibold text-slate-700">Shuffle Questions</label><input type="checkbox" checked={shuffle} onChange={() => setShuffle(!shuffle)} className="w-6 h-6 rounded text-sky-500" /></div>
                 </div>
                 <button onClick={() => onStart({ mode: 'Custom', timer: useTimer, hints: useHints, shuffle })} className="w-full text-center p-3 mt-6 bg-purple-600 text-white hover:bg-purple-500 rounded-xl font-bold transition">Start Custom Test</button>
+                <div className="mt-4 border-t pt-4">
+                  <button onClick={() => onStart({ mode: 'Speed', timer: true, perQuestionTime: 60, hints: false, shuffle: true })} className="w-full text-center p-3 bg-amber-500 text-white hover:bg-amber-400 rounded-xl font-bold transition">Start Speed Round (60s per Q)</button>
+                </div>
             </div>
         );
     }
 
     const QuestionNavigator = ({ total, current, answeredIndices, onNavigate }) => {
         return (
-            <div className="flex flex-wrap gap-2 my-4">
-                {Array.from({ length: total }, (_, i) => {
-                    const isAnswered = answeredIndices.has(i);
-                    const isCurrent = i === current;
-                    let btnClass = 'bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50';
-                    if (isCurrent) btnClass = 'bg-sky-500 text-white border-sky-600 shadow-md transform scale-110';
-                    else if (isAnswered) btnClass = 'bg-sky-100 border-sky-300 text-sky-800';
-                    return <button key={i} onClick={() => onNavigate(i)} className={`w-10 h-10 rounded-xl font-bold transition-all ${btnClass}`}>{i + 1}</button>;
-                })}
+            <div className="sticky-navigator mb-4">
+              <div className="flex flex-wrap gap-2 my-4">
+                  {Array.from({ length: total }, (_, i) => {
+                      const isAnswered = answeredIndices.has(i);
+                      const isCurrent = i === current;
+                      let btnClass = 'bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50';
+                      if (isCurrent) btnClass = 'bg-sky-500 text-white border-sky-600 shadow-md transform scale-110';
+                      else if (isAnswered) btnClass = 'bg-sky-100 border-sky-300 text-sky-800';
+                      return <button key={i} onClick={() => onNavigate(i)} className={`w-10 h-10 rounded-xl font-bold transition-all ${btnClass}`}>{i + 1}</button>;
+                  })}
+              </div>
             </div>
         );
     }
+
+    // --- Onboarding Modal ---
+    const OnboardingModal = ({ onComplete }) => {
+      const [name, setName] = useState('');
+      const [avatar, setAvatar] = useState('👨‍🚀');
+      const avatars = ['👨‍🚀', '🚀', '⭐', '🎮', '🤖', '🧠', '💡', '🏆'];
+
+      return (
+        <div className="modal-backdrop z-[2000]" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-lg text-center border-8 border-sky-200">
+            <h2 className="text-4xl font-black text-sky-900 mb-4 font-orbitron">Welcome to Quest!</h2>
+            <p className="text-slate-600 font-bold mb-8 text-lg">Before we begin your adventure, tell us your name and choose your character.</p>
+            
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-5 bg-slate-50 rounded-2xl border-4 border-slate-200 mb-6 font-bold text-2xl outline-none focus:border-sky-500 text-center transition" placeholder="Your Name" />
+            
+            <div className="grid grid-cols-4 gap-3 mb-8">
+              {avatars.map(av => <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-4 rounded-2xl transition-all ${avatar === av ? 'bg-sky-100 ring-4 ring-sky-400 transform scale-110 shadow-md' : 'bg-slate-50 hover:bg-slate-100 border-2 border-slate-200'}`}>{av}</button>)}
+            </div>
+
+            <button onClick={() => { if(name.trim()) onComplete(name, avatar); }} disabled={!name.trim()} className="w-full bg-amber-400 text-amber-900 border-b-4 border-amber-600 font-black py-5 rounded-2xl text-2xl shadow-lg transition active:border-b-0 active:translate-y-[4px] disabled:opacity-50 disabled:bg-slate-300 disabled:border-slate-400">
+              Start Adventure! 🚀
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Avatar Renderer ---
+    const AvatarDisplay = ({ userData, className = "text-6xl" }) => {
+      const hasBorder = userData.inventory?.border;
+      const accessory = userData.inventory?.accessory;
+      
+      let borderClass = "";
+      if (hasBorder === 'gold') borderClass = "ring-4 ring-amber-400 p-2 rounded-full bg-amber-50 shadow-[0_0_15px_rgba(251,191,36,0.5)]";
+      else if (hasBorder === 'diamond') borderClass = "ring-4 ring-cyan-400 p-2 rounded-full bg-cyan-50 shadow-[0_0_15px_rgba(34,211,238,0.5)]";
+
+      return (
+        <div className={`relative inline-block ${borderClass}`}>
+            <span className={className}>{userData.avatar || '👨‍🚀'}</span>
+            {accessory && <span className="absolute -top-3 -right-3 text-3xl drop-shadow-md animate-bounce">{accessory}</span>}
+        </div>
+      );
+    };
 
     // --- MAIN VIEWS ---
     const Dashboard = ({ userData, setView, handleSelectTest, allTests, showModal, hideModal, updateAllData, appData, showNotification }) => {
       const xpForNextLevel = (userData.level || 1) * 100;
       const xpPercent = ((userData.xp || 0) / xpForNextLevel) * 100;
 
-      const handleAdminAccess = () => {
+      const handleAdminAccess = async () => {
           let pinInput = '';
           showModal({
               title: "Parent Access",
               message: "Please enter Parent PIN:",
-              children: (
-                  <input type="password" autoFocus className="w-full p-4 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold tracking-widest mt-4" onChange={e => pinInput = e.target.value} />
-              ),
+              children: <input type="password" autoFocus className="w-full p-4 border-4 border-slate-200 rounded-xl text-center text-3xl font-black tracking-widest mt-4 focus:border-sky-500 outline-none" onChange={e => pinInput = e.target.value} />,
               confirmText: "Unlock",
               onConfirm: async () => {
                   const savedPin = userData.parentPin || "1234";
@@ -730,7 +784,6 @@
 
       const getGlobalIndex = (testId) => orderedCoreTests.findIndex(t => t.id === testId);
 
-      // --- SAGA MAP NODE RENDERING ---
       const renderMapNode = (test, globalIndex) => {
           const progress = userData.progress?.[test.id];
           const isCompleted = !!progress?.completedAt;
@@ -738,126 +791,108 @@
           const isActive = overrideUnlock ? (!isCompleted) : (globalIndex === firstIncompleteIdx);
 
           const emoji = test.subject === 'Maths' ? '🧮' : (test.subject === 'English' ? '📖' : '⚔️');
-
-          const offsetBase = [-60, 60, -90, 90, -40, 40];
+          const offsetBase = [0, 40, 70, 40, 0, -40, -70, -40];
           const xOffset = offsetBase[globalIndex % offsetBase.length];
 
+          let btnClass = "bg-slate-300 border-slate-400 text-slate-500 opacity-80 cursor-not-allowed";
+          if (isActive) btnClass = "bg-amber-400 border-amber-600 text-amber-900 active-node";
+          if (isCompleted) btnClass = "bg-emerald-400 border-emerald-600 text-white hover:bg-emerald-300";
+
           return (
-            <div key={test.id} className="relative z-10 my-8 flex flex-col items-center" style={{ transform: `translateX(${xOffset}px)` }}>
+            <div key={test.id} className="relative z-10 my-8 flex flex-col items-center w-full" style={{ paddingLeft: `${xOffset}px` }}>
                {isActive && isUnlocked && (
-                  <div className="absolute -top-12 animate-bounce bg-white text-amber-600 font-black px-4 py-2 rounded-xl shadow-lg border-2 border-amber-200 whitespace-nowrap z-20">
+                  <div className="absolute -top-14 animate-bounce bg-white text-amber-600 font-black px-4 py-2 rounded-2xl shadow-lg border-2 border-amber-200 z-20 whitespace-nowrap">
                      START QUEST 👇
                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-b-2 border-r-2 border-amber-200 rotate-45"></div>
                   </div>
                )}
+
                <button 
                   onClick={() => isUnlocked ? handleSelectTest(test.id) : null}
                   disabled={!isUnlocked}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-xl transition-all duration-200 border-b-[8px] active:border-b-0 active:translate-y-[8px] outline-none ${
-                    isActive ? 'bg-amber-400 border-amber-600 ring-4 ring-amber-200' :
-                    isCompleted ? 'bg-emerald-400 border-emerald-600' :
-                    isUnlocked ? 'bg-sky-400 border-sky-600 hover:bg-sky-300' :
-                    'bg-slate-300 border-slate-400 cursor-not-allowed opacity-80'
-                  }`}
+                  className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl shadow-xl transition-all duration-150 border-b-[8px] active:border-b-0 active:translate-y-[8px] outline-none ${btnClass}`}
                >
                   {isUnlocked ? emoji : '🔒'}
-                  {isCompleted && (
-                      <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md text-xl border-2 border-slate-100">
-                          ⭐
-                      </div>
-                  )}
+                  {isCompleted && <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md text-xl border-2 border-slate-100">⭐</div>}
                </button>
-               <div className="absolute top-full mt-3 w-48 text-center">
-                  <div className="bg-white/90 px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-sm font-bold text-slate-700 font-orbitron">
+               
+               <div className="mt-4 w-48 text-center pointer-events-none">
+                  <span className="bg-white/95 px-3 py-2 rounded-xl shadow-md border border-slate-200 text-sm font-bold text-slate-700 font-orbitron block truncate">
                     {test.title}
-                  </div>
+                  </span>
                </div>
             </div>
           );
       };
 
+      const SceneLayer = ({ children }) => (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40 text-5xl">
+              {children}
+          </div>
+      );
+
       return (
-        <div className="p-4 sm:p-10 max-w-7xl mx-auto">
-          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-sky-900 flex items-center font-orbitron">
-                <span className="text-6xl mr-4">{userData.avatar || '👨‍🚀'}</span> 
-                Hero {userData.name}!
-              </h1>
-              <p className="text-xl text-sky-700 font-semibold mt-2">The realm needs your wisdom. Journey through the lands to unlock the Citadel!</p>
-            </div>
-            <div className="flex gap-3 mt-4 sm:mt-0">
-              <button onClick={() => setView('settings')} className="bg-white border-2 border-slate-200 text-slate-600 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-slate-50 transition">Profile</button>
-              <button onClick={() => setView('achievements')} className="bg-yellow-400 text-yellow-900 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-yellow-300 transition">Achievements</button>
-              <button onClick={handleAdminAccess} className="bg-slate-200 text-slate-700 font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-slate-300 transition">⚙️ Parents</button>
-            </div>
-          </div>
+        <div className="min-h-screen bg-gradient-to-b from-sky-100 via-emerald-100 to-indigo-200 font-sans pb-24">
           
-          <div className="bg-white border-2 border-sky-100 rounded-3xl p-6 mb-10 shadow-lg">
-            <div className="flex justify-between items-center mb-3 font-orbitron">
-              <span className="font-bold text-sky-700 text-2xl">Level {userData.level || 1} {userData.title && <span className="ml-3 text-lg bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-sans">{userData.title}</span>}</span>
-              <span className="text-lg text-slate-500 font-bold">{userData.xp || 0} / {xpForNextLevel} XP</span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, xpPercent))}%` }}></div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col cursor-pointer" onClick={handleDailyChallenge}>
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-3xl font-bold font-orbitron">Wandering Merchant</h2>
-                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
-                  <div className="text-2xl mb-1">📜</div>
-                </div>
+          {/* Base Camp (Top Header) */}
+          <div className="max-w-4xl mx-auto px-4 sm:px-10 pt-10">
+              <div className="bg-white/80 backdrop-blur-md border-4 border-white rounded-[2.5rem] p-8 shadow-xl mb-12 flex flex-col sm:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-6">
+                        <AvatarDisplay userData={userData} />
+                        <div>
+                            <h1 className="text-4xl sm:text-5xl font-black text-sky-900 font-orbitron">{userData.name}</h1>
+                            <p className="text-xl text-sky-700 font-bold mt-1">Level {userData.level || 1} • {userData.xp || 0} XP</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3 w-full sm:w-auto">
+                        <div className="flex items-center justify-center gap-4 bg-amber-100 border-2 border-amber-200 px-6 py-2 rounded-full font-black text-amber-600 text-xl shadow-inner">
+                            <span>⭐ {userData.stars || 0}</span>
+                            <span className="w-px h-6 bg-amber-300"></span>
+                            <span>🔥 {userData.currentStreak || 0}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setView('shop')} className="flex-1 bg-purple-500 border-b-4 border-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-purple-400 transition active:border-b-0 active:translate-y-[4px]">🏬 Shop</button>
+                            <button onClick={() => setView('settings')} className="bg-slate-200 border-b-4 border-slate-400 text-slate-700 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-slate-300 transition active:border-b-0 active:translate-y-[4px]">⚙️ Settings</button>
+                        </div>
+                        <button onClick={handleAdminAccess} className="text-xs text-slate-400 font-bold hover:text-slate-600">Parent Access</button>
+                    </div>
               </div>
-              <p className="text-xl opacity-90 mb-8 font-semibold">A quick 5-question quest!</p>
-              <div className="mt-auto">
-                  {userData.dailyChallenge?.completedToday ? (
-                    <div className="w-full bg-white/20 text-center font-bold py-4 rounded-xl text-xl">Quest Complete!</div>
-                  ) : (
-                    <button className="w-full bg-white text-emerald-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 shadow-lg text-xl transition pointer-events-none">Visit Merchant</button>
-                  )}
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col cursor-pointer" onClick={!hasMistakes ? null : handlePracticeMistakes}>
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-3xl font-bold font-orbitron">The Healing Spring</h2>
-                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
-                  <div className="text-2xl mb-1">🧪</div>
-                </div>
-              </div>
-              <p className="text-xl opacity-90 mb-8 font-semibold">Turn past errors into strength.</p>
-              <div className="relative group mt-auto">
-                  <button disabled={!hasMistakes} className="w-full bg-white text-blue-600 font-bold py-4 px-6 rounded-xl hover:bg-slate-100 disabled:opacity-50 shadow-lg text-xl transition pointer-events-none">Enter Spring</button>
-                  {!hasMistakes && <p className="absolute text-center w-full mt-2 text-sm font-bold opacity-80">You are fully healed!</p>}
-              </div>
-            </div>
+              {/* Side Quests */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+                  <button onClick={handleDailyChallenge} className="bg-white/80 backdrop-blur-md border-b-8 border-slate-200 rounded-[2rem] p-6 shadow-lg hover:bg-white transition active:border-b-0 active:translate-y-[8px] flex items-center justify-between group">
+                      <div className="text-left">
+                          <h2 className="text-2xl font-black text-slate-800 font-orbitron">Wandering Merchant</h2>
+                          <p className="text-slate-500 font-bold">Daily 5-Quest Warmup</p>
+                      </div>
+                      <div className="text-5xl group-hover:scale-110 transition">📜</div>
+                  </button>
 
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transform hover:-translate-y-1 transition flex flex-col">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-3xl font-bold font-orbitron">Adventurer's Log</h2>
-                <div className="text-center bg-white/20 px-4 py-2 rounded-xl">
-                  <div className="text-2xl mb-1">🗺️</div>
-                </div>
+                  <button onClick={!hasMistakes ? null : handlePracticeMistakes} disabled={!hasMistakes} className={`bg-white/80 backdrop-blur-md border-b-8 border-slate-200 rounded-[2rem] p-6 shadow-lg transition flex items-center justify-between group ${hasMistakes ? 'hover:bg-white active:border-b-0 active:translate-y-[8px]' : 'opacity-60 cursor-not-allowed'}`}>
+                      <div className="text-left">
+                          <h2 className="text-2xl font-black text-slate-800 font-orbitron">Healing Spring</h2>
+                          <p className="text-slate-500 font-bold">{hasMistakes ? 'Review past errors' : 'You are fully healed!'}</p>
+                      </div>
+                      <div className="text-5xl group-hover:scale-110 transition">🧪</div>
+                  </button>
               </div>
-              <p className="text-xl opacity-90 mb-6 font-semibold">Your deeds over the last 7 days.</p>
-              <div className="flex justify-between items-center bg-white/20 p-4 rounded-xl mt-auto">
-                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Quests</p><p className="text-3xl font-black">{testsThisWeekCount}</p></div>
-                  <div className="text-center"><p className="text-sm uppercase tracking-wider font-bold opacity-80">Accuracy</p><p className="text-3xl font-black">{thisWeekAccuracy}%</p></div>
-              </div>
-            </div>
           </div>
-          
-          {/* THE NEW SAGA MAP UI */}
+
+          {/* THE WINDING PATH MAP */}
           <div className="relative max-w-lg mx-auto py-10 flex flex-col items-center">
               
               {/* Background Path Line */}
-              <div className="absolute top-0 bottom-0 w-6 bg-slate-200 rounded-full shadow-inner opacity-60"></div>
+              <div className="absolute top-0 bottom-0 left-1/2 w-6 bg-white/50 rounded-full transform -translate-x-1/2 border-x-4 border-white z-0 shadow-inner"></div>
 
               {/* ZONE 1 */}
-              <div className="relative z-10 bg-emerald-100 border-4 border-emerald-500 text-emerald-800 font-black px-8 py-3 rounded-full text-2xl shadow-lg my-6 font-orbitron">
+              <SceneLayer>
+                  <div className="absolute top-[5%] left-[10%] drop-shadow-md">🌲</div>
+                  <div className="absolute top-[15%] right-[15%] drop-shadow-md">🍄</div>
+                  <div className="absolute top-[25%] left-[20%] drop-shadow-md">🌲</div>
+              </SceneLayer>
+
+              <div className="relative z-10 bg-emerald-100 border-4 border-emerald-500 text-emerald-800 font-black px-8 py-4 rounded-full text-2xl shadow-xl my-6 font-orbitron">
                   🍄 Whispering Woods
               </div>
               
@@ -868,7 +903,12 @@
               )}
 
               {/* ZONE 2 */}
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <SceneLayer>
+                  <div className="absolute top-[40%] right-[10%] drop-shadow-md">💎</div>
+                  <div className="absolute top-[50%] left-[15%] drop-shadow-md">🦇</div>
+              </SceneLayer>
+
+              <div className={`relative z-10 border-4 font-black px-8 py-4 rounded-full text-2xl shadow-xl mt-24 mb-6 font-orbitron ${canAccessLevel2 ? 'bg-purple-100 border-purple-500 text-purple-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel2 ? '💎 Crystal Caverns' : '🔒 Zone Locked'}
               </div>
               
@@ -881,7 +921,12 @@
               )}
 
               {/* ZONE 3 */}
-              <div className={`relative z-10 border-4 font-black px-8 py-3 rounded-full text-2xl shadow-lg mt-20 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
+              <SceneLayer>
+                  <div className="absolute top-[70%] left-[10%] drop-shadow-md">☁️</div>
+                  <div className="absolute top-[80%] right-[20%] drop-shadow-md">🏰</div>
+              </SceneLayer>
+
+              <div className={`relative z-10 border-4 font-black px-8 py-4 rounded-full text-2xl shadow-xl mt-24 mb-6 font-orbitron ${canAccessLevel3 ? 'bg-sky-100 border-sky-500 text-sky-800' : 'bg-slate-200 border-slate-400 text-slate-500'}`}>
                   {canAccessLevel3 ? '🏰 Sky Citadel' : '🔒 Zone Locked'}
               </div>
               
@@ -896,17 +941,23 @@
               {/* BOSS STAGE */}
               {canAccessLevel3 && bossTests.length > 0 && (
                   <>
-                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-3 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] mt-20 mb-6 font-orbitron">
+                      <div className="relative z-10 bg-red-100 border-4 border-red-600 text-red-900 font-black px-8 py-4 rounded-full text-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] mt-24 mb-6 font-orbitron">
                           🐉 Dragon's Lair (Boss)
                       </div>
                       {bossTests.map(t => renderMapNode(t, getGlobalIndex(t.id)))}
                   </>
               )}
           </div>
+          
+          {/* Floating UI Elements */}
+          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+            <button onClick={() => setView('breathe')} className="bg-white border-2 border-slate-200 rounded-full p-4 shadow-lg text-2xl hover:bg-slate-50 transition transform hover:scale-110" title="Breathe">🧘</button>
+          </div>
         </div>
       );
     };
 
+    // --- QUIZ VIEW (With Inventory Integration) ---
     const QuizView = ({ userData, testDetails, setView, allTests, updateUserData, showNotification, showModal }) => {
       const { id: testId, settings } = testDetails;
       const test = allTests.find(t => t.id === testId);
@@ -920,19 +971,8 @@
       const [showExplanation, setShowExplanation] = useState(false);
       const [lastAnswerResult, setLastAnswerResult] = useState(null);
       const [shuffledOrder, setShuffledOrder] = useState(null);
-      const [showPassage, setShowPassage] = useState(false);
-
-      const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer);
-      const timeLimitMs = settings.mode === 'Test' ? (test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0; 
       
-      const questionStartTimeRef = useRef(Date.now());
-      const accumulatedElapsedMsRef = useRef(existingProgress?.accumulatedElapsedMs || 0);
-      const [displayTime, setDisplayTime] = useState(timeLimitMs > 0 ? timeLimitMs : (existingProgress?.accumulatedElapsedMs || 0));
-
-      const [flash, setFlash] = useState(null);
-      const [feedback, setFeedback] = useState(null);
-
-      // GUARARD CLAUSE TO PREVENT FATAL RENDER BUG
+      // FATAL BUG FIX: Safety Guard
       if (!test || !test.questions || test.questions.length === 0 || (settings.shuffle && !shuffledOrder)) {
           return <LoadingSpinner message="Preparing Quest..." />;
       }
@@ -948,16 +988,44 @@
         }
       }, []); 
 
+      const timerEnabled = settings.mode === 'Test' || (settings.mode === 'Custom' && settings.timer) || settings.mode === 'Speed';
+      const timeLimitMsTotal = settings.mode === 'Test' ? (test && test.isBoss ? 20 * 60 * 1000 : 45 * 60 * 1000) : 0;
+      const perQuestionTimeMs = settings.mode === 'Speed' ? ((settings.perQuestionTime || 60) * 1000) : 0;
+
+      const questionStartTimeRef = useRef(Date.now());
+      const accumulatedElapsedMsRef = useRef(existingProgress?.accumulatedElapsedMs || 0);
+      const [displayTime, setDisplayTime] = useState(timeLimitMsTotal > 0 ? timeLimitMsTotal : (existingProgress?.accumulatedElapsedMs || 0));
+
+      const [flash, setFlash] = useState(null);
+      const [feedback, setFeedback] = useState(null);
+
       useEffect(() => {
         if (!timerEnabled) return;
-        setDisplayTime(timeLimitMs > 0 ? Math.max(0, timeLimitMs - accumulatedElapsedMsRef.current) : accumulatedElapsedMsRef.current);
+        if (settings.mode === 'Speed') {
+          setDisplayTime(perQuestionTimeMs);
+          questionStartTimeRef.current = Date.now();
+        } else {
+          setDisplayTime(timeLimitMsTotal > 0 ? Math.max(0, timeLimitMsTotal - accumulatedElapsedMsRef.current) : accumulatedElapsedMsRef.current);
+        }
         const interval = setInterval(() => {
             const now = Date.now();
-            const elapsed = accumulatedElapsedMsRef.current + (now - questionStartTimeRef.current);
-            setDisplayTime(timeLimitMs > 0 ? Math.max(0, timeLimitMs - elapsed) : elapsed);
-        }, 1000);
+            const elapsedSinceStart = now - questionStartTimeRef.current;
+            if (settings.mode === 'Speed') {
+              const remain = Math.max(0, perQuestionTimeMs - elapsedSinceStart);
+              setDisplayTime(remain);
+              if (remain <= 50) {
+                if (!submittedAnswers[currentQuestionIndex]) {
+                  if (userAnswers[currentQuestionIndex] !== undefined && userAnswers[currentQuestionIndex] !== '') handleSubmitAnswer(userAnswers[currentQuestionIndex]);
+                  else handleSubmitAnswer('');
+                }
+              }
+            } else {
+              const elapsed = accumulatedElapsedMsRef.current + (now - questionStartTimeRef.current);
+              setDisplayTime(timeLimitMsTotal > 0 ? Math.max(0, timeLimitMsTotal - elapsed) : elapsed);
+            }
+        }, 250);
         return () => clearInterval(interval);
-      }, [timerEnabled, timeLimitMs]);
+      }, [timerEnabled, perQuestionTimeMs, settings.mode, currentQuestionIndex, submittedAnswers, userAnswers]);
 
       const commitElapsed = () => { const now = Date.now(); const delta = now - questionStartTimeRef.current; accumulatedElapsedMsRef.current += delta; questionStartTimeRef.current = now; return delta; };
       const calculateScore = () => { return Object.entries(userAnswers).reduce((acc, [idx, ua]) => acc + (isAnswerCorrect(test.questions[idx], ua) ? 1 : 0), 0); };
@@ -966,17 +1034,20 @@
         const score = calculateScore();
         const currentElapsed = accumulatedElapsedMsRef.current + (Date.now() - questionStartTimeRef.current);
         const pEntry = { answers: userAnswers, lastQuestionIndex: typeof overrideIndex === 'number' ? overrideIndex : currentQuestionIndex, score, accumulatedElapsedMs: currentElapsed, streak, settings, submittedAnswers, ...(shuffledOrder && { shuffledOrder }), ...(isFinished ? { completedAt: Date.now() } : {}) };
-        const lastOrigIdx = shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1);
         
         updateUserData(prev => ({ progress: { ...prev.progress, [testId]: pEntry } }), {
-            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMs, timeLeft: timeLimitMs > 0 ? Math.max(0, timeLimitMs - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[lastOrigIdx], userAnswers[lastOrigIdx]), isFullPractice: testId.includes('full') || testId.includes('seag') || testId.includes('boss'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
+            event: isFinished ? { type: 'PACK_COMPLETED', payload: { finishedTestId: testId, totalQuestions: test.questions.length, score, mode: settings.mode, initialTotalTime: timeLimitMsTotal, timeLeft: timeLimitMsTotal > 0 ? Math.max(0, timeLimitMsTotal - currentElapsed) : 0, testHasGeometry: test.questions.some(q => (q.tags || []).includes('geometry')), lastQuestionCorrect: isAnswerCorrect(test.questions[(shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1))], userAnswers[(shuffledOrder ? shuffledOrder[test.questions.length - 1] : (test.questions.length - 1))]), isFullPractice: testId.includes('full') || testId.includes('seag') || testId.includes('boss'), isDailyChallenge: testId === 'daily-challenge', finishedAt: Date.now() } } : undefined
         });
       };
 
       const originalIndex = shuffledOrder ? shuffledOrder[currentQuestionIndex] : currentQuestionIndex;
+      const currentQ = test.questions[originalIndex];
+      if (!currentQ) return <LoadingSpinner message="Loading Question..." />;
+
+      const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       const showInstantFeedback = settings.mode === 'Practice' || (settings.mode === 'Custom' && settings.hints);
 
-      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); saveProgress(false, idx); } };
+      const navigateToQuestion = (idx) => { if (idx >= 0 && idx < test.questions.length) { commitElapsed(); setFeedback(null); setHint(null); setShowExplanation(false); setLastAnswerResult(null); setCurrentQuestionIndex(idx); questionStartTimeRef.current = Date.now(); saveProgress(false, idx); } };
       const goToNext = () => navigateToQuestion(currentQuestionIndex + 1);
 
       const handleAnswerSelect = (answer, isTextarea = false) => {
@@ -989,23 +1060,36 @@
       };
 
       const handleSubmitAnswer = (ansOverride) => {
-        const answer = ansOverride || userAnswers[originalIndex];
+        const answer = typeof ansOverride !== 'undefined' ? ansOverride : userAnswers[originalIndex];
         if (answer === undefined || answer === null || answer === '') return;
         setSubmittedAnswers(prev => ({ ...prev, [currentQuestionIndex]: true }));
         const deltaMs = commitElapsed();
         
-        const question = test.questions[originalIndex];
-        const isCorrect = isAnswerCorrect(question, answer);
+        const isCorrect = isAnswerCorrect(currentQ, answer);
+        setLastAnswerResult({ isCorrect, userAnswer: answer, question: currentQ });
         
-        setLastAnswerResult({ isCorrect, userAnswer: answer, question });
-        updateUserData({}, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: question.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
+        let freezeUsed = false;
+        if (!isCorrect && userData.inventory?.streakFreezes > 0 && streak >= 3) {
+            freezeUsed = true;
+            updateUserData(prev => ({ 
+                inventory: { ...prev.inventory, streakFreezes: prev.inventory.streakFreezes - 1 }
+            }), { event: { type: 'NO_OP' }});
+            showNotification({ message: "🧊 Streak Freeze Used!", type: "success" });
+        }
+
+        updateUserData({}, { event: { type: 'ANSWER_SUBMITTED', payload: { correct: isCorrect, timeToAnswer: deltaMs/1000, usedHint: !!hint, tags: currentQ.tags || [], wasReviewed: testId === 'mistakes-test', mode: settings.mode, testId } }});
         
-        setStreak(isCorrect ? streak + 1 : 0);
-        playSound(isCorrect ? 'correct' : 'incorrect', userData.soundEnabled !== false);
+        if (isCorrect) {
+            setStreak(streak + 1);
+            playSound('correct', userData.soundEnabled !== false);
+        } else {
+            if (!freezeUsed) setStreak(0);
+            playSound('incorrect', userData.soundEnabled !== false);
+        }
 
         if (showInstantFeedback) {
             setFlash(isCorrect ? 'correct' : 'incorrect');
-            setFeedback(isCorrect ? "Correct! Great job!" : `Not quite. The correct answer is: ${question._isMCQ && question._correctOptionId ? (question.options.find(o => o.id === question._correctOptionId)?.text || question.answer) : question.answer}`);
+            setFeedback(isCorrect ? "✨ Brilliant! Correct!" : `❌ Oops! The correct answer was ${currentQ._isMCQ && currentQ._correctOptionId ? (currentQ.options.find(o => o.id === currentQ._correctOptionId)?.text || currentQ.answer) : currentQ.answer}`);
             setTimeout(() => setFlash(null), 800);
         } else {
             if (currentQuestionIndex < test.questions.length - 1) setTimeout(goToNext, 300);
@@ -1015,12 +1099,16 @@
 
       const handleFinish = () => {
         commitElapsed();
+        saveProgress(true);
+        const score = calculateScore();
+        const total = test.questions.length || 1;
+        const starsEarned = Math.max(0, Math.round((score / total) * 5));
+        updateUserData(prev => ({ stars: (prev.stars || 0) + starsEarned }), { event: { type: 'NO_OP' }});
+
         if (testId === 'mistakes-test') {
-          saveProgress(true);
-          showNotification({ message: `Mistakes reviewed! Great work.`, type: "success" });
+          showNotification({ message: `Mistakes reviewed! You earned ${starsEarned} ★`, type: "success" });
           setView('dashboard');
         } else {
-          saveProgress(true);
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
           setView('results');
         }
@@ -1032,25 +1120,35 @@
         } else { commitElapsed(); saveProgress(false); setView('dashboard'); }
       }
 
-      const fetchHint = () => { setHint("Try re-reading the question carefully and break it into steps."); };
+      const useHintPotion = () => {
+          if (userData.inventory?.hintPotions > 0) {
+              updateUserData(prev => ({ inventory: { ...prev.inventory, hintPotions: prev.inventory.hintPotions - 1 } }), { event: { type: 'NO_OP' }});
+              setHint("Magic Hint: Try re-reading the question carefully and break it into steps.");
+              playSound('buy', userData.soundEnabled !== false);
+          } else {
+              showNotification({ message: "No Hint Potions left! Visit the Shop.", type: "error" });
+          }
+      };
 
-      const currentQ = test.questions[originalIndex];
-      if (!currentQ) return <LoadingSpinner message="Loading Question..." />;
-
-      const isSubmitted = !!submittedAnswers[currentQuestionIndex];
       const passageText = getPassageForQuestion(currentQ, test);
-      
       const optObjs = Array.isArray(currentQ.options) && currentQ.options.length ? currentQ.options : null;
       const isFreeResponse = !optObjs;
       const answeredSet = new Set(Object.keys(submittedAnswers).map(Number));
 
       return (
-        <div className={`min-h-screen p-4 sm:p-8 flex flex-col items-center justify-center transition-colors duration-300 ${flash ? `flash-${flash}` : ''}`}>
-          <div className="bg-white border-4 border-slate-100 rounded-3xl shadow-2xl p-6 sm:p-12 w-full max-w-4xl relative">
+        <div className={`min-h-screen p-4 sm:p-8 flex flex-col items-center justify-center transition-colors duration-300 ${flash ? `flash-${flash}` : 'bg-slate-50'}`}>
+          <div className="bg-white border-4 border-slate-100 rounded-[2.5rem] shadow-2xl p-6 sm:p-12 w-full max-w-4xl relative">
+            
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-sky-900 font-orbitron">{test.title}</h2>
-              {streak >= 1 && <span className={`font-bold text-orange-500 ${streak >= 3 ? 'text-2xl animate-pulse' : 'text-lg'}`}>🔥 {streak} Streak!</span>}
-              {timerEnabled && <div className={`text-xl font-orbitron px-4 py-2 rounded-xl font-bold border-2 flex items-center gap-2 ${timeLimitMs > 0 && displayTime < 300000 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{test.isBoss && <span className="text-xs uppercase bg-red-200 px-2 rounded font-bold text-red-800">BOSS TIMER</span>}{timeLimitMs > 0 ? '⏱️ ' : ''}{formatTime(displayTime)}</div>}
+              <div className="flex gap-4 items-center">
+                  {userData.inventory?.hintPotions > 0 && showInstantFeedback && !isSubmitted && (
+                      <button onClick={useHintPotion} className="bg-purple-100 text-purple-700 font-bold px-4 py-2 rounded-xl shadow-sm border-2 border-purple-200">
+                          🧪 Use Hint ({userData.inventory.hintPotions})
+                      </button>
+                  )}
+                  {streak >= 1 && <span className={`font-black text-orange-500 ${streak >= 3 ? 'text-2xl animate-pulse drop-shadow-md' : 'text-lg'}`}>🔥 {streak} Streak!</span>}
+              </div>
             </div>
             
             <QuestionNavigator total={test.questions.length} current={currentQuestionIndex} answeredIndices={answeredSet} onNavigate={navigateToQuestion} />
@@ -1058,44 +1156,37 @@
             <div className="mb-8 bg-sky-50 rounded-3xl p-8 border-2 border-sky-100 shadow-sm min-h-[10rem] flex flex-col justify-center">
               <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-slate-400 font-bold mb-3 uppercase tracking-wider text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-                    <p className="text-2xl text-slate-800 whitespace-pre-wrap font-bold leading-relaxed">{currentQ.question}</p>
+                    <p className="text-slate-400 font-black mb-3 uppercase tracking-widest text-sm">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
+                    <p className="text-3xl text-slate-800 whitespace-pre-wrap font-bold leading-relaxed">{currentQ.question}</p>
                   </div>
                   {passageText && (
-                      <button onClick={() => setShowPassage(true)} className="ml-4 bg-white border-2 border-slate-200 px-4 py-2 rounded-xl font-bold hover:bg-slate-50 whitespace-nowrap">📖 Read Passage</button>
+                      <button onClick={() => setShowPassage(true)} className="ml-4 bg-white border-2 border-slate-200 px-4 py-2 rounded-xl font-bold hover:bg-slate-50 whitespace-nowrap shadow-sm">📖 Read Passage</button>
                   )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-              {optObjs ? optObjs.map((opt, i) => {
-                const checked = userAnswers[originalIndex] === opt.id;
-                return (
-                  <button key={opt.id} onClick={() => handleAnswerSelect(opt.id, false)} disabled={isSubmitted} className={`p-6 rounded-2xl border-4 text-left text-xl font-bold transition-all min-h-[80px] shadow-sm ${checked ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+              {optObjs ? optObjs.map((opt) => (
+                  <button key={opt.id} onClick={() => handleAnswerSelect(opt.id, false)} disabled={isSubmitted} className={`p-6 rounded-3xl border-4 text-left text-xl font-bold transition-all shadow-sm min-h-[80px] ${userAnswers[originalIndex] === opt.id ? 'bg-sky-100 border-sky-500 text-sky-900 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'} ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}>
                     <div className="flex items-start gap-4">
-                        <div className="uppercase text-sky-700 font-bold mr-2">{opt.id})</div>
-                        <div className="text-left leading-snug">{opt.text}</div>
+                        <div className="uppercase text-sky-700 font-black text-2xl bg-sky-100 px-3 py-1 rounded-xl">{opt.id}</div>
+                        <div className="text-left mt-1">{opt.text}</div>
                     </div>
                   </button>
-                )
-              }) : (
+              )) : (
                 <textarea value={userAnswers[originalIndex] || ''} onChange={(e) => handleAnswerSelect(e.target.value, true)} disabled={isSubmitted} className="w-full col-span-2 p-6 text-2xl font-bold border-4 border-slate-200 rounded-3xl focus:border-sky-500 outline-none resize-none bg-white shadow-inner" placeholder="Type your answer here..." rows="4" />
               )}
             </div>
 
+            {hint && <div className="p-6 bg-purple-50 border-2 border-purple-200 text-purple-800 rounded-2xl text-xl font-bold shadow-sm mb-6 text-center animate-pulse">{hint}</div>}
+
             {!isSubmitted && (!showInstantFeedback || isFreeResponse) && (
               <div className="text-center my-8">
-                <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl hover:bg-emerald-400 disabled:opacity-50 text-2xl shadow-xl transition-all transform hover:-translate-y-1">Submit Answer</button>
+                <button onClick={() => handleSubmitAnswer()} disabled={typeof userAnswers[originalIndex] === 'undefined' || userAnswers[originalIndex] === ''} className="bg-emerald-500 border-b-4 border-emerald-700 text-white font-black py-4 px-12 rounded-2xl shadow-xl transition active:border-b-0 active:translate-y-[4px] text-2xl disabled:opacity-50 disabled:bg-slate-400 disabled:border-slate-500">Submit Answer</button>
               </div>
             )}
 
-            {showInstantFeedback && (
-              <div className="my-6 text-center">
-                {hint ? <div className="p-5 bg-amber-50 border-2 border-amber-200 text-amber-800 rounded-2xl text-xl font-bold shadow-sm">{hint}</div> : <button onClick={fetchHint} className="text-sky-600 font-bold hover:text-sky-800 text-xl">💡 Need a hint?</button>}
-              </div>
-            )}
-
-            {feedback && <div aria-live="polite" className={`p-6 rounded-2xl text-2xl font-bold mb-8 text-center shadow-md border-2 ${feedback.includes('Correct') ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>{feedback}</div>}
+            {feedback && <div aria-live="polite" className={`p-6 rounded-2xl text-2xl font-black mb-8 text-center shadow-md border-4 ${feedback.includes('Correct') ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-red-50 border-red-400 text-red-700'}`}>{feedback}</div>}
             
             {lastAnswerResult && !lastAnswerResult.isCorrect && showInstantFeedback && !showExplanation && (
               <div className="text-center">
@@ -1105,31 +1196,121 @@
             {showExplanation && <AIExplanation question={lastAnswerResult.question} userAnswer={lastAnswerResult.userAnswer} correctAnswer={lastAnswerResult.question._isMCQ && lastAnswerResult.question._correctOptionId ? (lastAnswerResult.question.options.find(o=>o.id===lastAnswerResult.question._correctOptionId)?.text || lastAnswerResult.question.answer) : lastAnswerResult.question.answer} onClose={() => setShowExplanation(false)} />}
 
             <div className="flex justify-between items-center mt-12 pt-8 border-t-4 border-slate-100">
-              <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-xl px-6 py-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Exit Quest</button>
+              <button onClick={handleExit} className="text-slate-500 font-bold hover:text-slate-800 text-xl px-6 py-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Flee Quest</button>
               {currentQuestionIndex < test.questions.length - 1 ? (
-                <button onClick={goToNext} disabled={!isSubmitted && showInstantFeedback} className="bg-sky-600 text-white font-bold py-4 px-10 rounded-2xl hover:bg-sky-500 disabled:opacity-50 disabled:bg-slate-400 text-2xl shadow-lg transition">Next Question &rarr;</button>
+                <button onClick={goToNext} disabled={!isSubmitted && showInstantFeedback} className="bg-sky-600 border-b-4 border-sky-800 text-white font-bold py-4 px-10 rounded-2xl hover:bg-sky-500 disabled:opacity-50 disabled:bg-slate-400 text-2xl shadow-lg transition active:border-b-0 active:translate-y-[4px]">Next Question &rarr;</button>
               ) : (
-                <button onClick={handleFinish} disabled={!isSubmitted && showInstantFeedback} className="bg-purple-600 text-white font-bold py-4 px-12 rounded-2xl hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-400 text-2xl shadow-xl transition transform hover:-translate-y-1">Finish Quest 🏆</button>
+                <button onClick={handleFinish} disabled={!isSubmitted && showInstantFeedback} className="bg-amber-400 border-b-4 border-amber-600 text-amber-900 font-black py-4 px-12 rounded-2xl shadow-xl transition active:border-b-0 active:translate-y-[4px] text-2xl disabled:opacity-50 disabled:bg-slate-400">Finish Quest 🏆</button>
               )}
             </div>
           </div>
 
           {showPassage && (
             <div className="modal-backdrop">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl text-left border-4 border-sky-100 max-h-[80vh] overflow-auto">
+              <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl text-left border-8 border-sky-100 max-h-[80vh] overflow-auto">
                 <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-3xl font-bold font-orbitron text-sky-900">Passage</h3>
+                  <h3 className="text-3xl font-black font-orbitron text-sky-900">Passage</h3>
                   <button onClick={() => setShowPassage(false)} className="text-sky-600 text-2xl font-bold hover:text-sky-800">✕</button>
                 </div>
-                <div className="prose prose-xl text-slate-800 whitespace-pre-wrap font-semibold">
+                <div className="prose prose-xl text-slate-800 whitespace-pre-wrap font-semibold leading-relaxed">
                   {passageText}
                 </div>
-                <div className="flex justify-end mt-8">
-                  <button onClick={() => setShowPassage(false)} className="bg-slate-100 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 text-xl">Close</button>
+                <div className="flex justify-end mt-8 border-t-4 border-slate-100 pt-6">
+                  <button onClick={() => setShowPassage(false)} className="bg-sky-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-sky-500 text-xl shadow-md border-b-4 border-sky-800 active:border-b-0 active:translate-y-[4px]">Close</button>
                 </div>
               </div>
             </div>
           )}
+        </div>
+      );
+    };
+
+    // --- SHOP VIEW (With Consumables) ---
+    const ShopView = ({ userData, setView, updateUserData, showNotification }) => {
+      const items = [
+        { id: 'border-gold', title: 'Golden Aura', desc: 'A shiny border for your avatar.', price: 50, type: 'border', value: 'gold', icon: '✨' },
+        { id: 'border-diamond', title: 'Diamond Frost', desc: 'An icy blue legendary border.', price: 100, type: 'border', value: 'diamond', icon: '💎' },
+        { id: 'acc-wizard', title: 'Wizard Hat', desc: 'Equip a magical hat.', price: 30, type: 'accessory', value: '🧙‍♂️', icon: '🎩' },
+        { id: 'potion-hint', title: 'Hint Potion', desc: 'Reveals a clue during a quest.', price: 15, type: 'consumable_hint', icon: '🧪' },
+        { id: 'freeze-streak', title: 'Streak Freeze', desc: 'Saves your streak if you make a mistake.', price: 25, type: 'consumable_freeze', icon: '🧊' },
+      ];
+
+      const buyItem = (item) => {
+          if ((userData.stars || 0) < item.price) {
+              showNotification({ message: "Not enough Stars! Complete more quests.", type: 'error' });
+              return;
+          }
+          playSound('buy', userData.soundEnabled !== false);
+          updateUserData(prev => {
+              const newInv = { ...(prev.inventory || {}) };
+              if (item.type === 'border') newInv.border = item.value;
+              if (item.type === 'accessory') newInv.accessory = item.value;
+              if (item.type === 'consumable_hint') newInv.hintPotions = (newInv.hintPotions || 0) + 1;
+              if (item.type === 'consumable_freeze') newInv.streakFreezes = (newInv.streakFreezes || 0) + 1;
+              return { stars: (prev.stars || 0) - item.price, inventory: newInv };
+          }, { event: { type: 'NO_OP' } });
+          showNotification({ message: `Purchased ${item.title}!`, type: 'success' });
+      };
+
+      return (
+          <div className="p-4 sm:p-10 max-w-5xl mx-auto min-h-screen">
+              <div className="flex flex-wrap justify-between items-center mb-10 gap-4 bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-slate-100">
+                  <div className="flex items-center gap-6">
+                      <AvatarDisplay userData={userData} className="text-6xl" />
+                      <div>
+                          <h1 className="text-4xl sm:text-5xl font-black text-sky-900 font-orbitron">Merchant Shop</h1>
+                          <p className="text-slate-500 font-bold text-lg mt-1">Spend your hard-earned stars.</p>
+                      </div>
+                  </div>
+                  <div className="text-center bg-amber-100 border-2 border-amber-200 px-8 py-4 rounded-3xl shadow-inner w-full sm:w-auto">
+                      <p className="text-sm uppercase tracking-widest font-bold text-amber-600">Balance</p>
+                      <p className="text-5xl font-black text-amber-500">⭐ {userData.stars || 0}</p>
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {items.map(item => (
+                      <div key={item.id} className="bg-white border-4 border-slate-100 rounded-[2rem] p-8 text-center shadow-lg flex flex-col hover:border-amber-300 transition">
+                          <div className="text-7xl mb-6 drop-shadow-md">{item.icon}</div>
+                          <h3 className="text-2xl font-black text-slate-800 mb-2 font-orbitron">{item.title}</h3>
+                          <p className="text-slate-500 font-bold mb-8 h-12 text-lg">{item.desc}</p>
+                          
+                          <button onClick={() => buyItem(item)} className="mt-auto w-full bg-amber-400 border-b-4 border-amber-600 text-amber-900 font-black py-4 rounded-2xl text-2xl shadow-md active:border-b-0 active:translate-y-[4px] transition hover:bg-amber-300">
+                              {item.price} ⭐
+                          </button>
+                      </div>
+                  ))}
+              </div>
+
+              <div className="mt-16 text-center">
+                  <button onClick={() => setView('dashboard')} className="bg-slate-200 border-b-4 border-slate-400 text-slate-700 font-black py-5 px-16 rounded-2xl hover:bg-slate-300 transition text-2xl active:border-b-0 active:translate-y-[4px] shadow-sm">Return to Map</button>
+              </div>
+          </div>
+      );
+    };
+
+    const BreatheView = ({ setView }) => {
+      const [phase, setPhase] = useState(0);
+      useEffect(() => {
+        const interval = setInterval(() => { setPhase(p => (p + 1) % 3); }, 4000);
+        return () => clearInterval(interval);
+      }, []);
+      return (
+        <div className="p-8 min-h-screen flex items-center justify-center bg-sky-50">
+          <div className="bg-white rounded-[3rem] p-12 shadow-2xl border-4 border-sky-100 text-center max-w-2xl w-full">
+            <h2 className="text-4xl font-black mb-6 font-orbitron text-sky-900">Morning Breathe</h2>
+            <p className="text-slate-500 font-bold text-xl mb-10">A quick breathing exercise to calm exam nerves.</p>
+            
+            <div className="mb-12 relative flex justify-center items-center h-64">
+                <div className={`absolute rounded-full bg-sky-100 border-4 border-sky-200 transition-all duration-[4000ms] ease-in-out flex items-center justify-center ${phase === 0 ? 'w-64 h-64 scale-100' : phase === 1 ? 'w-64 h-64 scale-110 bg-sky-200' : 'w-32 h-32 scale-100'}`}>
+                    <div className="text-7xl drop-shadow-md">{phase===0 ? '🌬️' : phase===1 ? '😮' : '😌'}</div>
+                </div>
+            </div>
+            
+            <div className="text-4xl font-black mb-12 text-sky-800 tracking-wide">{phase === 0 ? 'Breathe in...' : phase === 1 ? 'Hold it...' : 'Breathe out...'}</div>
+            
+            <button onClick={() => setView('dashboard')} className="bg-sky-600 border-b-4 border-sky-800 text-white px-12 py-5 rounded-2xl font-black text-2xl active:border-b-0 active:translate-y-[4px] transition shadow-lg w-full sm:w-auto">I'm Ready</button>
+          </div>
         </div>
       );
     };
@@ -1178,7 +1359,7 @@
             <div className="inline-block bg-sky-50 border-4 border-sky-200 rounded-[3rem] p-10 mb-12 relative z-10 shadow-inner">
                 <p className="text-3xl text-sky-800 font-bold uppercase tracking-widest mb-4">Final Score</p>
                 <p className="text-7xl font-black text-amber-500 my-4 tracking-tighter">{score} <span className="text-5xl text-sky-800 opacity-50">/ {total}</span></p>
-                <p className="text-2xl text-sky-700 font-bold bg-white px-6 py-2 rounded-full inline-block mt-4">{pct}% Accuracy</p>
+                <p className="text-2xl text-sky-700 font-bold bg-sky-200 inline-block px-6 py-2 rounded-full mt-4">{pct}% Accuracy</p>
             </div>
             
             {band && (
@@ -1218,7 +1399,7 @@
             
             <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
                 <button onClick={handleTryAgain} className="w-full sm:w-auto bg-slate-100 text-slate-700 font-bold py-5 px-10 rounded-2xl hover:bg-slate-200 text-2xl shadow-sm transition border-2 border-slate-200">Try Again</button>
-                <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition transform hover:-translate-y-1">Return to Map</button>
+                <button onClick={() => setView('dashboard')} className="w-full sm:w-auto bg-sky-600 border-b-4 border-sky-800 text-white font-bold py-5 px-16 rounded-2xl hover:bg-sky-500 text-3xl shadow-xl transition active:border-b-0 active:translate-y-[4px]">Return to Map</button>
             </div>
           </div>
         </div>
@@ -1232,6 +1413,21 @@
         completedTests.forEach(t => { totalQs += t.questions.length; totalCorr += t.score; });
         const overallAcc = totalQs > 0 ? Math.round((totalCorr / totalQs) * 100) : 0;
         const overrideOn = !!userData?.overrideUnlockAllLevels;
+
+        const printReport = () => {
+          const w = window.open('', '_blank', 'noopener');
+          const date = new Date().toLocaleString();
+          let html = `<html><head><title>Progress Report - ${userData.name}</title><style>body{font-family:Arial, sans-serif;padding:20px;color:#0f172a} .header{display:flex;justify-content:space-between;align-items:center} .card{border:1px solid #e6eef8;padding:12px;margin:8px 0;border-radius:10px}</style></head><body><div class="header"><h1>Progress Report: ${userData.name}</h1><div>${date}</div></div><p><strong>Overall Accuracy:</strong> ${overallAcc}%</p><p><strong>Total Attempts:</strong> ${userData.totalAttempts || 0}</p><hr/>`;
+          html += `<h2>Recent Tests</h2>`;
+          if (completedTests.length > 0) {
+            completedTests.slice(0,20).forEach(t => {
+              html += `<div class="card"><strong>${t.title}</strong><div>Score: ${t.score} / ${t.questions.length} (${Math.round((t.score/t.questions.length)*100)}%)</div><div>Date: ${t.date ? new Date(t.date).toLocaleString() : 'Unknown'}</div></div>`;
+            });
+          } else { html += `<p>No tests completed yet.</p>`; }
+          html += `<hr/><p>Generated by SEAG Portal</p></body></html>`;
+          w.document.write(html); w.document.close();
+          setTimeout(() => { w.print(); }, 500);
+        };
 
         return (
             <div className="p-4 sm:p-8 max-w-5xl mx-auto min-h-screen">
@@ -1258,7 +1454,12 @@
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-slate-100">
-                    <h2 className="text-2xl font-bold text-sky-900 mb-6 font-orbitron">Recent Test History</h2>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-sky-900 font-orbitron">Recent Test History</h2>
+                      <div className="flex gap-3">
+                        <button onClick={printReport} className="bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl hover:bg-indigo-500">Print Progress Report</button>
+                      </div>
+                    </div>
                     {completedTests.length > 0 ? (
                         <div className="space-y-4">
                             {completedTests.slice(0, 10).map(t => (
@@ -1287,7 +1488,7 @@
                     progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, dailyChallengeStreak: 0, 
                     achievements: {}, badgeProgress: { geometryGuruTests: [] }, fullTestsCompleted: [], weeklyCompletionWeeks: [], 
                     lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, 
-                    noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } 
+                    noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] }, inventory: { border: null, accessory: null, hintPotions: 0, streakFreezes: 0 }, stars: 0, isFirstLogin: false 
                 };
                 updateAllData(prev => ({ ...prev, userData: clean }));
                 showNotification({message: "Reset complete.", type: 'success'}); 
@@ -1354,29 +1555,29 @@
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <button onClick={() => setView('createTest')} className="bg-emerald-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-emerald-400 shadow-lg transition transform hover:-translate-y-1">Create New Test 📝</button>
-              <button onClick={() => setView('performance')} className="bg-purple-500 text-white p-8 rounded-3xl font-bold text-2xl hover:bg-purple-400 shadow-lg transition transform hover:-translate-y-1">Performance Charts 📈</button>
+              <button onClick={() => setView('createTest')} className="bg-emerald-500 border-b-4 border-emerald-700 text-white p-8 rounded-3xl font-black text-3xl shadow-lg transition active:border-b-0 active:translate-y-[4px]">Create New Test 📝</button>
+              <button onClick={() => setView('performance')} className="bg-purple-500 border-b-4 border-purple-700 text-white p-8 rounded-3xl font-black text-3xl shadow-lg transition active:border-b-0 active:translate-y-[4px]">Performance Charts 📈</button>
           </div>
           
-          <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 mb-8 shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Data Import & Reset</h2>
+          <div className="bg-white border-4 border-slate-100 rounded-3xl p-8 mb-8 shadow-xl">
+              <h2 className="text-3xl font-bold mb-6 text-sky-900 font-orbitron">Data Import & Reset</h2>
               <div className="flex flex-wrap gap-4">
                   <input type="file" accept=".json" id="import-test-pack" className="hidden" onChange={handleImportTestPacks} />
-                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-lg">📥 Import JSON Tests</label>
-                  <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-400 text-lg shadow-md transition">⚠️ Reset All Player Data</button>
+                  <label htmlFor="import-test-pack" className="bg-indigo-600 text-white font-bold py-4 px-8 rounded-2xl hover:bg-indigo-500 cursor-pointer shadow-md transition text-xl border-b-4 border-indigo-800 active:border-b-0 active:translate-y-[4px]">📥 Import JSON Tests</label>
+                  <button onClick={handleResetAllData} className="bg-red-500 text-white font-bold py-4 px-8 rounded-2xl hover:bg-red-400 text-xl shadow-md transition border-b-4 border-red-700 active:border-b-0 active:translate-y-[4px]">⚠️ Reset All Player Data</button>
               </div>
           </div>
           
-          <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-md">
-            <h2 className="text-2xl font-bold mb-6 text-sky-900 font-orbitron">Manage Existing Tests</h2>
+          <div className="bg-white border-4 border-slate-100 rounded-3xl p-8 shadow-xl">
+            <h2 className="text-3xl font-bold mb-6 text-sky-900 font-orbitron">Manage Existing Tests</h2>
             <div className="space-y-4">
               {allTests.map(t => (
-                <div key={t.id} className="bg-slate-50 p-5 rounded-2xl flex flex-wrap justify-between items-center border border-slate-200 gap-4">
+                <div key={t.id} className="bg-slate-50 p-6 rounded-2xl flex flex-wrap justify-between items-center border-2 border-slate-200 gap-4">
                   <div>
-                      <h3 className="font-bold text-lg text-slate-800">{t.title}</h3>
-                      <p className="text-slate-500 font-semibold">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
+                      <h3 className="font-bold text-xl text-slate-800">{t.title}</h3>
+                      <p className="text-slate-500 font-bold">{t.subject} {t.level ? `• Level ${t.level}` : ''} • {t.questions.length} questions</p>
                   </div>
-                  <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-50 transition">Delete</button>
+                  <button onClick={() => handleDeleteTest(t.id)} className="bg-white border-2 border-red-200 text-red-600 font-bold px-6 py-3 rounded-xl hover:bg-red-50 transition text-lg">Delete</button>
                 </div>
               ))}
             </div>
@@ -1401,28 +1602,28 @@
         
         return (
             <div className="p-4 sm:p-10 max-w-4xl mx-auto min-h-screen">
-                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-6 py-2 rounded-xl">Cancel</button></div>
-                <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-2 border-slate-100">
-                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-2 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
+                <div className="flex flex-wrap justify-between items-center mb-8 gap-4"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Create Test</h1><button onClick={() => setView('admin')} className="font-bold text-slate-500 hover:text-slate-800 bg-white border-2 border-slate-200 px-6 py-3 rounded-xl">Cancel</button></div>
+                <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border-4 border-slate-100">
+                    <input type="text" placeholder="Test Title" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-5 mb-6 border-4 border-slate-200 rounded-2xl font-bold text-2xl focus:border-sky-500 outline-none" />
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
-                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-2 border-slate-200 rounded-xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
+                        <select value={subject} onChange={e=>setSubject(e.target.value)} className="flex-1 p-4 border-4 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option>Maths</option><option>English</option><option>Mixed</option></select>
+                        <select value={level} onChange={e=>setLevel(e.target.value)} className="flex-1 p-4 border-4 border-slate-200 rounded-2xl font-bold text-xl outline-none focus:border-sky-500"><option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option></select>
                     </div>
                     {questions.map((q, i) => (
-                        <div key={i} className="mb-8 p-6 bg-sky-50 rounded-3xl border-2 border-sky-100 relative">
-                            <span className="absolute -top-3 left-4 bg-sky-200 text-sky-800 px-3 py-1 rounded-full font-bold text-sm">Q {i+1}</span>
-                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-6 mb-4 rounded-2xl border-2 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div key={i} className="mb-8 p-8 bg-sky-50 rounded-3xl border-4 border-sky-100 relative">
+                            <span className="absolute -top-5 left-6 bg-sky-600 text-white px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-md">Question {i+1}</span>
+                            <textarea placeholder="Question Text" value={q.question} onChange={e=>{const n=[...questions]; n[i].question=e.target.value; setQuestions(n);}} className="w-full p-5 mt-4 mb-4 rounded-2xl border-4 border-slate-200 text-xl font-semibold outline-none focus:border-sky-500" rows="3" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                                 {q.options.map((opt, oIndex) => (
-                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-3 rounded-lg border border-slate-200 font-semibold outline-none focus:border-sky-500 ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
+                                    <input key={oIndex} type="text" value={opt} onChange={e=>{const n=[...questions]; n[i].options[oIndex]=e.target.value; setQuestions(n);}} placeholder={`Option ${oIndex + 1}`} className={`p-4 rounded-xl border-4 border-slate-200 font-semibold outline-none focus:border-sky-500 text-lg ${oIndex === 4 ? 'sm:col-span-2' : ''}`} />
                                 ))}
                             </div>
-                            <input type="text" placeholder="Exact Correct Answer (option text or letter A..E)" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 font-bold text-lg outline-none focus:border-emerald-500" />
+                            <input type="text" placeholder="Exact Correct Answer" value={q.answer} onChange={e=>{const n=[...questions]; n[i].answer=e.target.value; setQuestions(n);}} className="w-full p-5 rounded-2xl border-4 border-emerald-300 bg-emerald-50 font-bold text-xl outline-none focus:border-emerald-500 text-emerald-900" />
                         </div>
                     ))}
                     <div className="flex flex-col sm:flex-row gap-6 mt-10">
-                        <button onClick={() => setQuestions([...questions, {question:'', options:['','','','',''], answer:''}])} className="flex-1 bg-slate-100 text-slate-700 font-bold py-5 rounded-2xl text-xl hover:bg-slate-200 border-2 border-slate-200 transition">Add Question</button>
-                        <button onClick={handleSave} className="flex-1 bg-emerald-500 text-white font-bold py-5 rounded-2xl text-xl hover:bg-emerald-400 shadow-lg transition">Save Test</button>
+                        <button onClick={() => setQuestions([...questions, {question:'', options:['','','','',''], answer:''}])} className="flex-1 bg-slate-100 text-slate-700 font-bold py-5 rounded-2xl text-xl hover:bg-slate-200 border-4 border-slate-200 transition">Add Question</button>
+                        <button onClick={handleSave} className="flex-1 bg-emerald-500 border-b-4 border-emerald-700 text-white font-bold py-5 rounded-2xl text-xl hover:bg-emerald-400 shadow-lg transition active:border-b-0 active:translate-y-[4px]">Save Test</button>
                     </div>
                 </div>
             </div>
@@ -1462,8 +1663,8 @@
 
       return (
           <div className="p-8 max-w-5xl mx-auto min-h-screen">
-              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
-              <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-slate-100">
+              <div className="flex justify-between items-center mb-8"><h1 className="text-4xl font-bold text-sky-900 font-orbitron">Performance Charts</h1><button onClick={() => setView('admin')} className="font-bold bg-white border-2 border-slate-200 px-6 py-3 rounded-xl text-slate-500 hover:text-slate-800 shadow-sm">Back</button></div>
+              <div className="bg-white p-8 rounded-3xl shadow-xl border-4 border-slate-100">
                   {completed.length > 0 ? <canvas ref={chartRef}></canvas> : <p className="text-center font-bold text-slate-500 text-xl py-10">No data yet. Complete a test to see your progress!</p>}
               </div>
           </div>
@@ -1484,26 +1685,26 @@
             <h1 className="text-3xl sm:text-4xl font-bold font-orbitron text-sky-900 mb-8 text-center">Profile Settings</h1>
             
             <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Player Name</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-slate-200 mb-6 font-bold text-xl outline-none focus:border-sky-500 transition" placeholder="Player Name" />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-5 bg-slate-50 rounded-2xl border-4 border-slate-200 mb-6 font-bold text-xl outline-none focus:border-sky-500 transition" placeholder="Player Name" />
             
             <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Choose Your Avatar</label>
             <div className="grid grid-cols-4 gap-3 mb-8">
               {avatars.map(av => <button key={av} onClick={() => setAvatar(av)} className={`text-4xl p-3 rounded-2xl transition-all ${avatar === av ? 'bg-sky-100 ring-4 ring-sky-400 transform scale-110 shadow-md' : 'bg-slate-50 hover:bg-slate-100 border-2 border-slate-200'}`}>{av}</button>)}
             </div>
             
-            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50 transition">
+            <label className="flex items-center justify-between p-5 border-4 border-slate-200 rounded-2xl mb-4 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Dyslexia Friendly Font</span><span className="text-slate-500 font-semibold text-sm">Uses Arial for all text.</span></div>
                 <input type="checkbox" checked={dyslexiaFriendly} onChange={() => setDyslexiaFriendly(!dyslexiaFriendly)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
             </label>
             
-            <label className="flex items-center justify-between p-5 border-2 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
+            <label className="flex items-center justify-between p-5 border-4 border-slate-200 rounded-2xl mb-8 cursor-pointer hover:bg-slate-50 transition">
                 <div><span className="block font-bold text-slate-800 text-lg">Sound Effects</span><span className="text-slate-500 font-semibold text-sm">Chimes and celebrations.</span></div>
                 <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="w-7 h-7 text-sky-600 focus:ring-sky-500 border-slate-300 rounded-lg" />
             </label>
 
-            <div className="pt-6 border-t-2 border-slate-100 mb-8">
-                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN (stored securely)</label>
-                <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
+            <div className="pt-6 border-t-4 border-slate-100 mb-8">
+                <label className="block text-slate-500 font-bold mb-2 uppercase text-sm">Parent Admin PIN</label>
+                <input type="text" value={parentPin} onChange={e => setParentPin(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-4 border-slate-200 font-bold text-xl outline-none focus:border-purple-500 text-center" placeholder="1234" />
             </div>
 
             <div className="flex gap-4">
@@ -1528,11 +1729,11 @@
         <div className="p-4 sm:p-10 min-h-screen max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
               <h1 className="text-4xl sm:text-5xl font-bold font-orbitron text-sky-900">Achievements 🏆</h1>
-              <button onClick={() => setView('dashboard')} className="bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl hover:bg-slate-50 shadow-sm text-lg transition">Back to Map</button>
+              <button onClick={() => setView('dashboard')} className="bg-white border-4 border-slate-200 text-slate-700 font-bold py-3 px-8 rounded-xl hover:bg-slate-50 shadow-sm text-lg transition">Back to Map</button>
           </div>
           <div className="flex gap-4 mb-10 bg-slate-100 p-2 rounded-2xl inline-flex">
-              <button onClick={()=>setActiveTab('Badges')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Badges' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Badges</button>
-              <button onClick={()=>setActiveTab('Titles')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Titles' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Titles</button>
+              <button onClick={()=>setActiveTab('Badges')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Badges' ? 'bg-white text-sky-700 shadow-sm border-2 border-sky-200' : 'text-slate-500 hover:text-slate-800'}`}>Badges</button>
+              <button onClick={()=>setActiveTab('Titles')} className={`px-8 py-4 font-bold rounded-xl text-lg transition ${activeTab==='Titles' ? 'bg-white text-sky-700 shadow-sm border-2 border-sky-200' : 'text-slate-500 hover:text-slate-800'}`}>Titles</button>
           </div>
           {activeTab === 'Badges' && (
               <div className="space-y-12">
@@ -1548,7 +1749,7 @@
                                           <h3 className={`font-black text-xl mb-2 leading-tight ${unl ? 'text-amber-600' : 'text-slate-500'}`}>{a.title}</h3>
                                           <p className="text-sm font-bold text-slate-500 leading-snug">{a.description}</p>
                                           {!unl && a.getProgress && (
-                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full">{a.getProgress(userData)}</div>
+                                              <div className="absolute bottom-3 text-xs font-bold text-sky-600 bg-sky-100 px-3 py-1 rounded-full border border-sky-200">{a.getProgress(userData)}</div>
                                           )}
                                       </div>
                                   )
@@ -1564,7 +1765,7 @@
                   {unlockedTitles.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {unlockedTitles.map(a => (
-                              <div key={a.id} className="flex flex-col sm:flex-row justify-between items-center p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl gap-4 hover:border-sky-300 transition">
+                              <div key={a.id} className="flex flex-col sm:flex-row justify-between items-center p-6 bg-slate-50 border-4 border-slate-200 rounded-2xl gap-4 hover:border-sky-300 transition">
                                   <div className="text-center sm:text-left">
                                       <p className="font-black text-2xl text-amber-600 mb-1">{a.unlocksTitle}</p>
                                       <p className="text-slate-500 font-bold text-sm">Unlocked from: {a.title}</p>
@@ -1576,7 +1777,7 @@
                           ))}
                       </div>
                   ) : (
-                      <div className="text-center p-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300">
+                      <div className="text-center p-12 bg-slate-50 rounded-2xl border-4 border-dashed border-slate-300">
                           <p className="text-slate-500 font-bold text-2xl">No titles unlocked yet.</p>
                           <p className="text-slate-400 font-semibold mt-2 text-lg">Keep earning badges to unlock them!</p>
                       </div>
@@ -1639,8 +1840,8 @@
           title: "Choose Your Mode",
           children: (
             <div className="space-y-4">
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-2 border-sky-300 transition"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
-              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-2 border-amber-300 transition"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Practice', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-sky-100 hover:bg-sky-200 rounded-2xl border-4 border-sky-300 transition"><h3 className="font-bold text-sky-900 text-xl">Practice Mode</h3><p className="text-sky-700 mt-2">No timer, hints enabled, live feedback.</p></button>
+              <button onClick={() => { setSelectedTest({ id: testId, settings: { mode: 'Test', shuffle: false } }); setView('quiz'); hideModal(); }} className="w-full text-left p-6 bg-amber-100 hover:bg-amber-200 rounded-2xl border-4 border-amber-300 transition"><h3 className="font-bold text-amber-900 text-xl">Test Mode</h3><p className="text-amber-700 mt-2">Timer countdown runs, no hints, results at the end.</p></button>
               <CustomModeSelector onStart={(settings) => { setSelectedTest({ id: testId, settings }); setView('quiz'); hideModal(); }} />
             </div>
           ), onCancel: hideModal
@@ -1661,7 +1862,7 @@
         if (!loadedData || !loadedData.userData) {
           loadedData = { 
             schemaVersion: 1,
-            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] } }, 
+            userData: { name: "Nicolas", avatar: '👨‍🚀', progress: {}, level: 1, xp: 0, totalAttempts: 0, currentStreak: 0, correctRunAfterWrong: 0, achievements: {}, parentPin: "1234", lastLoginDate: new Date().toDateString(), loginStreak: 1, perTopicStats: {}, reviewCorrections: 0, noHintStreak: 0, noHintCorrectCount: 0, lastCorrectAnswerTimes: [], totalCorrectAnswers: 0, uniqueTagsToday: { date: new Date().toDateString(), tags: [] }, inventory: { border: null, accessory: null, hintPotions: 0, streakFreezes: 0 }, stars: 0, isFirstLogin: true }, 
             allTests: defaultTests.map(normalizeTestPack),
             deletedDefaultTests: []
           };
@@ -1823,10 +2024,16 @@
           });
       }, []);
 
+      const handleFinishOnboarding = (name, avatar) => {
+          updateUserData(prev => ({ ...prev, name, avatar, isFirstLogin: false, stars: 10 }));
+          showNotification({ message: "Welcome Hero! Here are 10 ⭐ to start your journey.", type: "success" });
+      };
+
       if (!appData) return <LoadingSpinner message="Loading Portal System..." />;
 
       return (
         <div>
+          {appData.userData.isFirstLogin && <OnboardingModal onComplete={handleFinishOnboarding} />}
           {view === 'loading' && <LoadingSpinner message="Loading Portal System..." />}
           {view === 'dashboard' && <Dashboard userData={appData.userData} setView={setView} handleSelectTest={handleSelectTest} allTests={appData.allTests} showModal={showModalWrapper} hideModal={hideModal} updateAllData={updateAllData} appData={appData} showNotification={showNotification} />}
           {view === 'quiz' && <QuizView userData={appData.userData} testDetails={selectedTest} setView={setView} allTests={appData.allTests} updateUserData={updateUserData} showNotification={showNotification} showModal={showModalWrapper} />}
@@ -1837,6 +2044,8 @@
           {view === 'performance' && <PerformanceDashboardView userData={appData.userData} setView={setView} allTests={appData.allTests} />}
           {view === 'settings' && <SettingsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
           {view === 'achievements' && <AchievementsView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
+          {view === 'shop' && <ShopView userData={appData.userData} setView={setView} updateUserData={updateUserData} showNotification={showNotification} />}
+          {view === 'breathe' && <BreatheView setView={setView} />}
           
           <NotificationManager notifications={notificationQueue} onDismiss={dismissNotification} />
           {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={modal.onCancel} confirmText={modal.confirmText}>{modal.children}</Modal>}
